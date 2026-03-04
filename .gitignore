@@ -1,0 +1,52 @@
+# ─── Node / Bun ───────────────────────────────────────────────────────────────
+node_modules/
+.next/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# Bun lock file (keep bun.lockb, ignore nothing extra)
+# bun.lockb is binary but should be committed
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+.uv/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# ─── Editor / OS ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─── Env files ────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
