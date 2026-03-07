@@ -11,7 +11,7 @@ class BaseUser(BaseModel):
     name: int = Field(min_length=2, max_length=50)
 
 class CreateUser(BaseModel):
-    name: str = Field(min_length=2, max_length=50)
+    user_name: str = Field(min_length=2, max_length=50)
     email: EmailStr
     phone_number: PhoneNumber
     password: str
@@ -46,4 +46,4 @@ class UserSettings(BaseModel):
     notify_email: bool = Field(default=False)
 
 class PictureUpload(BaseModel):
-    photo_path: str
+    photo_url: HttpUrl
