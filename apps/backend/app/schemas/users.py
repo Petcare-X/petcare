@@ -9,6 +9,7 @@ from typing import Optional
 class BaseUser(BaseModel):
     id: int
     name: int = Field(min_length=2, max_length=50)
+    role: str # owner, co-owner, helper, doctor?
 
 class CreateUser(BaseModel):
     user_name: str = Field(min_length=2, max_length=50)

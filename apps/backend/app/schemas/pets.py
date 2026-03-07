@@ -4,6 +4,8 @@ from pydantic.types import HttpUrl
 from datetime import date
 from typing import Optional, List
 
+from app.schemas.users import UserPublic
+
 class BasePet(BaseModel):
     pet_name: str = Field(min_length=2, max_length=50)
     date_of_birth: Optional[date]
@@ -15,6 +17,9 @@ class BasePet(BaseModel):
     
 class GetPet(BasePet):
     owner_name: int
+
+class CreatePet(BasePet):
+    pass
 
 class UpdatePet(BasePet):
     years_old: Optional[int] = None
@@ -32,3 +37,7 @@ class PetDocument(BaseModel):
 
 class PetWithDocuments(BaseModel):
     documents: List[PetDocument]
+
+class PetSharing(BaseModel):
+    user_name: UserPublic
+    role: str # co-owner, doctor, helper?

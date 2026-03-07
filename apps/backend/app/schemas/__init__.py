@@ -1,9 +1,17 @@
-from app.schemas.users import CreateUser, UpdateUser, UserPrivate, UserPublic, UserSettings
+from app.schemas.users import CreateUser, UpdateDataUser, UpdateContactsUser, UserPrivate, UserPublic, UserSettings
+from app.schemas.pets import GetPet, UpdatePet, CreatePet, PetDocument, PetSharing, PetWithDocuments
 
 __all__ = (
     "CreateUser",
-    "UpdateUser",
+    "UpdateDataUser",
+    "UpdateContactsUser",
     "UserPrivate",
     "UserPublic",
-    "UserSettings"
+    "UserSettings",
+    "GetPet",
+    "UpdatePet",
+    "CreatePet",
+    "PetDocument",
+    "PetSharing",
+    "PetWithDocuments",
 )
