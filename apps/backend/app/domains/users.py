@@ -20,3 +20,4 @@ class Users:
             self.photo_url = photo_url,
             self.created_at = created_at,
             self.updated_at = updated_at
+
