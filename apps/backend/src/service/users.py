@@ -6,10 +6,8 @@ from src.core.security import hash_password
 from src.models.user_info import UserInfo
 from src.schemas.users import CreateUser, UpdateContactsUser, UpdateDataUser
 
-from sqlalchemy.exc import IntegrityError
-from fastapi import HTTPException
-
 from src.core.phone import to_e164
+
 
 # read
 async def get_user_by_id(db: AsyncSession, user_id: int) -> UserInfo | None:
@@ -49,20 +47,12 @@ async def create_user(db: AsyncSession, payload: CreateUser) -> UserInfo:
 
     try:
         await db.commit()
-        return True
-    except IntegrityError as e:
+        await db.refresh(user)
+        return user
+    except IntegrityError:
         await db.rollback()
-        orig = getattr(e, "orig", None)
-        sqlstate = getattr(orig, "sqlstate", None)
-        constraint = getattr(orig, "constraint_name", None)
-        msg = str(orig)
+        raise ValueError("Email or phone already exists")
 
-        if sqlstate == "23514":
-            raise HTTPException(
-                status_code=400,
-                detail=f"CHECK constraint failed: {constraint or 'unknown'} | {msg}"
-            )
-        raise
 
 # update profile data
 async def update_user_data(db: AsyncSession, user_id: int, payload: UpdateDataUser) -> UserInfo | None:
