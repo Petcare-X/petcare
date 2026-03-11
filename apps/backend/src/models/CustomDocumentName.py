@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, ForeignKey
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.db import Base
@@ -11,4 +11,4 @@ class CustomDocumentName(Base):
     __tablename__ = "custom_documents_names"
     
     id: Mapped[int_primary_key]
-    name: Mapped[int] = mapped_column(Integer (50), unique=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True)
