@@ -13,3 +13,4 @@ class PetDocument(Base):
     id: Mapped[int_primary_key]
     pet_id: Mapped[int] = mapped_column(Integer, ForeignKey("pets_info.id", ondelete="CASCADE"))
     document_id: Mapped[int] = mapped_column(Integer, ForeignKey("documents_types.id", ondelete="CASCADE"))
+    custom_document_name: Mapped[int] = mapped_column(Integer, ForeignKey("custom_documents_names.id", ondelete="CASCADE"))
