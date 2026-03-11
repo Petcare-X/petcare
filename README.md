@@ -1,62 +1,67 @@
-# Petcare-X
+# Petcare Monorepo
 
-## Установка PostgreSQL
+Fullstack монорепо: React + FastAPI, управляемый Turborepo.
 
-Ubuntu/Debian:
+## Стек
+
+| Слой | Технологии |
+|------|-----------|
+| **Frontend** | React 19, TypeScript, Vite — порт 3000 |
+| **Backend** | FastAPI, Python 3.12, Pydantic v2 — порт 8000 |
+| **Shared** | TypeScript типы (`@monorepo/shared-types`) |
+| **JS tooling** | Bun, Turborepo |
+| **Python tooling** | uv, ruff, pytest |
+
+## Структура
+
+```
+.
+├── apps/
+│   ├── frontend/        # React + Vite (порт 3000)
+│   └── backend/         # FastAPI (порт 8000)
+├── packages/
+│   └── shared-types/    # Общие TypeScript типы
+├── package.json         # Bun workspace + postinstall
+├── turbo.json           # Turborepo конфиг
+└── pyproject.toml       # uv workspace root
+```
+
+## Требования
+
+- [Bun](https://bun.sh) >= 1.2
+- [uv](https://docs.astral.sh/uv/) >= 0.5
+
+## Установка и запуск
 
 ```bash
-sudo apt install postgresql
-sudo systemctl start postgresql
+# Установить все зависимости (JS + Python автоматически через postinstall)
+bun install
+
+# Запустить frontend + backend одновременно
+bun run dev
 ```
 
-Если есть Homebrew:
+Готово. Открывайте:
+
+| Адрес | Что там |
+|-------|---------|
+| http://localhost:3000 | React приложение |
+| http://localhost:8000/docs | Swagger UI |
+| http://localhost:8000/redoc | ReDoc |
+
+## Другие команды
 
 ```bash
-brew install postgresql@16
-brew services start postgresql@16
+# Сборка
+bun run build
+
+# Линтинг всего монорепо
+bun run lint
+
+# Тесты Python
+cd apps/backend && uv run pytest -v
+
+# Автоисправление Python кода
+cd apps/backend && uv run ruff check --fix . && uv run ruff format .
 ```
-
-## Настройка базы данных
-
-```bash
-psql postgres
-```
-
-```sql
-CREATE USER "petcare-admin" WITH PASSWORD 'kQrA3-oBVn';
-CREATE DATABASE petcare OWNER "petcare-admin";
-\q
-```
-
-## Установка
-
-```bash
-uv sync
-cp apps/backend/.env.example apps/backend/.env
-```
-
-## Миграции
-
-```bash
-cd apps/backend
-uv run alembic upgrade head
-```
-
-## Запуск
-
-```bash
-make dev
-```
-
-Сервер: http://localhost:8000
-
-## API
-
-| Метод | Эндпоинт | Описание |
-|-------|----------|----------|
-| POST | /users | Создать пользователя |
-| GET | /users | Список пользователей |
-| GET | /users/{id} | Получить пользователя |
-| PATCH | /users/{id}/data | Обновить данные |
-| PATCH | /users/{id}/contacts | Обновить контакты |
-| DELETE | /users/{id} | Удалить пользователя |
+> Фронтенд обращается к `/api/*` — Vite проксирует запросы на `http://localhost:8000`.

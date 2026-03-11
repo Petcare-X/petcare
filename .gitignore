@@ -6,9 +6,6 @@ build/
 .turbo/
 *.tsbuildinfo
 
-# Bun lock file (keep bun.lockb, ignore nothing extra)
-# bun.lockb is binary but should be committed
-
 # ─── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
