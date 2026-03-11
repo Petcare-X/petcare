@@ -36,5 +36,6 @@ __all__ = (
     'CustomDocumentName',
     'SharedUser',
     'SmartDiet',
-    'LlmChatMessage'
+    'LlmChatMessage',
+    'PetInvite'
 )

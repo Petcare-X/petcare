@@ -17,7 +17,7 @@ class PetInfo(Base):
     pet_date_of_birth: Mapped[date] = mapped_column(Date)
     pet_type: Mapped[int] = mapped_column(Integer, ForeignKey("animals_types.id", ondelete="CASCADE"))
     pet_breed: Mapped[int] = mapped_column(Integer, ForeignKey("animals_breeds.id", ondelete="CASCADE"))
-    pet_pedigree: Mapped[bool] = mapped_column(Boolean)
+    pet_pedigree: Mapped[int] = mapped_column(Integer, ForeignKey("animals_pedigrees.id", ondelete="CASCADE"))
     pet_neck_girth: Mapped[int] = mapped_column(Numeric)
     pet_breast_girth: Mapped[int] = mapped_column(Numeric)
     pet_length: Mapped[int] = mapped_column(Numeric)
