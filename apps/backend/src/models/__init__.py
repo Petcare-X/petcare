@@ -21,6 +21,8 @@ from .SmartDiet import SmartDiet
 
 from .LlmChatMessage import LlmChatMessage
 
+from .PetInvite import PetInvite
+
 __all__ = (
     'UserInfo',
     'PetInfo',
