@@ -19,6 +19,8 @@ from .SharedUser import SharedUser
 
 from .SmartDiet import SmartDiet
 
+from .LlmChatMessage import LlmChatMessage
+
 __all__ = (
     'UserInfo',
     'PetInfo',
@@ -33,5 +35,6 @@ __all__ = (
     'DocumentType',
     'CustomDocumentName',
     'SharedUser',
-    'SmartDiet'
+    'SmartDiet',
+    'LlmChatMessage'
 )
