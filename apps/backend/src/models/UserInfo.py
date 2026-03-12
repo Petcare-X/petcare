@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Date, String, Text
+from sqlalchemy import Date, String, Text, BIGINT, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.db import Base
@@ -16,3 +16,5 @@ class UserInfo(Base):
     user_password_hash: Mapped[str] = mapped_column(Text)
     user_phone: Mapped[str] = mapped_column(String(16), unique=True, index=True)
     user_photo: Mapped[str] = mapped_column(Text)
+    telegram_id: Mapped[int | None] = mapped_column(BIGINT, unique=True, index=True, nullable=True)
+    auth_provider: Mapped[str] = mapped_column(String(20), server_default=text("'email'"), nullable=False)
