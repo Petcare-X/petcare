@@ -4,5 +4,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     DATABASE_URL: str
+    INVITE_BASE_URL: str
 
 settings = Settings()
