@@ -21,6 +21,6 @@ class TelegramAuth(BaseModel):
     photo_url: HttpUrl | None = None
     auth_date: int
     hash: str
-    
-class LogoutRequest(BaseModel):
-    refresh_token: str
+
+class SuccessResponse(BaseModel):
+    success: bool

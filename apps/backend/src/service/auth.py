@@ -118,7 +118,7 @@ class AuthService:
             refresh_token=refresh_token,
         )
 
-    async def logout(self, db: AsyncSession, user_id: int, refresh_token: str) -> None:
+    async def logout(self, db: AsyncSession, refresh_token: str) -> None:
         token_payload = decode_token(refresh_token)
         if not token_payload:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
@@ -131,8 +131,7 @@ class AuthService:
         if not sub or not jti:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
 
-        if int(sub) != user_id:
-            raise HTTPException(status_code=403, detail="Token does not belong to user")
+        user_id = int(sub)
 
         token_row = await db.execute(
             select(RefreshToken).where(
