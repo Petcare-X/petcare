@@ -3,10 +3,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.security import hash_password
-from src.models import UserInfo
+from src.models import UserInfo, SharedUser, PetInfo
 from src.schemas import CreateUser, UpdateUser
 
 from fastapi import HTTPException
+from datetime import datetime, timezone
 
 from src.core.phone import to_e164
 
@@ -124,3 +125,12 @@ class UsersService:
         await db.delete(user)
         await db.commit()
         return True
+    
+    # вывод всех питомцев юзера из SharedUsers
+    async def list_user_pets(self, db: AsyncSession, user_id: int) -> list[PetInfo]:
+        now_utc = datetime.now(timezone.utc)
+        user_pet = await db.execute(
+                select(PetInfo).join(SharedUser).where(
+                    SharedUser.shared_user_id == user_id and 
+                    (not SharedUser.sharing_end or SharedUser.sharing_end > now_utc)))
+        return list(user_pet.scalars().all())

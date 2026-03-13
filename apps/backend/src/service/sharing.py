@@ -42,13 +42,6 @@ class SharingService:
 
             orig = getattr(e, "orig", None)
             msg = str(orig)
-
-# чек на наличие pet_id в pet_info (не уверена в реализации)
-            # if "pet_id" in msg:
-            #     raise HTTPException(
-            #         status_code=400,
-            #         detail="Pet with this ID does not exist"
-            #     )
             
             raise HTTPException(
                 status_code=400,
