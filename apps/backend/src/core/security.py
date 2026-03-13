@@ -10,18 +10,57 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import settings
 from src.models.RefreshToken import RefreshToken
 
-from fastapi import Header, HTTPException
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-def get_current_user_id(authorization: str = Header(...)) -> int:
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authorization header")
+from src.core.db import get_db
+from src.models import UserInfo
 
-    token = authorization.removeprefix("Bearer ").strip()
+bearer_scheme = HTTPBearer()
+optional_bearer_scheme = HTTPBearer(auto_error=False)
+
+async def get_user_by_id(db: AsyncSession, user_id: int) -> UserInfo | None:
+    return await db.get(UserInfo, user_id)
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> UserInfo:
+    token = credentials.credentials
     user_id = verify_access_token(token)
-    if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid access token")
 
-    return user_id
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    user = await get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    return user
+
+async def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(optional_bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> UserInfo | None:
+    if credentials is None:
+        return None
+
+    token = credentials.credentials
+    user_id = verify_access_token(token)
+
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    user = await get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    return user
+
+async def get_current_user_id(
+    current_user: UserInfo = Depends(get_current_user),
+) -> int:
+    return current_user.id
 
 def hash_password(password: str) -> str:
     salt = secrets.token_hex(16)

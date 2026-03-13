@@ -4,6 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.db import get_db
 from src.service import UsersService
 
+from src.core.security import get_current_user, get_current_user_optional
+from src.models import UserInfo
+
 from src.schemas.users import CreateUser, UpdateUser
 
 users_router = APIRouter(prefix="/users", tags=["users"])
