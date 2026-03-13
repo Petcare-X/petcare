@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.security import (
@@ -35,11 +35,13 @@ class AuthService:
 
         access_token = create_access_token(user.id)
         refresh_token = await create_refresh_token(user.id, db)
+        await db.commit()
 
         return Token(
             access_token=access_token,
             refresh_token=refresh_token,
         )
+
     
     async def refresh(self, db: AsyncSession, payload: RefreshRequest) -> Token:
         token_payload = decode_token(payload.refresh_token)
@@ -62,6 +64,9 @@ class AuthService:
         if not stored_token:
             raise HTTPException(status_code=401, detail="Refresh token not found")
 
+        if stored_token.user_id != int(sub):
+            raise HTTPException(status_code=401, detail="Refresh token subject mismatch")
+
         if stored_token.revoked:
             raise HTTPException(status_code=401, detail="Refresh token revoked")
 
@@ -69,11 +74,11 @@ class AuthService:
             raise HTTPException(status_code=401, detail="Refresh token expired")
 
         stored_token.revoked = True
-        await db.commit()
 
         user_id = int(sub)
         access_token = create_access_token(user_id)
         refresh_token = await create_refresh_token(user_id, db)
+        await db.commit()
 
         return Token(
             access_token=access_token,
@@ -106,8 +111,53 @@ class AuthService:
 
         access_token = create_access_token(user.id)
         refresh_token = await create_refresh_token(user.id, db)
+        await db.commit()
 
         return Token(
             access_token=access_token,
             refresh_token=refresh_token,
         )
+
+    async def logout(self, db: AsyncSession, user_id: int, refresh_token: str) -> None:
+        token_payload = decode_token(refresh_token)
+        if not token_payload:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+        if token_payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+
+        sub = token_payload.get("sub")
+        jti = token_payload.get("jti")
+        if not sub or not jti:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+        if int(sub) != user_id:
+            raise HTTPException(status_code=403, detail="Token does not belong to user")
+
+        token_row = await db.execute(
+            select(RefreshToken).where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.token_jti == jti,
+            )
+        )
+        stored_token = token_row.scalar_one_or_none()
+
+        if not stored_token:
+            raise HTTPException(status_code=404, detail="Refresh token not found")
+
+        if stored_token.revoked:
+            return
+
+        stored_token.revoked = True
+        await db.commit()
+        
+    async def logout_all(self, db: AsyncSession, user_id: int) -> None:
+        await db.execute(
+            update(RefreshToken)
+            .where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.revoked.is_(False),
+            )
+            .values(revoked=True)
+        )
+        await db.commit()

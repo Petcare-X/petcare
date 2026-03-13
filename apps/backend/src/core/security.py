@@ -10,6 +10,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import settings
 from src.models.RefreshToken import RefreshToken
 
+from fastapi import Header, HTTPException
+
+def get_current_user_id(authorization: str = Header(...)) -> int:
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+
+    token = authorization.removeprefix("Bearer ").strip()
+    user_id = verify_access_token(token)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid access token")
+
+    return user_id
+
 def hash_password(password: str) -> str:
     salt = secrets.token_hex(16)
     dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 200_000)
@@ -99,7 +112,6 @@ async def create_refresh_token(user_id: int, db: AsyncSession) -> str:
         revoked=False,
     )
     db.add(refresh_token)
-    await db.commit()
 
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
