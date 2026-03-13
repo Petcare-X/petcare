@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.security import hash_password
 from src.models import UserInfo
-from src.schemas import CreateUser, UpdateUser
+from src.schemas import CreateUser, UpdateUser, UpdateUserContacts
 
 from fastapi import HTTPException
 
@@ -124,3 +124,29 @@ class UsersService:
         await db.delete(user)
         await db.commit()
         return True
+    
+    async def update_user_contacts(
+        self,
+        user_id: int,
+        payload: UpdateUserContacts,
+        db: AsyncSession,
+    ) -> UserInfo | None:
+        user = await self.get_user_by_id(db, user_id)
+        if not user:
+            return None
+
+        data = payload.model_dump(exclude_unset=True)
+
+        if "email" in data and data["email"] is not None:
+            user.user_email = str(data["email"])
+
+        if "phone_number" in data and data["phone_number"] is not None:
+            user.user_phone = to_e164(data["phone_number"])
+
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return user
+        except IntegrityError:
+            await db.rollback()
+            raise ValueError("Email or phone already exists")

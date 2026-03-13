@@ -44,3 +44,7 @@ class UserSettings(BaseModel):
 
 class PictureUpload(BaseModel):
     photo_url: str
+    
+class UpdateUserContacts(BaseModel):
+    email: Optional[EmailStr] = None
+    phone_number: Optional[PhoneNumber] = None
