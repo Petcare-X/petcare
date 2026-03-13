@@ -21,7 +21,5 @@ class SharedUser(Base):
     shared_user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users_info.id", ondelete="CASCADE"))
     shared_pet_id: Mapped[int] = mapped_column(Integer, ForeignKey("pets_info.id", ondelete="CASCADE"))
     sharing_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    # shared_till: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     sharing_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    # has_shared_pet: Mapped[bool | None] = mapped_column(Boolean)
     pet = relationship("Pet", back_populates="shared_users")
