@@ -1,26 +1,44 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 import uuid
 
-from src.models import PetInfo, PetInvite, SharedUser
+from src.exceptions import (
+    DatabaseIntegrityAppError,
+    InviteAlreadyAcceptedError,
+    InviteExpiredError,
+    InviteNotFoundError,
+    InviteOwnerAcceptError,
+    PetNotFoundError,
+    PetOwnerOnlyError,
+    SharedAccessNotFoundError,
+    SharedPetsNotFoundError,
+    SharedUsersNotFoundError,
+)
+from src.models import PetInfo, PetInvite, SharedUser, UserInfo
 from src.schemas import InviteCreate, InviteResponse, AcceptInvite, SharedUserResponce, BasePet
+from src.service.pets import active_shared_access_clause
 
 class SharingService:
+    async def ensure_pet_owner(
+        self,
+        db: AsyncSession,
+        pet_id: int,
+        user_id: int,
+    ) -> PetInfo:
+        pet = await db.get(PetInfo, pet_id)
+        if not pet:
+            raise PetNotFoundError()
+        if pet.user_id != user_id:
+            raise PetOwnerOnlyError()
+        return pet
+
     async def create_invite(self, 
                             user_id: int, 
                             db: AsyncSession, 
                             payload: InviteCreate) -> PetInvite:
-        
-        pet = db.query(PetInfo).filter(PetInfo.id == payload.pet_id).first()
-        if not pet:
-            raise HTTPException(status_code=404, 
-                                detail="Pet not found")
-
-        if pet.user_id != user_id:
-            raise HTTPException(status_code=400, 
-                                detail="User is not the owner of the pet")
+        await self.ensure_pet_owner(db, payload.pet_id, user_id)
         
         invite_code = uuid.uuid4().hex[:12]
 
@@ -47,62 +65,69 @@ class SharingService:
             orig = getattr(e, "orig", None)
             msg = str(orig)
             
-            raise HTTPException(
-                status_code=400,
-                detail=f"Database integrity error: {msg}"
-            )
+            raise DatabaseIntegrityAppError(f"Database integrity error: {msg}")
 
 
     async def accept_invite(self,
                             db: AsyncSession,
-                            invite_code: int,
+                            invite_code: str,
                             user_id: int) -> AcceptInvite:
-        invite = db.query(PetInvite).filter(PetInvite.invite_code == invite_code).first()
+        invite_result = await db.execute(
+            select(PetInvite).where(PetInvite.invite_code == invite_code)
+        )
+        invite = invite_result.scalar_one_or_none()
 
         if not invite:
-            raise HTTPException(status_code=404, 
-                                detail="Invite not found")
+            raise InviteNotFoundError()
 
         # чек is_active
         if invite.is_active == False:
-            raise HTTPException(status_code=400, 
-                                detail="Invite has expired")
+            raise InviteExpiredError()
         
         # чек expired_at
         if invite.expires_at:
             now_utc = datetime.now(timezone.utc)
             if invite.expires_at < now_utc:
-                raise HTTPException(status_code=400, 
-                                    detail="Invite has expired")
+                raise InviteExpiredError()
         
         # чек uses_count
-        if invite.uses_count and (invite.max_uses <= invite.uses_count):
+        if invite.max_uses is not None and invite.uses_count >= invite.max_uses:
             invite.is_active = False
+            await db.commit()
+            raise InviteExpiredError()
 
         # чек owner != user
-        pet = db.query(PetInfo).filter(PetInfo.id == invite.pet_id).first()
+        pet = await db.get(PetInfo, invite.pet_id)
         if user_id == pet.user_id:
-            raise HTTPException(status_code=400,
-                                detail="Owner cannot accept the invite")
+            raise InviteOwnerAcceptError()
         
         # чек дубликация доступа
-        existing_shared_user = db.query(SharedUser).filter(SharedUser.shared_pet_id == invite.pet_id, SharedUser.shared_user_id == user_id).first()
+        existing_shared_user_result = await db.execute(
+            select(SharedUser).where(
+                SharedUser.shared_pet_id == invite.pet_id,
+                SharedUser.shared_user_id == user_id,
+            )
+        )
+        existing_shared_user = existing_shared_user_result.scalar_one_or_none()
         if existing_shared_user:
-            raise HTTPException(status_code=400,
-                                detail="Already have access")
+            if existing_shared_user.sharing_end is None or existing_shared_user.sharing_end > datetime.now(timezone.utc):
+                raise InviteAlreadyAcceptedError()
+            await db.delete(existing_shared_user)
+            await db.flush()
 
         new_shared_user = SharedUser(
             shared_user_id=user_id,
             shared_pet_id=invite.pet_id,
+            sharing_start=datetime.now(timezone.utc),
             sharing_end=invite.expires_at if invite.expires_at else None
         )
 
         db.add(new_shared_user)
 
         try: 
+            invite.uses_count += 1
             await db.commit()
             await db.refresh(new_shared_user)
-            invite.uses_count += 1
             return {
                 "message": "Invite accepted",
                 "invite code": invite.invite_code
@@ -114,29 +139,27 @@ class SharingService:
             orig = getattr(e, "orig", None)
             msg = str(orig)
 
-            raise HTTPException(status_code=400,
-                                detail=f"Database integrity error: {msg}")
+            raise DatabaseIntegrityAppError(f"Database integrity error: {msg}")
 
 
     async def deactivate_invite(self, 
                                 db: AsyncSession,
                                 invite_code: str,
                                 user_id: int) -> PetInvite:
-        invite = db.query(PetInvite).filter(PetInvite.invite_code == invite_code).first()
+        invite_result = await db.execute(
+            select(PetInvite).where(PetInvite.invite_code == invite_code)
+        )
+        invite = invite_result.scalar_one_or_none()
 
         if not invite:
-            raise HTTPException(status_code=404, 
-                                detail="Invite not found")
+            raise InviteNotFoundError()
         
-        pet = db.query(PetInfo).filter(PetInfo.id == invite.pet_id).first()
-        if pet.user_id != user_id:
-            raise HTTPException(status_code=403, 
-                                detail="Only the owner can deactivate the invite")
+        await self.ensure_pet_owner(db, invite.pet_id, user_id)
         
         invite.is_active = False
         try:
-            db.commit()
-            db.refresh(invite)
+            await db.commit()
+            await db.refresh(invite)
             return {
                 "msg": f"Invite with invite code {invite.invite_code} is deactivated"
                 }
@@ -147,23 +170,21 @@ class SharingService:
             orig = getattr(e, "orig", None)
             msg = str(orig)
 
-            raise HTTPException(status_code=400,
-                                detail=f"Database integrity error: {msg}")
+            raise DatabaseIntegrityAppError(f"Database integrity error: {msg}")
 
 
     async def get_shared_pets(self, 
                             db: AsyncSession, 
                             user_id: int) -> list[BasePet]:
-        shared_pets = db.query(PetInfo).join(
-            SharedUser, 
-            SharedUser.shared_pet_id == PetInfo.id).filter(
-            SharedUser.shared_user_id == user_id,
-            (SharedUser.sharing_end == None) | (SharedUser.sharing_end > datetime.now(timezone.utc))
-        ).all()
+        shared_pets_result = await db.execute(
+            select(PetInfo)
+            .join(SharedUser, SharedUser.shared_pet_id == PetInfo.id)
+            .where(*active_shared_access_clause(user_id))
+        )
+        shared_pets = list(shared_pets_result.scalars().all())
 
         if not shared_pets:
-            raise HTTPException(status_code=404,
-                                detail="Shared pets not found")
+            raise SharedPetsNotFoundError()
 
         for pet in shared_pets:
             pet = BasePet(**pet.dump_model())
@@ -173,29 +194,25 @@ class SharingService:
 
     async def revoke_access(self, 
                             db: AsyncSession, 
-                            user_id: int, 
-                            pet_id: int) -> PetInvite:
-        pet = db.query(PetInfo).filter(PetInfo.id == pet_id).first()
-
-        if not pet:
-            raise HTTPException(status_code=404,
-                                detail="Pet not found")
+                            user_id: int,
+                            pet_id: int,
+                            shared_user_id: int) -> PetInvite:
+        await self.ensure_pet_owner(db, pet_id, user_id)
         
-        if pet.user_id != user_id:
-            raise HTTPException(status_code=403,
-                                detail="Access denied")
-        
-        shared_user = db.query(SharedUser).filter(
-            SharedUser.shared_pet_id == pet_id, 
-            SharedUser.shared_user_id == user_id).first()
+        shared_user_result = await db.execute(
+            select(SharedUser).where(
+                SharedUser.shared_pet_id == pet_id,
+                SharedUser.shared_user_id == shared_user_id,
+            )
+        )
+        shared_user = shared_user_result.scalar_one_or_none()
         
         if not shared_user:
-            raise HTTPException(status_code=404,
-                                detail="User not found")
+            raise SharedAccessNotFoundError()
         
         try:
-            db.delete(shared_user)
-            db.commit()
+            await db.delete(shared_user)
+            await db.commit()
             return{
                 "msg": "Access revoked"
             }
@@ -206,37 +223,43 @@ class SharingService:
             orig = getattr(e, "orig", None)
             msg = str(orig)
 
-            raise HTTPException(status_code=400,
-                                detail=f"Database integrity error: {msg}")
+            raise DatabaseIntegrityAppError(f"Database integrity error: {msg}")
         
 
     async def get_shared_users(self, 
                                 db: AsyncSession, 
-                                pet_id: int) -> list[SharedUserResponce]:
-        pet = db.query(PetInfo).filter(PetInfo.id == pet_id).first()
-
-        if not pet:
-            raise HTTPException(status_code=404,
-                                detail="Pet not found")
+                                pet_id: int,
+                                user_id: int) -> list[SharedUserResponce]:
+        pet = await self.ensure_pet_owner(db, pet_id, user_id)
         
-        shared_users = db.query(SharedUser).join(
-            PetInfo, PetInfo.id == SharedUser.shared_pet_id).filter(
-                SharedUser.shared_pet_id == pet_id).all()
+        shared_users_result = await db.execute(
+            select(SharedUser, UserInfo)
+            .join(UserInfo, UserInfo.id == SharedUser.shared_user_id)
+            .where(*active_shared_access_clause(pet_id=pet_id))
+        )
+        shared_users = shared_users_result.all()
         
         if not shared_users:
-            raise HTTPException(status_code=404,
-                                detail="Shared users not found")
-        
-        for user in shared_users:
-            user = SharedUserResponce(**user.dump_model())
-        
-        return shared_users
+            raise SharedUsersNotFoundError()
+
+        return [
+            SharedUserResponce(
+                pet_id=shared_user.shared_pet_id,
+                pet_name=pet.pet_name,
+                shared_with_user_id=user.id,
+                shared_with_user_name=user.user_name,
+                shared_till=shared_user.sharing_end,
+            )
+            for shared_user, user in shared_users
+        ]
     
     async def get_invite(self, 
                         db: AsyncSession, 
                         invite_code: str) -> PetInvite:
-        invite = db.query(PetInvite).filter(PetInvite.invite_code == invite_code).first()
+        invite_result = await db.execute(
+            select(PetInvite).where(PetInvite.invite_code == invite_code)
+        )
+        invite = invite_result.scalar_one_or_none()
         if not invite:
-            raise HTTPException(status_code=404,
-                                detail="Invite not found")
+            raise InviteNotFoundError()
         return InviteResponse(**invite.dump_model())

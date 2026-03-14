@@ -22,6 +22,6 @@ class PetInvite(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     pet = relationship("PetInfo", back_populates="invites")
 
-    table_args = (
+    __table_args__ = (
         Index("ix_pet_id_created_by", "pet_id", "created_by"),
     )

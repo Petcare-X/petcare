@@ -3,13 +3,18 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.security import hash_password
+from src.exceptions import (
+    DatabaseIntegrityAppError,
+    UserConflictError,
+    UserNotFoundError,
+)
 from src.models import UserInfo, SharedUser, PetInfo
 from src.schemas import CreateUser, UpdateUser
-
-from fastapi import HTTPException
-from datetime import datetime, timezone
+from src.models import UserInfo
+from src.schemas import CreateUser, UpdateUser
 
 from src.core.phone import to_e164
+from src.service.pets import active_shared_access_clause
 
 class UsersService:
     # create
@@ -43,27 +48,17 @@ class UsersService:
             # duplicate email / phone
             if sqlstate == "23505":
                 if constraint and "email" in constraint:
-                    raise HTTPException(
-                        status_code=409,
-                        detail="User with this email already exists"
-                    )
+                    raise UserConflictError("User with this email already exists")
                 if constraint and "phone" in constraint:
-                    raise HTTPException(
-                        status_code=409,
-                        detail="User with this phone number already exists"
-                    )
+                    raise UserConflictError("User with this phone number already exists")
 
             # check constraint (например формат телефона)
             if sqlstate == "23514":
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"CHECK constraint failed: {constraint or 'unknown'}"
+                raise DatabaseIntegrityAppError(
+                    f"CHECK constraint failed: {constraint or 'unknown'}"
                 )
 
-            raise HTTPException(
-                status_code=400,
-                detail=f"Database integrity error: {msg}"
-            )
+            raise DatabaseIntegrityAppError(f"Database integrity error: {msg}")
     
     # read
     async def get_user_by_id(self, db: AsyncSession, user_id: int) -> UserInfo | None:
@@ -88,7 +83,7 @@ class UsersService:
     async def update_user(self, user_id: int, payload: UpdateUser, db: AsyncSession) -> UserInfo | None:
         user = await self.get_user_by_id(db, user_id)
         if not user:
-            return None
+            raise UserNotFoundError()
 
         data = payload.model_dump(exclude_unset=True)
 
@@ -114,13 +109,13 @@ class UsersService:
             return user
         except IntegrityError:
             await db.rollback()
-            raise ValueError("Email or phone already exists")
+            raise UserConflictError()
 
     # delete
     async def delete_user(self, db: AsyncSession, user_id: int) -> bool:
         user = await self.get_user_by_id(db, user_id)
         if not user:
-            return False
+            raise UserNotFoundError()
 
         await db.delete(user)
         await db.commit()
@@ -128,9 +123,9 @@ class UsersService:
     
     # вывод всех питомцев юзера из SharedUsers
     async def list_user_pets(self, db: AsyncSession, user_id: int) -> list[PetInfo]:
-        now_utc = datetime.now(timezone.utc)
         user_pet = await db.execute(
-                select(PetInfo).join(SharedUser).where(
-                    SharedUser.shared_user_id == user_id and 
-                    (not SharedUser.sharing_end or SharedUser.sharing_end > now_utc)))
+            select(PetInfo)
+            .join(SharedUser, SharedUser.shared_pet_id == PetInfo.id)
+            .where(*active_shared_access_clause(user_id))
+        )
         return list(user_pet.scalars().all())
