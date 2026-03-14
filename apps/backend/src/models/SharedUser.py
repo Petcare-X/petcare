@@ -22,4 +22,4 @@ class SharedUser(Base):
     shared_pet_id: Mapped[int] = mapped_column(Integer, ForeignKey("pets_info.id", ondelete="CASCADE"))
     sharing_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     sharing_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    pet = relationship("Pet", back_populates="shared_users")
+    pet = relationship("PetInfo", back_populates="shared_users")
