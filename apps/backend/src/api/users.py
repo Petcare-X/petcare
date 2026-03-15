@@ -7,7 +7,7 @@ from src.service import UsersService
 from src.core.security import get_current_user
 from src.models import UserInfo
 
-from src.schemas.users import CreateUser, UpdateUser, UpdateUserContacts
+from src.schemas.users import CreateUser, UpdateUser
 
 users_router = APIRouter(prefix="/users", tags=["users"])
 
@@ -32,11 +32,11 @@ async def patch_data(
 
 @users_router.patch("/me/contacts")
 async def patch_contacts(
-    payload: UpdateUserContacts,
+    payload: UpdateUser,
     current_user: UserInfo = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await users_service.update_user_contacts(current_user.id, payload, db)
+    return await users_service.update_user(current_user.id, payload, db)
 
 @users_router.delete("/me")
 async def remove(

@@ -17,7 +17,7 @@ from src.exceptions import (
     SharedUsersNotFoundError,
 )
 from src.models import PetInfo, PetInvite, SharedUser, UserInfo
-from src.schemas import InviteCreate, InviteResponse, AcceptInvite, SharedUserResponce, BasePet
+from src.schemas import InviteCreate, InviteResponse, AcceptInvite, SharedUserResponce, PetResponse
 from src.service.pets import active_shared_access_clause
 
 class SharingService:
@@ -175,7 +175,7 @@ class SharingService:
 
     async def get_shared_pets(self, 
                             db: AsyncSession, 
-                            user_id: int) -> list[BasePet]:
+                            user_id: int) -> list[PetResponse]:
         shared_pets_result = await db.execute(
             select(PetInfo)
             .join(SharedUser, SharedUser.shared_pet_id == PetInfo.id)
@@ -186,10 +186,24 @@ class SharingService:
         if not shared_pets:
             raise SharedPetsNotFoundError()
 
-        for pet in shared_pets:
-            pet = BasePet(**pet.dump_model())
-        
-        return shared_pets
+        return [
+            PetResponse(
+                id=pet.id,
+                owner_user_id=pet.user_id,
+                pet_name=pet.pet_name,
+                date_of_birth=pet.pet_date_of_birth,
+                type=pet.pet_type,
+                breed=pet.pet_breed,
+                pedigree=bool(pet.pet_pedigree) if pet.pet_pedigree is not None else None,
+                length=float(pet.pet_length) if pet.pet_length is not None else None,
+                neck_girth=float(pet.pet_neck_girth) if pet.pet_neck_girth is not None else None,
+                breast_girth=float(pet.pet_breast_girth) if pet.pet_breast_girth is not None else None,
+                is_sterylized=pet.pet_is_sterylyzed,
+                photo_url=pet.pet_photo,
+                is_shared=True,
+            )
+            for pet in shared_pets
+        ]
 
 
     async def revoke_access(self, 
