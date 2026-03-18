@@ -11,4 +11,4 @@ class AnimalBreed(Base):
     __tablename__ = "animals_breeds"
     
     id: Mapped[int_primary_key]
-    animal_breed_name: Mapped[str] = mapped_column(String(50), unique=True)
+    animal_breed: Mapped[str] = mapped_column(String(50), unique=True)

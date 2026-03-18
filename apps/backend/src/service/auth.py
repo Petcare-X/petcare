@@ -19,9 +19,39 @@ from src.exceptions import (
     RefreshTokenNotFoundError,
 )
 from src.models import RefreshToken, UserInfo
-from src.schemas.auth import LoginRequest, RefreshRequest, TelegramAuth, Token
+from src.schemas.auth import LoginRequest, RefreshRequest, TelegramAuth, TelegramBotAuth, Token
 
 class AuthService:
+    async def get_or_create_telegram_user(
+        self,
+        db: AsyncSession,
+        telegram_id: int,
+        first_name: str,
+        photo_url: str | None = None,
+    ) -> tuple[UserInfo, bool]:
+        result = await db.execute(
+            select(UserInfo).where(UserInfo.telegram_id == telegram_id)
+        )
+        user = result.scalar_one_or_none()
+
+        if user:
+            return user, False
+
+        user = UserInfo(
+            user_name=first_name,
+            user_email=f"tg_{telegram_id}@telegram.local",
+            user_password_hash="telegram_auth_only",
+            user_phone_number=f"+100000{telegram_id}"[:16],
+            user_date_of_birth=datetime(1970, 1, 1).date(),
+            user_photo=photo_url or "",
+            telegram_id=telegram_id,
+            auth_provider="telegram",
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        return user, True
+
     async def login(self, db: AsyncSession, payload: LoginRequest) -> Token:
         result = await db.execute(
             select(UserInfo).where(UserInfo.user_email == str(payload.email))
@@ -93,25 +123,29 @@ class AuthService:
         if not verify_telegram_auth(payload.model_dump()):
             raise InvalidCredentialsError("Invalid Telegram auth data")
 
-        result = await db.execute(
-            select(UserInfo).where(UserInfo.telegram_id == payload.id)
+        user, _ = await self.get_or_create_telegram_user(
+            db,
+            payload.id,
+            payload.first_name,
+            str(payload.photo_url) if payload.photo_url else None,
         )
-        user = result.scalar_one_or_none()
 
-        if not user:
-            user = UserInfo(
-                user_name=payload.first_name,
-                user_email=f"tg_{payload.id}@telegram.local",
-                user_password_hash="telegram_auth_only",
-                user_phone=f"+100000{payload.id}"[:16],
-                user_date_of_birth=datetime(1970, 1, 1).date(),
-                user_photo=str(payload.photo_url) if payload.photo_url else "",
-                telegram_id=payload.id,
-                auth_provider="telegram",
-            )
-            db.add(user)
-            await db.commit()
-            await db.refresh(user)
+        access_token = create_access_token(user.id)
+        refresh_token = await create_refresh_token(user.id, db)
+        await db.commit()
+
+        return Token(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
+
+    async def telegram_bot_auth(self, db: AsyncSession, payload: TelegramBotAuth) -> Token:
+        user, _ = await self.get_or_create_telegram_user(
+            db,
+            payload.id,
+            payload.first_name,
+            str(payload.photo_url) if payload.photo_url else None,
+        )
 
         access_token = create_access_token(user.id)
         refresh_token = await create_refresh_token(user.id, db)

@@ -17,17 +17,22 @@ from src.core.phone import to_e164
 from src.service.pets import active_shared_access_clause
 
 class UsersService:
+    def to_private_response(self, user: UserInfo):
+        from src.schemas.users import UserPrivate
+
+        return UserPrivate.model_validate(user)
+
     # create
     async def create_user(self, db: AsyncSession, payload: CreateUser) -> UserInfo:
-        phone_str = to_e164(payload.phone_number)
-        photo_str = str(payload.photo_url)
+        phone_str = to_e164(payload.user_phone_number)
+        photo_str = str(payload.user_photo)
 
         user = UserInfo(
-            user_name=payload.name.strip(),
-            user_email=str(payload.email),
-            user_phone=phone_str,
+            user_name=payload.user_name.strip(),
+            user_email=str(payload.user_email),
+            user_phone_number=phone_str,
             user_password_hash=hash_password(payload.password),
-            user_date_of_birth=payload.birth_date,
+            user_date_of_birth=payload.user_date_of_birth,
             user_photo=photo_str,
         )
 
@@ -71,7 +76,7 @@ class UsersService:
 
 
     async def get_user_by_phone(self, db: AsyncSession, phone: str) -> UserInfo | None:
-        res = await db.execute(select(UserInfo).where(UserInfo.user_phone == phone))
+        res = await db.execute(select(UserInfo).where(UserInfo.user_phone_number == phone))
         return res.scalar_one_or_none()
 
 
@@ -87,17 +92,17 @@ class UsersService:
 
         data = payload.model_dump(exclude_unset=True)
 
-        if "name" in data and data["name"] is not None:
-            user.user_name = data["name"].strip()
+        if "user_name" in data and data["user_name"] is not None:
+            user.user_name = data["user_name"].strip()
 
-        if "photo_url" in data and data["photo_url"] is not None:
-            user.user_photo = str(data["photo_url"])
+        if "user_photo" in data and data["user_photo"] is not None:
+            user.user_photo = str(data["user_photo"])
             
-        if "email" in data and data["email"] is not None:
-            user.user_email = str(data["email"])
+        if "user_email" in data and data["user_email"] is not None:
+            user.user_email = str(data["user_email"])
 
-        if payload.phone_number is not None:
-            user.user_phone = to_e164(payload.phone_number)
+        if payload.user_phone_number is not None:
+            user.user_phone_number = to_e164(payload.user_phone_number)
 
         if "password" in data and data["password"] is not None:
             user.user_password_hash = hash_password(data["password"])

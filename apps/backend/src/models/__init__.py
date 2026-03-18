@@ -1,7 +1,6 @@
 from .UserInfo import UserInfo
 
 from .PetInfo import PetInfo
-from .AnimalPedigree import AnimalPedigree
 from .AnimalBreed import AnimalBreed
 from .AnimalType import AnimalType
 
@@ -27,7 +26,6 @@ from .RefreshToken import RefreshToken
 __all__ = (
     'UserInfo',
     'PetInfo',
-    'AnimalPedigree',
     'AnimalBreed',
     'AnimalType',
     'VetClinic',

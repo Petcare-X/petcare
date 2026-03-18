@@ -11,5 +11,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     TELEGRAM_BOT_TOKEN: str | None = None
+    TELEGRAM_BOT_INTERNAL_TOKEN: str | None = None
 
 settings = Settings()

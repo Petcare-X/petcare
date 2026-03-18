@@ -21,6 +21,15 @@ from src.schemas import InviteCreate, InviteResponse, AcceptInvite, SharedUserRe
 from src.service.pets import active_shared_access_clause
 
 class SharingService:
+    @staticmethod
+    def _to_utc(dt: datetime) -> datetime:
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+
+    def _invite_to_response(self, invite: PetInvite) -> InviteResponse:
+        return InviteResponse(invite_code=invite.invite_code)
+
     async def ensure_pet_owner(
         self,
         db: AsyncSession,
@@ -49,7 +58,8 @@ class SharingService:
             max_uses=payload.max_uses, 
             uses_count=0,
             is_active=True, 
-            expires_at=payload.expires_at
+            expires_at=payload.expires_at if payload.expires_at else None,
+            created_at=datetime.now(timezone.utc),
         )
 
         db.add(new_invite)
@@ -57,7 +67,7 @@ class SharingService:
         try: 
             await db.commit()
             await db.refresh(new_invite)
-            return InviteResponse.model_validate(new_invite)
+            return self._invite_to_response(new_invite)
         
         except IntegrityError as e:
             await db.rollback()
@@ -87,7 +97,8 @@ class SharingService:
         # чек expired_at
         if invite.expires_at:
             now_utc = datetime.now(timezone.utc)
-            if invite.expires_at < now_utc:
+            expires_at_utc = self._to_utc(invite.expires_at)
+            if expires_at_utc < now_utc:
                 raise InviteExpiredError()
         
         # чек uses_count
@@ -119,7 +130,7 @@ class SharingService:
             shared_user_id=shared_user_id,
             shared_pet_id=invite.pet_id,
             sharing_start=datetime.now(timezone.utc),
-            sharing_end=invite.expires_at if invite.expires_at else None
+            sharing_end=self._to_utc(invite.expires_at) if invite.expires_at else None
         )
 
         db.add(new_shared_user)
@@ -190,17 +201,18 @@ class SharingService:
         return [
             PetResponse(
                 id=pet.id,
-                owner_user_id=pet.user_id,
+                user_id=pet.user_id,
                 pet_name=pet.pet_name,
-                date_of_birth=pet.pet_date_of_birth,
-                type=pet.pet_type,
-                breed=pet.pet_breed,
-                pedigree=bool(pet.pet_pedigree) if pet.pet_pedigree is not None else None,
-                length=float(pet.pet_length) if pet.pet_length is not None else None,
-                neck_girth=float(pet.pet_neck_girth) if pet.pet_neck_girth is not None else None,
-                breast_girth=float(pet.pet_breast_girth) if pet.pet_breast_girth is not None else None,
-                is_sterylized=pet.pet_is_sterylyzed,
-                photo_url=pet.pet_photo,
+                pet_date_of_birth=pet.pet_date_of_birth,
+                animal_type_id=pet.animal_type_id,
+                animal_breed_id=pet.animal_breed_id,
+                pedigree=bool(pet.pedigree),
+                pet_length=float(pet.pet_length),
+                pet_neck_girth=float(pet.pet_neck_girth),
+                pet_breast_girth=float(pet.pet_breast_girth),
+                pet_weight=float(pet.pet_weight),
+                pet_is_sterylyzed=pet.pet_is_sterylyzed,
+                pet_photo=pet.pet_photo,
                 is_shared=True,
             )
             for pet in shared_pets
@@ -277,4 +289,4 @@ class SharingService:
         invite = invite_result.scalar_one_or_none()
         if not invite:
             raise InviteNotFoundError()
-        return InviteResponse(**invite.dump_model())
+        return self._invite_to_response(invite)

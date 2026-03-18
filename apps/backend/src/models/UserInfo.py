@@ -14,7 +14,7 @@ class UserInfo(Base):
     user_date_of_birth: Mapped[date] = mapped_column(Date)
     user_email: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     user_password_hash: Mapped[str] = mapped_column(Text)
-    user_phone: Mapped[str] = mapped_column(String(16), unique=True, index=True)
+    user_phone_number: Mapped[str] = mapped_column(String(16), unique=True, index=True)
     user_photo: Mapped[str] = mapped_column(Text)
     telegram_id: Mapped[int | None] = mapped_column(BIGINT, unique=True, index=True, nullable=True)
     auth_provider: Mapped[str] = mapped_column(String(20), server_default=text("'email'"), nullable=False)
