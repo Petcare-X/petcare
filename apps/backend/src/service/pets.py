@@ -28,33 +28,35 @@ class PetsService:
     def to_response(self, pet: PetInfo, current_user_id: int) -> PetResponse:
         return PetResponse(
             id=pet.id,
-            owner_user_id=pet.user_id,
+            user_id=pet.user_id,
             pet_name=pet.pet_name,
-            date_of_birth=pet.pet_date_of_birth,
-            type=pet.pet_type,
-            breed=pet.pet_breed,
-            pedigree=bool(pet.pet_pedigree) if pet.pet_pedigree is not None else None,
-            length=float(pet.pet_length) if pet.pet_length is not None else None,
-            neck_girth=float(pet.pet_neck_girth) if pet.pet_neck_girth is not None else None,
-            breast_girth=float(pet.pet_breast_girth) if pet.pet_breast_girth is not None else None,
-            is_sterylized=pet.pet_is_sterylyzed,
-            photo_url=pet.pet_photo,
+            pet_date_of_birth=pet.pet_date_of_birth,
+            animal_type_id=pet.animal_type_id,
+            animal_breed_id=pet.animal_breed_id,
+            pedigree=bool(pet.pedigree),
+            pet_length=float(pet.pet_length),
+            pet_neck_girth=float(pet.pet_neck_girth),
+            pet_breast_girth=float(pet.pet_breast_girth),
+            pet_weight=float(pet.pet_weight),
+            pet_is_sterylyzed=pet.pet_is_sterylyzed,
+            pet_photo=pet.pet_photo,
             is_shared=pet.user_id != current_user_id,
         )
 
     async def create_pet(self, db: AsyncSession, payload: PetCreate, user_id: int) -> PetInfo | None:
         pet = PetInfo(
             pet_name=payload.pet_name.strip(),
-            pet_type=payload.type,
-            pet_date_of_birth=payload.date_of_birth,
+            animal_type_id=payload.animal_type_id,
+            pet_date_of_birth=payload.pet_date_of_birth,
             user_id=user_id,
-            pet_breed=payload.breed,
-            pet_pedigree=payload.pedigree,
-            pet_neck_girth=payload.neck_girth,
-            pet_breast_girth=payload.neck_girth,
-            pet_length=payload.length,
-            pet_is_sterylyzed=payload.is_sterylized,
-            pet_photo=payload.photo_url
+            animal_breed_id=payload.animal_breed_id,
+            pedigree=payload.pedigree,
+            pet_neck_girth=payload.pet_neck_girth,
+            pet_breast_girth=payload.pet_breast_girth,
+            pet_length=payload.pet_length,
+            pet_weight=payload.pet_weight,
+            pet_is_sterylyzed=payload.pet_is_sterylyzed,
+            pet_photo=payload.pet_photo
         )
 
         db.add(pet)
@@ -136,32 +138,35 @@ class PetsService:
         if "pet_name" in data and data["pet_name"] is not None:
             pet.pet_name = data["pet_name"].strip()
 
-        if "date_of_birth" in data and data["date_of_birth"] is not None:
-            pet.pet_date_of_birth = data["date_of_birth"]
+        if "pet_date_of_birth" in data and data["pet_date_of_birth"] is not None:
+            pet.pet_date_of_birth = data["pet_date_of_birth"]
 
-        if "type" in data and data["type"] is not None:
-            pet.pet_type = data["type"]
+        if "animal_type_id" in data and data["animal_type_id"] is not None:
+            pet.animal_type_id = data["animal_type_id"]
             
-        if "breed" in data and data["breed"] is not None:
-            pet.pet_breed = data["breed"]
+        if "animal_breed_id" in data and data["animal_breed_id"] is not None:
+            pet.animal_breed_id = data["animal_breed_id"]
 
         if "pedigree" in data and data["pedigree"] is not None:
-            pet.pet_pedigree = data["pedigree"]
+            pet.pedigree = data["pedigree"]
 
-        if "length" in data and data["length"] is not None:
-            pet.pet_length = data["length"]
+        if "pet_length" in data and data["pet_length"] is not None:
+            pet.pet_length = data["pet_length"]
 
-        if "neck_girth" in data and data["neck_girth"] is not None:
-            pet.pet_neck_girth = data["neck_girth"]
+        if "pet_neck_girth" in data and data["pet_neck_girth"] is not None:
+            pet.pet_neck_girth = data["pet_neck_girth"]
 
-        if "breast_girth" in data and data["breast_girth"] is not None:
-            pet.pet_breast_girth = data["breast_girth"]
+        if "pet_breast_girth" in data and data["pet_breast_girth"] is not None:
+            pet.pet_breast_girth = data["pet_breast_girth"]
 
-        if "is_sterylized" in data and data["is_sterylized"] is not None:
-            pet.pet_is_sterylyzed = data["is_sterylized"]
+        if "pet_weight" in data and data["pet_weight"] is not None:
+            pet.pet_weight = data["pet_weight"]
 
-        if "photo_url" in data and data["photo_url"] is not None:
-            pet.pet_photo = data["photo_url"]
+        if "pet_is_sterylyzed" in data and data["pet_is_sterylyzed"] is not None:
+            pet.pet_is_sterylyzed = data["pet_is_sterylyzed"]
+
+        if "pet_photo" in data and data["pet_photo"] is not None:
+            pet.pet_photo = data["pet_photo"]
 
         await db.commit()
         await db.refresh(pet)

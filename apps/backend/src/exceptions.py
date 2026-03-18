@@ -87,6 +87,10 @@ class InvalidTokenError(AuthenticationError):
     message = "Invalid or expired token"
 
 
+class InvalidBotTokenError(AuthenticationError):
+    message = "Invalid bot token"
+
+
 class RefreshTokenError(AuthenticationError):
     message = "Invalid refresh token"
 

@@ -22,5 +22,13 @@ class TelegramAuth(BaseModel):
     auth_date: int
     hash: str
 
+
+class TelegramBotAuth(BaseModel):
+    id: int
+    first_name: str
+    last_name: str | None = None
+    username: str | None = None
+    photo_url: HttpUrl | None = None
+
 class SuccessResponse(BaseModel):
     success: bool

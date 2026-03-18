@@ -1,46 +1,93 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from datetime import date
+
+from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic_extra_types.phone_numbers import PhoneNumber
 
-from datetime import date
-from typing import Optional
-
-# базовый юзер-класс
-class BaseUser(BaseModel):
-    name: str = Field(min_length=2, max_length=50)
-    role: str # owner, co-owner, helper, doctor?
 
 class CreateUser(BaseModel):
-    name: str = Field(min_length=2, max_length=50)
-    email: EmailStr
-    phone_number: PhoneNumber
-    password: str
-    birth_date: date
-    photo_url: str 
+    model_config = ConfigDict(populate_by_name=True)
 
-    @field_validator("name")
-    def validate_name(cls, v):
-        return v.strip()
+    user_name: str = Field(
+        min_length=2,
+        max_length=50,
+        validation_alias=AliasChoices("user_name", "name"),
+    )
+    user_email: EmailStr = Field(
+        validation_alias=AliasChoices("user_email", "email"),
+    )
+    user_phone_number: PhoneNumber = Field(
+        validation_alias=AliasChoices("user_phone_number", "phone_number"),
+    )
+    password: str
+    user_date_of_birth: date = Field(
+        validation_alias=AliasChoices("user_date_of_birth", "birth_date"),
+    )
+    user_photo: str = Field(
+        validation_alias=AliasChoices("user_photo", "photo_url"),
+    )
+
+    @field_validator("user_name")
+    def validate_name(cls, value: str) -> str:
+        return value.strip()
+
 
 class UpdateUser(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=2, max_length=50)
-    photo_url: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone_number: Optional[PhoneNumber] = None
-    password: Optional[str] = None
+    model_config = ConfigDict(populate_by_name=True)
 
-class UserPrivate(BaseUser):
-    email: EmailStr
-    phone_number: PhoneNumber
-    password: str
-    birth_date: date
-    photo_url: str
+    user_name: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=50,
+        validation_alias=AliasChoices("user_name", "name"),
+    )
+    user_photo: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("user_photo", "photo_url"),
+    )
+    user_email: EmailStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("user_email", "email"),
+    )
+    user_phone_number: PhoneNumber | None = Field(
+        default=None,
+        validation_alias=AliasChoices("user_phone_number", "phone_number"),
+    )
+    password: str | None = None
 
-class UserPublic(BaseUser):
-    photo_path: str
+    @field_validator("user_name")
+    def validate_optional_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        return value.strip()
+
+
+class UserPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_name: str
+    user_photo: str
+
+
+class UserPrivate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_name: str
+    user_email: EmailStr
+    user_phone_number: str
+    user_date_of_birth: date
+    user_photo: str
+    telegram_id: int | None
+    auth_provider: str
+
 
 class UserSettings(BaseModel):
     notify_push: bool = Field(default=False)
     notify_email: bool = Field(default=False)
 
+
 class PictureUpload(BaseModel):
-    photo_url: str
+    user_photo: str = Field(
+        validation_alias=AliasChoices("user_photo", "photo_url"),
+    )
