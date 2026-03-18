@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from jose import jwt
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
@@ -132,7 +133,16 @@ def create_access_token(user_id: int) -> str:
     }
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
+async def delete_expired_refresh_tokens(db: AsyncSession) -> None:
+    await db.execute(
+        delete(RefreshToken).where(
+            RefreshToken.expires_at < datetime.now(timezone.utc)
+        )
+    )
+
 async def create_refresh_token(user_id: int, db: AsyncSession) -> str:
+    await delete_expired_refresh_tokens(db)
+
     now = datetime.now(timezone.utc)
     jti = str(uuid4())
     expires_at = now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)

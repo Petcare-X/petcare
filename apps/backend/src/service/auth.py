@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.security import (
     create_access_token,
     create_refresh_token,
+    delete_expired_refresh_tokens,
     decode_token,
     verify_telegram_auth,
     verify_password,
@@ -78,6 +79,8 @@ class AuthService:
 
     
     async def refresh(self, db: AsyncSession, payload: RefreshRequest) -> Token:
+        await delete_expired_refresh_tokens(db)
+
         token_payload = decode_token(payload.refresh_token)
         if not token_payload:
             raise RefreshTokenError()
@@ -157,6 +160,8 @@ class AuthService:
         )
 
     async def logout(self, db: AsyncSession, refresh_token: str) -> None:
+        await delete_expired_refresh_tokens(db)
+
         token_payload = decode_token(refresh_token)
         if not token_payload:
             raise RefreshTokenError()
@@ -189,6 +194,8 @@ class AuthService:
         await db.commit()
         
     async def logout_all(self, db: AsyncSession, user_id: int) -> None:
+        await delete_expired_refresh_tokens(db)
+
         await db.execute(
             update(RefreshToken)
             .where(
