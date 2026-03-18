@@ -1,5 +1,6 @@
 from .users import CreateUser, UpdateUser, UserPrivate, UserPublic, UserSettings, UpdateUserContacts
-from .pets import UpdatePet, CreatePet, PetDocument, PetSharing, PetWithDocuments
+from .pets import BasePet, UpdatePet, CreatePet, PetDocument, PetSharing, PetWithDocuments
+from .sharing import InviteCreate, InviteResponse, AcceptInvite, SharedUserResponse
 
 __all__ = (
     "CreateUser",
@@ -12,5 +13,9 @@ __all__ = (
     "PetDocument",
     "PetSharing",
     "PetWithDocuments",
+    "InviteCreate",
+    "InviteResponse",
+    "AcceptInvite",
+    "SharedUserResponse",
     "UpdateUserContacts"
 )

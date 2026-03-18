@@ -1,5 +1,5 @@
 from sqlalchemy import ForeignKey, String, Integer, DateTime, Boolean, Index, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.db import Base
 
@@ -20,6 +20,7 @@ class PetInvite(Base):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    pet = relationship("PetInfo", back_populates="invites")
 
     table_args = (
         Index("ix_pet_id_created_by", "pet_id", "created_by"),

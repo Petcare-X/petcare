@@ -1,5 +1,5 @@
 from sqlalchemy import Text, String, Date, Integer, Boolean, Numeric, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.db import Base
 
@@ -23,3 +23,7 @@ class PetInfo(Base):
     pet_length: Mapped[int] = mapped_column(Numeric)
     pet_is_sterylyzed: Mapped[bool | None] = mapped_column(Boolean)
     pet_photo: Mapped[str] = mapped_column(Text)
+
+    shared_users = relationship("SharedUser", back_populates="pet", cascade="all, delete-orphan", lazy="dynamic")
+    invites = relationship("PetInvite", back_populates="pet", cascade="all, delete-orphan", lazy="dynamic")
+    
