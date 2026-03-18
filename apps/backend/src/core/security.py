@@ -10,10 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import settings
 from src.models.RefreshToken import RefreshToken
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.core.db import get_db
+from src.exceptions import InvalidTokenError
 from src.models import UserInfo
 
 bearer_scheme = HTTPBearer()
@@ -30,11 +31,11 @@ async def get_current_user(
     user_id = verify_access_token(token)
 
     if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise InvalidTokenError()
 
     user = await get_user_by_id(db, user_id)
     if user is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise InvalidTokenError()
 
     return user
 
@@ -49,11 +50,11 @@ async def get_current_user_optional(
     user_id = verify_access_token(token)
 
     if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise InvalidTokenError()
 
     user = await get_user_by_id(db, user_id)
     if user is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise InvalidTokenError()
 
     return user
 

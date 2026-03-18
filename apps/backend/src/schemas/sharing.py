@@ -21,7 +21,7 @@ class InviteCreate(BaseModel):
 
 
 class InviteResponse(BaseModel):
-    invite_url: str = settings.INVITE_BASE_URL
+    invite_url: Optional[str] = settings.INVITE_BASE_URL
     invite_code: str
 
     model_config = ConfigDict(from_attributes=True)

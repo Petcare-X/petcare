@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-from fastapi import HTTPException
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +9,14 @@ from src.core.security import (
     decode_token,
     verify_telegram_auth,
     verify_password,
+)
+from src.exceptions import (
+    AuthProviderMismatchError,
+    InvalidCredentialsError,
+    InviteExpiredError,
+    InvalidTokenError,
+    RefreshTokenError,
+    RefreshTokenNotFoundError,
 )
 from src.models import RefreshToken, UserInfo
 from src.schemas.auth import LoginRequest, RefreshRequest, TelegramAuth, Token
@@ -22,16 +29,13 @@ class AuthService:
         user = result.scalar_one_or_none()
 
         if not user:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            raise InvalidCredentialsError()
 
         if user.auth_provider != "email":
-            raise HTTPException(
-                status_code=400,
-                detail="This account uses a different sign-in method",
-            )
+            raise AuthProviderMismatchError()
 
         if not verify_password(payload.password, user.user_password_hash):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            raise InvalidCredentialsError()
 
         access_token = create_access_token(user.id)
         refresh_token = await create_refresh_token(user.id, db)
@@ -46,15 +50,15 @@ class AuthService:
     async def refresh(self, db: AsyncSession, payload: RefreshRequest) -> Token:
         token_payload = decode_token(payload.refresh_token)
         if not token_payload:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
+            raise RefreshTokenError()
 
         if token_payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
+            raise InvalidTokenError("Invalid token type")
 
         sub = token_payload.get("sub")
         jti = token_payload.get("jti")
         if not sub or not jti:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
+            raise RefreshTokenError()
 
         token_row = await db.execute(
             select(RefreshToken).where(RefreshToken.token_jti == jti)
@@ -62,16 +66,16 @@ class AuthService:
         stored_token = token_row.scalar_one_or_none()
 
         if not stored_token:
-            raise HTTPException(status_code=401, detail="Refresh token not found")
+            raise RefreshTokenNotFoundError()
 
         if stored_token.user_id != int(sub):
-            raise HTTPException(status_code=401, detail="Refresh token subject mismatch")
+            raise InvalidTokenError("Refresh token subject mismatch")
 
         if stored_token.revoked:
-            raise HTTPException(status_code=401, detail="Refresh token revoked")
+            raise InvalidTokenError("Refresh token revoked")
 
         if stored_token.expires_at <= datetime.now(timezone.utc):
-            raise HTTPException(status_code=401, detail="Refresh token expired")
+            raise InvalidTokenError("Refresh token expired")
 
         stored_token.revoked = True
 
@@ -87,7 +91,7 @@ class AuthService:
     
     async def telegram_auth(self, db: AsyncSession, payload: TelegramAuth) -> Token:
         if not verify_telegram_auth(payload.model_dump()):
-            raise HTTPException(status_code=401, detail="Invalid Telegram auth data")
+            raise InvalidCredentialsError("Invalid Telegram auth data")
 
         result = await db.execute(
             select(UserInfo).where(UserInfo.telegram_id == payload.id)
@@ -121,15 +125,15 @@ class AuthService:
     async def logout(self, db: AsyncSession, refresh_token: str) -> None:
         token_payload = decode_token(refresh_token)
         if not token_payload:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
+            raise RefreshTokenError()
 
         if token_payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
+            raise InvalidTokenError("Invalid token type")
 
         sub = token_payload.get("sub")
         jti = token_payload.get("jti")
         if not sub or not jti:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
+            raise RefreshTokenError()
 
         user_id = int(sub)
 
@@ -142,7 +146,7 @@ class AuthService:
         stored_token = token_row.scalar_one_or_none()
 
         if not stored_token:
-            raise HTTPException(status_code=404, detail="Refresh token not found")
+            raise RefreshTokenNotFoundError()
 
         if stored_token.revoked:
             return

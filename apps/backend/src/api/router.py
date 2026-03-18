@@ -1,7 +1,7 @@
-from fastapi import APIRouter, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter
 
 from src.api import users_router, pets_router, sharing_router
+from src.api import users_router, pets_router
 from src.api.auth import auth_router
 
 common_router = APIRouter()

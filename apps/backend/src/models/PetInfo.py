@@ -26,4 +26,3 @@ class PetInfo(Base):
 
     shared_users = relationship("SharedUser", back_populates="pet", cascade="all, delete-orphan", lazy="dynamic")
     invites = relationship("PetInvite", back_populates="pet", cascade="all, delete-orphan", lazy="dynamic")
-    
