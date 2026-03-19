@@ -12,7 +12,7 @@ class AddPetStates(StatesGroup):
     pet_length = State()
     pet_weight = State()
     pet_is_sterylyzed = State()
-    pet_photo = State()
+    pet_photo_object_key = State()
 
 
 class AcceptInviteStates(StatesGroup):
@@ -21,3 +21,7 @@ class AcceptInviteStates(StatesGroup):
 
 class RevokeAccessStates(StatesGroup):
     shared_user = State()
+
+
+class UpdatePetPhotoStates(StatesGroup):
+    photo = State()

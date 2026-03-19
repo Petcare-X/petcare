@@ -39,7 +39,11 @@ class PetsService:
             pet_breast_girth=float(pet.pet_breast_girth),
             pet_weight=float(pet.pet_weight),
             pet_is_sterylyzed=pet.pet_is_sterylyzed,
-            pet_photo=pet.pet_photo,
+            pet_photo_object_key=pet.pet_photo_object_key,
+            pet_photo_content_type=pet.pet_photo_content_type,
+            pet_photo_size_bytes=pet.pet_photo_size_bytes,
+            pet_photo_etag=pet.pet_photo_etag,
+            pet_photo_uploaded_at=pet.pet_photo_uploaded_at,
             is_shared=pet.user_id != current_user_id,
         )
 
@@ -56,7 +60,11 @@ class PetsService:
             pet_length=payload.pet_length,
             pet_weight=payload.pet_weight,
             pet_is_sterylyzed=payload.pet_is_sterylyzed,
-            pet_photo=payload.pet_photo
+            pet_photo_object_key=payload.pet_photo_object_key,
+            pet_photo_content_type=payload.pet_photo_content_type,
+            pet_photo_size_bytes=payload.pet_photo_size_bytes,
+            pet_photo_etag=payload.pet_photo_etag,
+            pet_photo_uploaded_at=payload.pet_photo_uploaded_at,
         )
 
         db.add(pet)
@@ -165,8 +173,28 @@ class PetsService:
         if "pet_is_sterylyzed" in data and data["pet_is_sterylyzed"] is not None:
             pet.pet_is_sterylyzed = data["pet_is_sterylyzed"]
 
-        if "pet_photo" in data and data["pet_photo"] is not None:
-            pet.pet_photo = data["pet_photo"]
+        if "pet_photo_object_key" in data and data["pet_photo_object_key"] is not None:
+            pet.pet_photo_object_key = data["pet_photo_object_key"]
+            if "pet_photo_content_type" not in data:
+                pet.pet_photo_content_type = None
+            if "pet_photo_size_bytes" not in data:
+                pet.pet_photo_size_bytes = None
+            if "pet_photo_etag" not in data:
+                pet.pet_photo_etag = None
+            if "pet_photo_uploaded_at" not in data:
+                pet.pet_photo_uploaded_at = None
+
+        if "pet_photo_content_type" in data:
+            pet.pet_photo_content_type = data["pet_photo_content_type"]
+
+        if "pet_photo_size_bytes" in data:
+            pet.pet_photo_size_bytes = data["pet_photo_size_bytes"]
+
+        if "pet_photo_etag" in data:
+            pet.pet_photo_etag = data["pet_photo_etag"]
+
+        if "pet_photo_uploaded_at" in data:
+            pet.pet_photo_uploaded_at = data["pet_photo_uploaded_at"]
 
         await db.commit()
         await db.refresh(pet)
@@ -178,3 +206,36 @@ class PetsService:
         await db.delete(pet)
         await db.commit()
         return True
+
+    async def set_pet_photo_metadata(
+        self,
+        db: AsyncSession,
+        pet_id: int,
+        user_id: int,
+        *,
+        object_key: str,
+        content_type: str | None,
+        size_bytes: int | None,
+        etag: str | None,
+        uploaded_at: datetime,
+    ) -> PetResponse:
+        pet = await self.ensure_pet_owner(db, pet_id, user_id)
+        pet.pet_photo_object_key = object_key
+        pet.pet_photo_content_type = content_type
+        pet.pet_photo_size_bytes = size_bytes
+        pet.pet_photo_etag = etag
+        pet.pet_photo_uploaded_at = uploaded_at
+        await db.commit()
+        await db.refresh(pet)
+        return self.to_response(pet, user_id)
+
+    async def clear_pet_photo(self, db: AsyncSession, pet_id: int, user_id: int) -> str | None:
+        pet = await self.ensure_pet_owner(db, pet_id, user_id)
+        previous_key = pet.pet_photo_object_key
+        pet.pet_photo_object_key = ""
+        pet.pet_photo_content_type = None
+        pet.pet_photo_size_bytes = None
+        pet.pet_photo_etag = None
+        pet.pet_photo_uploaded_at = None
+        await db.commit()
+        return previous_key or None

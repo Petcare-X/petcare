@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
@@ -35,9 +35,17 @@ class PetCreate(BaseModel):
         default=None,
         validation_alias=AliasChoices("pet_is_sterylyzed", "is_sterylized"),
     )
-    pet_photo: str = Field(
-        validation_alias=AliasChoices("pet_photo", "photo_url"),
+    pet_photo_object_key: str = Field(
+        validation_alias=AliasChoices(
+            "pet_photo_object_key",
+            "pet_photo",
+            "photo_url",
+        ),
     )
+    pet_photo_content_type: str | None = None
+    pet_photo_size_bytes: int | None = Field(default=None, ge=0)
+    pet_photo_etag: str | None = None
+    pet_photo_uploaded_at: datetime | None = None
 
     @field_validator("pet_name")
     def validate_name(cls, value: str) -> str:
@@ -59,7 +67,11 @@ class PetResponse(BaseModel):
     pet_length: float
     pet_weight: float
     pet_is_sterylyzed: bool | None
-    pet_photo: str
+    pet_photo_object_key: str
+    pet_photo_content_type: str | None
+    pet_photo_size_bytes: int | None
+    pet_photo_etag: str | None
+    pet_photo_uploaded_at: datetime | None
     is_shared: bool = False
 
 
@@ -100,10 +112,18 @@ class UpdatePet(BaseModel):
         default=None,
         validation_alias=AliasChoices("pet_is_sterylyzed", "is_sterylized"),
     )
-    pet_photo: str | None = Field(
+    pet_photo_object_key: str | None = Field(
         default=None,
-        validation_alias=AliasChoices("pet_photo", "photo_url"),
+        validation_alias=AliasChoices(
+            "pet_photo_object_key",
+            "pet_photo",
+            "photo_url",
+        ),
     )
+    pet_photo_content_type: str | None = None
+    pet_photo_size_bytes: int | None = Field(default=None, ge=0)
+    pet_photo_etag: str | None = None
+    pet_photo_uploaded_at: datetime | None = None
 
     @field_validator("pet_name")
     def validate_optional_name(cls, value: str | None) -> str | None:
@@ -127,3 +147,23 @@ class PetWithDocuments(BaseModel):
 
 class PetSharing(BaseModel):
     other_user: UserPublic
+
+
+class PetPhotoUploadUrlRequest(BaseModel):
+    content_type: str
+
+
+class PetPhotoUploadUrlResponse(BaseModel):
+    object_key: str
+    upload_url: str
+    expires_in: int
+
+
+class PetPhotoCompleteRequest(BaseModel):
+    object_key: str
+
+
+class PetPhotoDownloadUrlResponse(BaseModel):
+    object_key: str
+    download_url: str
+    expires_in: int

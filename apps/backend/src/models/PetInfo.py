@@ -1,11 +1,21 @@
-from sqlalchemy import Text, String, Date, Integer, Boolean, Numeric, ForeignKey
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Annotated
+
+from sqlalchemy import (
+    BIGINT,
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.db import Base
-
-from datetime import date
-from decimal import Decimal
-from typing import Annotated
 
 int_primary_key = Annotated[int, mapped_column(primary_key=True)]
 
@@ -24,7 +34,14 @@ class PetInfo(Base):
     pet_length: Mapped[int] = mapped_column(Numeric)
     pet_is_sterylyzed: Mapped[bool | None] = mapped_column(Boolean)
     pet_weight: Mapped[Decimal] = mapped_column(Numeric)
-    pet_photo: Mapped[str] = mapped_column(Text)
+    pet_photo_object_key: Mapped[str] = mapped_column(Text)
+    pet_photo_content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    pet_photo_size_bytes: Mapped[int | None] = mapped_column(BIGINT, nullable=True)
+    pet_photo_etag: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    pet_photo_uploaded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     shared_users = relationship("SharedUser", back_populates="pet", cascade="all, delete-orphan", lazy="dynamic")
     invites = relationship("PetInvite", back_populates="pet", cascade="all, delete-orphan", lazy="dynamic")
