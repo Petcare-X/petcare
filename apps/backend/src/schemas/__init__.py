@@ -11,6 +11,14 @@ from .pets import (
     PetWithDocuments,
     UpdatePet,
 )
+from .documents import (
+    PetDocumentCompleteRequest,
+    PetDocumentDownloadUrlResponse,
+    PetDocumentResponse,
+    PetDocumentUpdateRequest,
+    PetDocumentUploadUrlRequest,
+    PetDocumentUploadUrlResponse,
+)
 from .sharing import AcceptInvite, InviteCreate, InviteResponse, SharedUserResponce
 from .users import CreateUser, UpdateUser, UserPrivate, UserPublic, UserSettings
 
@@ -31,6 +39,12 @@ __all__ = (
     "PetPhotoUploadUrlResponse",
     "PetPhotoCompleteRequest",
     "PetPhotoDownloadUrlResponse",
+    "PetDocumentUploadUrlRequest",
+    "PetDocumentUploadUrlResponse",
+    "PetDocumentCompleteRequest",
+    "PetDocumentUpdateRequest",
+    "PetDocumentResponse",
+    "PetDocumentDownloadUrlResponse",
     "InviteCreate",
     "InviteResponse",
     "AcceptInvite",

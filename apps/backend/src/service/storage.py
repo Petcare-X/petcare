@@ -111,3 +111,15 @@ class StorageService:
     @staticmethod
     def now_utc() -> datetime:
         return datetime.now(timezone.utc)
+    
+    def build_pet_document_object_key(
+    self,
+    user_id: int,
+    pet_id: int,
+    document_type_id: int,
+    filename: str,
+    content_type: str,
+    ) -> str:
+        ext = mimetypes.guess_extension(content_type) or ""
+        safe_name = filename.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+        return f"users/{user_id}/pets/{pet_id}/documents/{document_type_id}/{uuid4().hex}_{safe_name or 'file'}{ext}"
