@@ -212,7 +212,11 @@ class SharingService:
                 pet_breast_girth=float(pet.pet_breast_girth),
                 pet_weight=float(pet.pet_weight),
                 pet_is_sterylyzed=pet.pet_is_sterylyzed,
-                pet_photo=pet.pet_photo,
+                pet_photo_object_key=pet.pet_photo_object_key,
+                pet_photo_content_type=pet.pet_photo_content_type,
+                pet_photo_size_bytes=pet.pet_photo_size_bytes,
+                pet_photo_etag=pet.pet_photo_etag,
+                pet_photo_uploaded_at=pet.pet_photo_uploaded_at,
                 is_shared=True,
             )
             for pet in shared_pets

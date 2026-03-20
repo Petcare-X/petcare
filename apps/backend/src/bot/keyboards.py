@@ -6,11 +6,13 @@ from .constants import (
     ACCEPT_INVITE_BUTTON_TEXT,
     ADD_PET_BUTTON_TEXT,
     BACK_TO_PROFILE_BUTTON_TEXT,
+    DELETE_PET_PHOTO_BUTTON_TEXT,
     NO_BREED_BUTTON_TEXT,
     NO_TEXT,
     PROFILE_BUTTON_TEXT,
     REVOKE_ACCESS_BUTTON_TEXT,
     SHARE_PET_BUTTON_TEXT,
+    UPDATE_PET_PHOTO_BUTTON_TEXT,
     YES_TEXT,
 )
 
@@ -73,8 +75,11 @@ def build_pet_details_keyboard(
     *,
     can_share: bool = False,
     can_revoke: bool = False,
+    can_manage_photo: bool = False,
 ) -> ReplyKeyboardMarkup:
     rows = [[PROFILE_BUTTON_TEXT, ADD_PET_BUTTON_TEXT]]
+    if can_manage_photo:
+        rows.append([UPDATE_PET_PHOTO_BUTTON_TEXT, DELETE_PET_PHOTO_BUTTON_TEXT])
     if can_share:
         rows.append([SHARE_PET_BUTTON_TEXT])
     if can_revoke:

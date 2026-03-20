@@ -1,9 +1,11 @@
 from datetime import date
 from decimal import Decimal
+from io import BytesIO
 
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
 
 from src.bot.constants import NO_BREED_BUTTON_TEXT
 from src.bot.flows import start_add_pet_registration
@@ -19,9 +21,11 @@ from src.bot.states import AddPetStates
 from src.bot.utils import normalize_text, parse_bool, parse_decimal
 from src.core.db import AsyncSessionLocal
 from src.models import PetInfo
+from src.service.storage import StorageService
 
 
 router = Router()
+storage_service = StorageService()
 
 
 def _find_by_text(items, attr_name: str, raw_value: str):
@@ -241,36 +245,90 @@ async def add_pet_sterylized_handler(message, state: FSMContext) -> None:
     await _ask_next_registration_step(
         message,
         state,
-        next_state=AddPetStates.pet_photo,
-        text="Отправьте ссылку на фото питомца или '-' если фото пока нет.",
+        next_state=AddPetStates.pet_photo_object_key,
+        text="Отправьте фото питомца (из галереи/камеры) или '-' если фото пока нет.",
         reply_markup=registration_navigation_keyboard,
     )
 
 
-@router.message(AddPetStates.pet_photo)
-async def add_pet_photo_handler(message, state: FSMContext) -> None:
+@router.message(AddPetStates.pet_photo_object_key)
+async def add_pet_photo_object_key_handler(message: Message, state: FSMContext) -> None:
     raw_value = normalize_text(message.text)
-    pet_photo = "" if raw_value == "-" else raw_value
+    no_photo = raw_value == "-"
+    has_photo = bool(message.photo)
+
+    if not no_photo and not has_photo:
+        await message.answer(
+            "Отправьте именно фото сообщением или '-' если хотите сохранить питомца без фото.",
+            reply_markup=registration_navigation_keyboard,
+        )
+        return
 
     data = await state.get_data()
     async with AsyncSessionLocal() as db:
-        pet = PetInfo(
-            user_id=data["user_id"],
-            pet_name=data["pet_name"],
-            pet_date_of_birth=date.fromisoformat(data["pet_date_of_birth"]),
-            animal_type_id=data["animal_type_id"],
-            animal_breed_id=data["animal_breed_id"],
-            pedigree=data["pedigree"],
-            pet_neck_girth=Decimal(data["pet_neck_girth"]),
-            pet_breast_girth=Decimal(data["pet_breast_girth"]),
-            pet_length=Decimal(data["pet_length"]),
-            pet_weight=Decimal(data["pet_weight"]),
-            pet_is_sterylyzed=data["pet_is_sterylyzed"],
-            pet_photo=pet_photo,
-        )
-        db.add(pet)
-        await db.commit()
-        await db.refresh(pet)
+        try:
+            pet = PetInfo(
+                user_id=data["user_id"],
+                pet_name=data["pet_name"],
+                pet_date_of_birth=date.fromisoformat(data["pet_date_of_birth"]),
+                animal_type_id=data["animal_type_id"],
+                animal_breed_id=data["animal_breed_id"],
+                pedigree=data["pedigree"],
+                pet_neck_girth=Decimal(data["pet_neck_girth"]),
+                pet_breast_girth=Decimal(data["pet_breast_girth"]),
+                pet_length=Decimal(data["pet_length"]),
+                pet_weight=Decimal(data["pet_weight"]),
+                pet_is_sterylyzed=data["pet_is_sterylyzed"],
+                pet_photo_object_key="",
+            )
+            db.add(pet)
+
+            await db.flush()
+
+            if has_photo and message.photo:
+                tg_photo = message.photo[-1]
+                tg_file = await message.bot.get_file(tg_photo.file_id)
+
+                if not tg_file.file_path:
+                    await db.rollback()
+                    await message.answer("Не удалось получить путь к файлу Telegram. Попробуйте снова.")
+                    return
+
+                destination = BytesIO()
+                await message.bot.download_file(tg_file.file_path, destination=destination)
+                payload = destination.getvalue()
+                if not payload:
+                    await db.rollback()
+                    await message.answer("Не удалось скачать фото из Telegram. Попробуйте снова.")
+                    return
+
+                content_type = "image/jpeg"
+                object_key = storage_service.build_pet_photo_object_key(
+                    user_id=data["user_id"],
+                    pet_id=pet.id,
+                    content_type=content_type,
+                )
+
+                put_result = storage_service.upload_bytes(
+                    object_key=object_key,
+                    payload=payload,
+                    content_type=content_type,
+                )
+                etag_raw = put_result.get("ETag")
+                etag = str(etag_raw).strip('"') if etag_raw is not None else None
+
+                pet.pet_photo_object_key = object_key
+                pet.pet_photo_content_type = content_type
+                pet.pet_photo_size_bytes = len(payload)
+                pet.pet_photo_etag = etag
+                pet.pet_photo_uploaded_at = storage_service.now_utc()
+
+            await db.commit()
+            await db.refresh(pet)
+        except Exception:
+            await db.rollback()
+            await message.answer("Не удалось сохранить питомца с фото. Попробуйте снова позже.")
+            return
 
     await state.clear()
     await message.answer(

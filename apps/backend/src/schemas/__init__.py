@@ -1,8 +1,18 @@
-from .users import CreateUser, UpdateUser, UserPrivate, UserPublic, UserSettings, UpdateUserContacts
-from .pets import UpdatePet, CreatePet, PetCreate, PetResponse, PetDocument, PetSharing, PetWithDocuments
-from .sharing import InviteCreate, InviteResponse, AcceptInvite, SharedUserResponce
+from .pets import (
+    CreatePet,
+    PetCreate,
+    PetDocument,
+    PetPhotoCompleteRequest,
+    PetPhotoDownloadUrlResponse,
+    PetPhotoUploadUrlRequest,
+    PetPhotoUploadUrlResponse,
+    PetResponse,
+    PetSharing,
+    PetWithDocuments,
+    UpdatePet,
+)
+from .sharing import AcceptInvite, InviteCreate, InviteResponse, SharedUserResponce
 from .users import CreateUser, UpdateUser, UserPrivate, UserPublic, UserSettings
-from .pets import UpdatePet, CreatePet, PetCreate, PetResponse, PetDocument, PetSharing, PetWithDocuments
 
 __all__ = (
     "CreateUser",
@@ -17,9 +27,12 @@ __all__ = (
     "PetDocument",
     "PetSharing",
     "PetWithDocuments",
+    "PetPhotoUploadUrlRequest",
+    "PetPhotoUploadUrlResponse",
+    "PetPhotoCompleteRequest",
+    "PetPhotoDownloadUrlResponse",
     "InviteCreate",
     "InviteResponse",
     "AcceptInvite",
-    "SharedUserResponse",
-    "UpdateUserContacts"
+    "SharedUserResponce",
 )

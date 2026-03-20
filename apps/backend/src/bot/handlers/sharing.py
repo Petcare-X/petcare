@@ -56,6 +56,7 @@ async def share_pet_button_handler(message, state: FSMContext) -> None:
         reply_markup=build_pet_details_keyboard(
             can_share=True,
             can_revoke=await pet_has_active_shared_users(selected_pet_id),
+            can_manage_photo=True,
         ),
     )
 
