@@ -21,7 +21,6 @@ class PetDocument(Base):
         nullable=True,
     )
     object_key: Mapped[str] = mapped_column(Text, unique=True)
-    original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
     content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     size_bytes: Mapped[int | None] = mapped_column(BIGINT, nullable=True)
     etag: Mapped[str | None] = mapped_column(String(128), nullable=True)

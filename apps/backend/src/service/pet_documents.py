@@ -9,7 +9,6 @@ from src.schemas.documents import PetDocumentResponse, PetDocumentUpdateRequest
 from src.service.pets import PetsService
 from src.service.storage import StorageService
 
-
 class PetDocumentsService:
     def __init__(self) -> None:
         self.pets_service = PetsService()
@@ -22,7 +21,6 @@ class PetDocumentsService:
             document_type_id=doc.document_id,
             custom_document_name_id=doc.custom_document_name_id,
             object_key=doc.object_key,
-            original_filename=doc.original_filename,
             content_type=doc.content_type,
             size_bytes=doc.size_bytes,
             etag=doc.etag,
@@ -56,7 +54,6 @@ class PetDocumentsService:
         document_type_id: int,
         custom_document_name_id: int | None,
         object_key: str,
-        filename: str,
     ) -> PetDocumentResponse:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
 
@@ -74,7 +71,6 @@ class PetDocumentsService:
             document_id=document_type_id,
             custom_document_name_id=custom_document_name_id,
             object_key=object_key,
-            original_filename=filename,
             content_type=str(content_type) if content_type else None,
             size_bytes=int(size_bytes_raw) if isinstance(size_bytes_raw, int | float) else None,
             etag=str(etag_raw).strip('"') if etag_raw is not None else None,
@@ -102,8 +98,6 @@ class PetDocumentsService:
             doc.document_id = data["document_type_id"]
         if "custom_document_name_id" in data:
             doc.custom_document_name_id = data["custom_document_name_id"]
-        if "original_filename" in data:
-            doc.original_filename = data["original_filename"]
 
         await db.commit()
         await db.refresh(doc)

@@ -20,7 +20,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 1. rename old FK column
     op.alter_column(
         "pet_documents",
         "custom_document_name",
@@ -29,7 +28,6 @@ def upgrade() -> None:
         existing_nullable=False,
     )
 
-    # 2. replace old FK so nullable + SET NULL match the model
     op.drop_constraint(
         "pet_documents_custom_document_name_fkey",
         "pet_documents",
@@ -50,7 +48,6 @@ def upgrade() -> None:
         ondelete="SET NULL",
     )
 
-    # 3. add storage-related columns
     op.add_column("pet_documents", sa.Column("object_key", sa.Text(), nullable=True))
     op.add_column("pet_documents", sa.Column("original_filename", sa.String(length=255), nullable=True))
     op.add_column("pet_documents", sa.Column("content_type", sa.String(length=100), nullable=True))
@@ -58,14 +55,12 @@ def upgrade() -> None:
     op.add_column("pet_documents", sa.Column("etag", sa.String(length=128), nullable=True))
     op.add_column("pet_documents", sa.Column("uploaded_at", sa.DateTime(timezone=True), nullable=True))
 
-    # 4. unique index/constraint for object_key
     op.create_unique_constraint(
         "uq_pet_documents_object_key",
         "pet_documents",
         ["object_key"],
     )
 
-    # 5. make object_key required only if table is empty
     op.execute(
         """
         DO $$
@@ -81,7 +76,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # if downgrade runs after rows were inserted, old schema cannot represent them safely
     op.drop_constraint("uq_pet_documents_object_key", "pet_documents", type_="unique")
 
     op.drop_column("pet_documents", "uploaded_at")

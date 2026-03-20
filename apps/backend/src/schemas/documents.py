@@ -17,12 +17,10 @@ class PetDocumentCompleteRequest(BaseModel):
     document_type_id: int
     custom_document_name_id: int | None = None
     object_key: str
-    filename: str = Field(min_length=1, max_length=255)
 
 class PetDocumentUpdateRequest(BaseModel):
     document_type_id: int | None = None
     custom_document_name_id: int | None = None
-    original_filename: str | None = Field(default=None, min_length=1, max_length=255)
 
 class PetDocumentResponse(BaseModel):
     id: int
@@ -30,7 +28,6 @@ class PetDocumentResponse(BaseModel):
     document_type_id: int
     custom_document_name_id: int | None
     object_key: str
-    original_filename: str | None
     content_type: str | None
     size_bytes: int | None
     etag: str | None
