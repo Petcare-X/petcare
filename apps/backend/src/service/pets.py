@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from sqlalchemy import and_, or_, select
@@ -6,6 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.exceptions import PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError
 from src.models import PetInfo, SharedUser
 from src.schemas import PetCreate, PetResponse, UpdatePet
+
+
+@dataclass(frozen=True, slots=True)
+class PetPhotoSnapshot:
+    object_key: str
+    content_type: str | None
+    size_bytes: int | None
+    etag: str | None
+    uploaded_at: datetime | None
 
 
 def active_shared_access_clause(
@@ -25,6 +35,18 @@ def active_shared_access_clause(
     return conditions
 
 class PetsService:
+    @staticmethod
+    def photo_snapshot(pet: PetInfo) -> PetPhotoSnapshot | None:
+        if not pet.pet_photo_object_key:
+            return None
+        return PetPhotoSnapshot(
+            object_key=pet.pet_photo_object_key,
+            content_type=pet.pet_photo_content_type,
+            size_bytes=pet.pet_photo_size_bytes,
+            etag=pet.pet_photo_etag,
+            uploaded_at=pet.pet_photo_uploaded_at,
+        )
+
     def to_response(self, pet: PetInfo, current_user_id: int) -> PetResponse:
         return PetResponse(
             id=pet.id,
@@ -217,7 +239,7 @@ class PetsService:
         content_type: str | None,
         size_bytes: int | None,
         etag: str | None,
-        uploaded_at: datetime,
+        uploaded_at: datetime | None,
     ) -> PetResponse:
         pet = await self.ensure_pet_owner(db, pet_id, user_id)
         pet.pet_photo_object_key = object_key
@@ -228,6 +250,27 @@ class PetsService:
         await db.commit()
         await db.refresh(pet)
         return self.to_response(pet, user_id)
+
+    async def restore_pet_photo(
+        self,
+        db: AsyncSession,
+        pet_id: int,
+        user_id: int,
+        snapshot: PetPhotoSnapshot | None,
+    ) -> PetResponse | None:
+        if snapshot is None:
+            return await self.clear_pet_photo(db, pet_id, user_id)
+
+        return await self.set_pet_photo_metadata(
+            db,
+            pet_id,
+            user_id,
+            object_key=snapshot.object_key,
+            content_type=snapshot.content_type,
+            size_bytes=snapshot.size_bytes,
+            etag=snapshot.etag,
+            uploaded_at=snapshot.uploaded_at,
+        )
 
     async def clear_pet_photo(self, db: AsyncSession, pet_id: int, user_id: int) -> str | None:
         pet = await self.ensure_pet_owner(db, pet_id, user_id)

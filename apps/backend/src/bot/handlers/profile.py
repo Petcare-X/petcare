@@ -12,8 +12,16 @@ from src.bot.constants import (
 )
 from src.bot.flows import show_profile
 from src.bot.formatters import format_pet_details_message
-from src.bot.keyboards import build_pet_details_keyboard, main_menu_keyboard, registration_navigation_keyboard
-from src.bot.queries import ensure_telegram_user, get_pet_details_row, pet_has_active_shared_users
+from src.bot.keyboards import (
+    build_pet_details_keyboard,
+    main_menu_keyboard,
+    registration_navigation_keyboard,
+)
+from src.bot.queries import (
+    ensure_telegram_user,
+    get_pet_details_row,
+    pet_has_active_shared_users,
+)
 from src.bot.states import UpdatePetPhotoStates
 from src.core.db import AsyncSessionLocal
 from src.service import PetsService
@@ -65,14 +73,25 @@ async def delete_pet_photo_button_handler(message: Message, state: FSMContext) -
     user, _ = await ensure_telegram_user(message)
     async with AsyncSessionLocal() as db:
         pet = await pets_service.ensure_pet_owner(db, selected_pet_id, user.id)
-        previous_key = pet.pet_photo_object_key or None
+        snapshot = pets_service.photo_snapshot(pet)
         await pets_service.clear_pet_photo(db, selected_pet_id, user.id)
 
-    if previous_key:
-        storage_service.delete_object(previous_key)
-        await message.answer("Фото питомца удалено.", reply_markup=main_menu_keyboard)
-    else:
+    if snapshot is None:
         await message.answer("У питомца и так нет фото.", reply_markup=main_menu_keyboard)
+        return
+
+    try:
+        await storage_service.delete_object(snapshot.object_key)
+    except Exception:
+        async with AsyncSessionLocal() as db:
+            await pets_service.restore_pet_photo(db, selected_pet_id, user.id, snapshot)
+        await message.answer(
+            "Не удалось удалить фото из хранилища. Изменения отменены.",
+            reply_markup=main_menu_keyboard,
+        )
+        return
+
+    await message.answer("Фото питомца удалено.", reply_markup=main_menu_keyboard)
 
 
 @router.message(UpdatePetPhotoStates.photo)
@@ -109,7 +128,7 @@ async def update_pet_photo_handler(message: Message, state: FSMContext) -> None:
         pet_id=selected_pet_id,
         content_type=content_type,
     )
-    put_result = storage_service.upload_bytes(
+    put_result = await storage_service.upload_bytes(
         object_key=object_key,
         payload=payload,
         content_type=content_type,
@@ -119,20 +138,32 @@ async def update_pet_photo_handler(message: Message, state: FSMContext) -> None:
 
     async with AsyncSessionLocal() as db:
         pet = await pets_service.ensure_pet_owner(db, selected_pet_id, user.id)
-        previous_key = pet.pet_photo_object_key or None
-        await pets_service.set_pet_photo_metadata(
-            db,
-            selected_pet_id,
-            user.id,
-            object_key=object_key,
-            content_type=content_type,
-            size_bytes=len(payload),
-            etag=etag,
-            uploaded_at=storage_service.now_utc(),
-        )
+        previous_snapshot = pets_service.photo_snapshot(pet)
+        previous_key = previous_snapshot.object_key if previous_snapshot else None
+        try:
+            await pets_service.set_pet_photo_metadata(
+                db,
+                selected_pet_id,
+                user.id,
+                object_key=object_key,
+                content_type=content_type,
+                size_bytes=len(payload),
+                etag=etag,
+                uploaded_at=storage_service.now_utc(),
+            )
+        except Exception:
+            await storage_service.delete_object(object_key)
+            await message.answer("Не удалось сохранить фото питомца. Изменения отменены.")
+            return
 
-    if previous_key and previous_key != object_key:
-        storage_service.delete_object(previous_key)
+        if previous_key and previous_key != object_key:
+            try:
+                await storage_service.delete_object(previous_key)
+            except Exception:
+                await pets_service.restore_pet_photo(db, selected_pet_id, user.id, previous_snapshot)
+                await storage_service.delete_object(object_key)
+                await message.answer("Не удалось обновить фото в хранилище. Изменения отменены.")
+                return
 
     await state.set_state(None)
     await message.answer("Фото питомца обновлено.", reply_markup=main_menu_keyboard)
@@ -166,7 +197,7 @@ async def pet_details_handler(message, state: FSMContext) -> None:
 
     if pet.pet_photo_object_key:
         try:
-            payload, _ = storage_service.download_bytes(pet.pet_photo_object_key)
+            payload, _ = await storage_service.download_bytes(pet.pet_photo_object_key)
             filename = pet.pet_photo_object_key.rsplit("/", 1)[-1] or f"pet-{pet.id}.jpg"
             await message.answer_photo(
                 photo=BufferedInputFile(payload, filename=filename),

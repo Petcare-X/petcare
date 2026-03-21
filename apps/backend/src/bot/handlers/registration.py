@@ -1,3 +1,4 @@
+from contextlib import suppress
 from datetime import date
 from decimal import Decimal
 from io import BytesIO
@@ -266,6 +267,7 @@ async def add_pet_photo_object_key_handler(message: Message, state: FSMContext) 
 
     data = await state.get_data()
     async with AsyncSessionLocal() as db:
+        uploaded_object_key: str | None = None
         try:
             pet = PetInfo(
                 user_id=data["user_id"],
@@ -308,8 +310,9 @@ async def add_pet_photo_object_key_handler(message: Message, state: FSMContext) 
                     pet_id=pet.id,
                     content_type=content_type,
                 )
+                uploaded_object_key = object_key
 
-                put_result = storage_service.upload_bytes(
+                put_result = await storage_service.upload_bytes(
                     object_key=object_key,
                     payload=payload,
                     content_type=content_type,
@@ -327,6 +330,9 @@ async def add_pet_photo_object_key_handler(message: Message, state: FSMContext) 
             await db.refresh(pet)
         except Exception:
             await db.rollback()
+            if uploaded_object_key:
+                with suppress(Exception):
+                    await storage_service.delete_object(uploaded_object_key)
             await message.answer("Не удалось сохранить питомца с фото. Попробуйте снова позже.")
             return
 

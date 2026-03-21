@@ -9,6 +9,7 @@ from src.schemas.documents import PetDocumentResponse, PetDocumentUpdateRequest
 from src.service.pets import PetsService
 from src.service.storage import StorageService
 
+
 class PetDocumentsService:
     def __init__(self) -> None:
         self.pets_service = PetsService()
@@ -61,7 +62,7 @@ class PetDocumentsService:
         if not object_key.startswith(allowed_prefix):
             raise AppError("Object key does not belong to this pet document", status_code=400)
 
-        head = self.storage_service.head_object(object_key)
+        head = await self.storage_service.head_object(object_key)
         content_type = head.get("ContentType")
         size_bytes_raw = head.get("ContentLength")
         etag_raw = head.get("ETag")
@@ -78,7 +79,19 @@ class PetDocumentsService:
         )
 
         db.add(doc)
-        await db.commit()
+        try:
+            await db.commit()
+        except Exception as exc:
+            await db.rollback()
+            try:
+                await self.storage_service.delete_object(object_key)
+            except Exception as cleanup_exc:
+                raise AppError(
+                    "Failed to save document metadata and clean up uploaded file",
+                    status_code=500,
+                    details={"cleanup_error": str(cleanup_exc)},
+                ) from exc
+            raise
         await db.refresh(doc)
         return self.to_response(doc)
 
@@ -106,7 +119,34 @@ class PetDocumentsService:
     async def delete(self, db: AsyncSession, pet_id: int, document_row_id: int, user_id: int) -> None:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
         doc = await self.get_one(db, pet_id, document_row_id, user_id)
+        snapshot = {
+            "id": doc.id,
+            "pet_id": doc.pet_id,
+            "document_id": doc.document_id,
+            "custom_document_name_id": doc.custom_document_name_id,
+            "object_key": doc.object_key,
+            "content_type": doc.content_type,
+            "size_bytes": doc.size_bytes,
+            "etag": doc.etag,
+            "uploaded_at": doc.uploaded_at,
+        }
         object_key = doc.object_key
         await db.delete(doc)
         await db.commit()
-        self.storage_service.delete_object(object_key)
+        try:
+            await self.storage_service.delete_object(object_key)
+        except Exception as exc:
+            db.add(PetDocument(**snapshot))
+            try:
+                await db.commit()
+            except Exception as rollback_exc:
+                await db.rollback()
+                raise AppError(
+                    "Failed to delete document file and restore database state",
+                    status_code=500,
+                    details={"rollback_error": str(rollback_exc)},
+                ) from exc
+            raise AppError(
+                "Failed to delete document file from storage; changes were rolled back",
+                status_code=500,
+            ) from exc

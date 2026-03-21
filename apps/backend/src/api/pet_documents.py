@@ -42,7 +42,7 @@ async def get_upload_url(
         filename=payload.filename,
         content_type=payload.content_type,
     )
-    upload_url = storage_service.create_upload_url(
+    upload_url = await storage_service.create_upload_url(
         object_key=object_key,
         content_type=payload.content_type,
     )
@@ -86,7 +86,7 @@ async def get_download_url(
     current_user_id: int = Depends(get_current_user_id),
 ):
     doc = await pet_documents_service.get_one(db, pet_id, document_row_id, current_user_id)
-    download_url = storage_service.create_download_url(doc.object_key)
+    download_url = await storage_service.create_download_url(doc.object_key)
     return PetDocumentDownloadUrlResponse(
         document_id=doc.id,
         object_key=doc.object_key,

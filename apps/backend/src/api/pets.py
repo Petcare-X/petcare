@@ -4,11 +4,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
-from src.core.security import get_current_user_id
 from src.core.db import get_db
+from src.core.security import get_current_user_id
 from src.exceptions import AppError
-from src.service import PetsService, SharingService, StorageService
-
 from src.schemas.pets import (
     PetCreate,
     PetPhotoCompleteRequest,
@@ -18,6 +16,7 @@ from src.schemas.pets import (
     PetResponse,
     UpdatePet,
 )
+from src.service import PetsService, SharingService, StorageService
 
 pets_router = APIRouter(prefix="/pets", tags=["pets"])
 
@@ -61,7 +60,7 @@ async def remove(
     db: AsyncSession = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id),
 ):
-    ok = await pets_service.delete_pet(db, pet_id, current_user_id)
+    await pets_service.delete_pet(db, pet_id, current_user_id)
     return {"deleted": True}
 
 @pets_router.get("/{pet_id}", response_model=PetResponse)
@@ -112,7 +111,7 @@ async def get_photo_upload_url(
         pet_id=pet_id,
         content_type=payload.content_type,
     )
-    upload_url = storage_service.create_upload_url(
+    upload_url = await storage_service.create_upload_url(
         object_key=object_key,
         content_type=payload.content_type,
     )
@@ -138,28 +137,55 @@ async def complete_photo_upload(
         raise AppError("Object key does not belong to this pet", status_code=400)
 
     pet = await pets_service.ensure_pet_owner(db, pet_id, current_user_id)
-    previous_key = pet.pet_photo_object_key or None
+    previous_snapshot = pets_service.photo_snapshot(pet)
+    previous_key = previous_snapshot.object_key if previous_snapshot else None
 
-    head = storage_service.head_object(payload.object_key)
+    head = await storage_service.head_object(payload.object_key)
     content_type = head.get("ContentType")
     size_bytes_raw = head.get("ContentLength")
     etag_raw = head.get("ETag")
     size_bytes = int(size_bytes_raw) if isinstance(size_bytes_raw, int | float) else None
     etag = str(etag_raw).strip('"') if etag_raw is not None else None
 
-    response = await pets_service.set_pet_photo_metadata(
-        db,
-        pet_id,
-        current_user_id,
-        object_key=payload.object_key,
-        content_type=str(content_type) if content_type else None,
-        size_bytes=size_bytes,
-        etag=etag,
-        uploaded_at=datetime.now(datetime.UTC),
-    )
+    try:
+        response = await pets_service.set_pet_photo_metadata(
+            db,
+            pet_id,
+            current_user_id,
+            object_key=payload.object_key,
+            content_type=str(content_type) if content_type else None,
+            size_bytes=size_bytes,
+            etag=etag,
+            uploaded_at=datetime.now(datetime.UTC),
+        )
+    except Exception as exc:
+        try:
+            await storage_service.delete_object(payload.object_key)
+        except Exception as cleanup_exc:
+            raise AppError(
+                "Failed to save pet photo metadata and clean up uploaded file",
+                status_code=500,
+                details={"cleanup_error": str(cleanup_exc)},
+            ) from exc
+        raise
 
     if previous_key and previous_key != payload.object_key:
-        storage_service.delete_object(previous_key)
+        try:
+            await storage_service.delete_object(previous_key)
+        except Exception as exc:
+            try:
+                await pets_service.restore_pet_photo(db, pet_id, current_user_id, previous_snapshot)
+                await storage_service.delete_object(payload.object_key)
+            except Exception as rollback_exc:
+                raise AppError(
+                    "Failed to delete previous pet photo and restore consistency",
+                    status_code=500,
+                    details={"rollback_error": str(rollback_exc)},
+                ) from exc
+            raise AppError(
+                "Failed to delete previous pet photo from storage; changes were rolled back",
+                status_code=500,
+            ) from exc
 
     return response
 
@@ -176,7 +202,7 @@ async def get_photo_download_url(
     pet = await pets_service.get_pet_for_user(db, pet_id, current_user_id, allow_shared=True)
     if not pet.pet_photo_object_key:
         raise AppError("Pet photo is not set", status_code=404)
-    download_url = storage_service.create_download_url(pet.pet_photo_object_key)
+    download_url = await storage_service.create_download_url(pet.pet_photo_object_key)
     return PetPhotoDownloadUrlResponse(
         object_key=pet.pet_photo_object_key,
         download_url=download_url,
@@ -190,7 +216,25 @@ async def delete_photo(
     db: AsyncSession = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id),
 ):
-    previous_key = await pets_service.clear_pet_photo(db, pet_id, current_user_id)
-    if previous_key:
-        storage_service.delete_object(previous_key)
+    pet = await pets_service.ensure_pet_owner(db, pet_id, current_user_id)
+    snapshot = pets_service.photo_snapshot(pet)
+    if snapshot is None:
+        return {"deleted": True}
+
+    await pets_service.clear_pet_photo(db, pet_id, current_user_id)
+    try:
+        await storage_service.delete_object(snapshot.object_key)
+    except Exception as exc:
+        try:
+            await pets_service.restore_pet_photo(db, pet_id, current_user_id, snapshot)
+        except Exception as rollback_exc:
+            raise AppError(
+                "Failed to delete pet photo and restore database state",
+                status_code=500,
+                details={"rollback_error": str(rollback_exc)},
+            ) from exc
+        raise AppError(
+            "Failed to delete pet photo from storage; changes were rolled back",
+            status_code=500,
+        ) from exc
     return {"deleted": True}
