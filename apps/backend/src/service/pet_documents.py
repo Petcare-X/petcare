@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +20,6 @@ class PetDocumentsService:
             id=doc.id,
             pet_id=doc.pet_id,
             document_type_id=doc.document_id,
-            custom_document_name_id=doc.custom_document_name_id,
             object_key=doc.object_key,
             content_type=doc.content_type,
             size_bytes=doc.size_bytes,
@@ -53,7 +52,6 @@ class PetDocumentsService:
         user_id: int,
         *,
         document_type_id: int,
-        custom_document_name_id: int | None,
         object_key: str,
     ) -> PetDocumentResponse:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
@@ -70,12 +68,11 @@ class PetDocumentsService:
         doc = PetDocument(
             pet_id=pet_id,
             document_id=document_type_id,
-            custom_document_name_id=custom_document_name_id,
             object_key=object_key,
             content_type=str(content_type) if content_type else None,
             size_bytes=int(size_bytes_raw) if isinstance(size_bytes_raw, int | float) else None,
             etag=str(etag_raw).strip('"') if etag_raw is not None else None,
-            uploaded_at=datetime.now(datetime.UTC),
+            uploaded_at=datetime.now(timezone.utc),
         )
 
         db.add(doc)
@@ -109,8 +106,6 @@ class PetDocumentsService:
         data = payload.model_dump(exclude_unset=True)
         if "document_type_id" in data and data["document_type_id"] is not None:
             doc.document_id = data["document_type_id"]
-        if "custom_document_name_id" in data:
-            doc.custom_document_name_id = data["custom_document_name_id"]
 
         await db.commit()
         await db.refresh(doc)
@@ -123,7 +118,6 @@ class PetDocumentsService:
             "id": doc.id,
             "pet_id": doc.pet_id,
             "document_id": doc.document_id,
-            "custom_document_name_id": doc.custom_document_name_id,
             "object_key": doc.object_key,
             "content_type": doc.content_type,
             "size_bytes": doc.size_bytes,

@@ -25,3 +25,12 @@ class RevokeAccessStates(StatesGroup):
 
 class UpdatePetPhotoStates(StatesGroup):
     photo = State()
+
+
+class AddPetDocumentStates(StatesGroup):
+    document_type_id = State()
+    file = State()
+
+
+class DeletePetDocumentStates(StatesGroup):
+    document_row_id = State()

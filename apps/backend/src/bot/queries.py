@@ -4,7 +4,7 @@ from aiogram.types import Message
 from sqlalchemy import select
 
 from src.core.db import AsyncSessionLocal
-from src.models import AnimalBreed, AnimalType, PetInfo, SharedUser, UserInfo
+from src.models import AnimalBreed, AnimalType, DocumentType, PetInfo, SharedUser, UserInfo
 from src.service.auth import AuthService
 from src.service.pets import active_shared_access_clause
 from src.service.sharing import SharingService
@@ -77,6 +77,12 @@ async def get_animal_types() -> list[AnimalType]:
 async def get_animal_breeds() -> list[AnimalBreed]:
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(AnimalBreed).order_by(AnimalBreed.id))
+        return list(result.scalars().all())
+
+
+async def get_document_types() -> list[DocumentType]:
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(DocumentType).order_by(DocumentType.id))
         return list(result.scalars().all())
 
 

@@ -64,7 +64,6 @@ async def complete_upload(
         pet_id,
         current_user_id,
         document_type_id=payload.document_type_id,
-        custom_document_name_id=payload.custom_document_name_id,
         object_key=payload.object_key,
     )
 

@@ -1,14 +1,12 @@
 from .pets import (
     CreatePet,
     PetCreate,
-    PetDocument,
     PetPhotoCompleteRequest,
     PetPhotoDownloadUrlResponse,
     PetPhotoUploadUrlRequest,
     PetPhotoUploadUrlResponse,
     PetResponse,
     PetSharing,
-    PetWithDocuments,
     UpdatePet,
 )
 from .documents import (
@@ -32,9 +30,7 @@ __all__ = (
     "CreatePet",
     "PetCreate",
     "PetResponse",
-    "PetDocument",
     "PetSharing",
-    "PetWithDocuments",
     "PetPhotoUploadUrlRequest",
     "PetPhotoUploadUrlResponse",
     "PetPhotoCompleteRequest",

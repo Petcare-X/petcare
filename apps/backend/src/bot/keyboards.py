@@ -5,12 +5,15 @@ from src.models import AnimalBreed, AnimalType
 from .constants import (
     ACCEPT_INVITE_BUTTON_TEXT,
     ADD_PET_BUTTON_TEXT,
+    ADD_PET_DOCUMENT_BUTTON_TEXT,
     BACK_TO_PROFILE_BUTTON_TEXT,
+    DELETE_PET_DOCUMENT_BUTTON_TEXT,
     DELETE_PET_PHOTO_BUTTON_TEXT,
     NO_BREED_BUTTON_TEXT,
     NO_TEXT,
     PROFILE_BUTTON_TEXT,
     REVOKE_ACCESS_BUTTON_TEXT,
+    SHOW_PET_DOCUMENTS_BUTTON_TEXT,
     SHARE_PET_BUTTON_TEXT,
     UPDATE_PET_PHOTO_BUTTON_TEXT,
     YES_TEXT,
@@ -78,6 +81,7 @@ def build_pet_details_keyboard(
     can_manage_photo: bool = False,
 ) -> ReplyKeyboardMarkup:
     rows = [[PROFILE_BUTTON_TEXT, ADD_PET_BUTTON_TEXT]]
+    rows.append([SHOW_PET_DOCUMENTS_BUTTON_TEXT])
     if can_manage_photo:
         rows.append([UPDATE_PET_PHOTO_BUTTON_TEXT, DELETE_PET_PHOTO_BUTTON_TEXT])
     if can_share:
@@ -89,5 +93,25 @@ def build_pet_details_keyboard(
 
 def build_shared_users_keyboard(shared_users: list[tuple[int, str]]) -> ReplyKeyboardMarkup:
     rows = [[f"{shared_user_name} ({shared_user_id})"] for shared_user_id, shared_user_name in shared_users]
+    rows.append([PROFILE_BUTTON_TEXT])
+    return _keyboard(rows)
+
+
+def build_document_types_keyboard(document_types: list[tuple[int, str]]) -> ReplyKeyboardMarkup:
+    rows = [[name] for _, name in document_types]
+    rows.append([BACK_TO_PROFILE_BUTTON_TEXT])
+    return _keyboard(rows)
+
+
+def build_pet_documents_keyboard(document_rows: list[tuple[int, str]]) -> ReplyKeyboardMarkup:
+    rows = [[f"{name} #{document_id}"] for document_id, name in document_rows]
+    rows.append([PROFILE_BUTTON_TEXT])
+    return _keyboard(rows)
+
+
+def build_pet_documents_actions_keyboard(*, can_manage_documents: bool = False) -> ReplyKeyboardMarkup:
+    rows = []
+    if can_manage_documents:
+        rows.append([ADD_PET_DOCUMENT_BUTTON_TEXT, DELETE_PET_DOCUMENT_BUTTON_TEXT])
     rows.append([PROFILE_BUTTON_TEXT])
     return _keyboard(rows)

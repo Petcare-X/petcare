@@ -32,3 +32,13 @@ def parse_shared_user_id(raw_value: str | None) -> int | None:
     if not candidate.isdigit():
         return None
     return int(candidate)
+
+
+def parse_document_row_id(raw_value: str | None) -> int | None:
+    normalized = normalize_text(raw_value)
+    if "#" not in normalized:
+        return None
+    candidate = normalized.rsplit("#", 1)[1]
+    if not candidate.isdigit():
+        return None
+    return int(candidate)

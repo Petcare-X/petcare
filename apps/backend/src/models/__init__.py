@@ -12,7 +12,6 @@ from .SuitableDogfriendlyPlace import SuitableDogFriendlyPlace
 
 from .PetDocument import PetDocument
 from .DocumentType import DocumentType
-from .CustomDocumentName import CustomDocumentName
 
 from .SharedUser import SharedUser
 
@@ -34,7 +33,6 @@ __all__ = (
     'SuitableDogFriendlyPlace',
     'PetDocument',
     'DocumentType',
-    'CustomDocumentName',
     'SharedUser',
     'SmartDiet',
     'LlmChatMessage',

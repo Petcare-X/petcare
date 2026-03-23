@@ -135,16 +135,6 @@ class UpdatePet(BaseModel):
 CreatePet = PetCreate
 BasePet = PetCreate
 
-
-class PetDocument(BaseModel):
-    document_name: str
-    document_file: str
-
-
-class PetWithDocuments(BaseModel):
-    documents: list[PetDocument]
-
-
 class PetSharing(BaseModel):
     other_user: UserPublic
 

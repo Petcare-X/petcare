@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 class PetDocumentUploadUrlRequest(BaseModel):
     document_type_id: int
-    custom_document_name_id: int | None = None
     filename: str = Field(min_length=1, max_length=255)
     content_type: str = Field(min_length=1, max_length=100)
 
@@ -15,18 +14,15 @@ class PetDocumentUploadUrlResponse(BaseModel):
 
 class PetDocumentCompleteRequest(BaseModel):
     document_type_id: int
-    custom_document_name_id: int | None = None
     object_key: str
 
 class PetDocumentUpdateRequest(BaseModel):
     document_type_id: int | None = None
-    custom_document_name_id: int | None = None
 
 class PetDocumentResponse(BaseModel):
     id: int
     pet_id: int
     document_type_id: int
-    custom_document_name_id: int | None
     object_key: str
     content_type: str | None
     size_bytes: int | None
