@@ -5,6 +5,7 @@ from src.core.config import settings
 from src.core.db import get_db
 from src.core.security import get_current_user_id
 from src.schemas.documents import (
+    DocumentTypeResponse,
     PetDocumentCompleteRequest,
     PetDocumentDownloadUrlResponse,
     PetDocumentResponse,
@@ -15,10 +16,20 @@ from src.schemas.documents import (
 from src.service import PetDocumentsService, PetsService, StorageService
 
 pet_documents_router = APIRouter(prefix="/pets/{pet_id}/documents", tags=["pet-documents"])
+document_types_router = APIRouter(prefix="/document-types", tags=["pet-documents"])
 
 pet_documents_service = PetDocumentsService()
 pets_service = PetsService()
 storage_service = StorageService()
+
+
+@document_types_router.get("", response_model=list[DocumentTypeResponse])
+async def list_document_types(
+    db: AsyncSession = Depends(get_db),
+):
+    return await pet_documents_service.list_document_types(db)
+
+
 @pet_documents_router.get("", response_model=list[PetDocumentResponse])
 async def list_documents(
     pet_id: int,
@@ -34,6 +45,7 @@ async def get_upload_url(
     current_user_id: int = Depends(get_current_user_id),
 ):
     await pets_service.ensure_pet_owner(db, pet_id, current_user_id)
+    await pet_documents_service.get_document_type(db, payload.document_type_id)
 
     object_key = storage_service.build_pet_document_object_key(
         user_id=current_user_id,
@@ -85,9 +97,11 @@ async def get_download_url(
     current_user_id: int = Depends(get_current_user_id),
 ):
     doc = await pet_documents_service.get_one(db, pet_id, document_row_id, current_user_id)
+    document_type = await pet_documents_service.get_document_type(db, doc.document_id)
     download_url = await storage_service.create_download_url(doc.object_key)
     return PetDocumentDownloadUrlResponse(
         document_id=doc.id,
+        document_type_name=document_type.document_name,
         object_key=doc.object_key,
         download_url=download_url,
         expires_in=settings.MINIO_PRESIGNED_DOWNLOAD_TTL_SEC,

@@ -157,12 +157,9 @@ async def show_pet_documents_button_handler(message: Message, state: FSMContext)
             payload, _ = await storage_service.download_bytes(document.object_key)
             filename = _document_filename_from_object_key(document.object_key, document.id)
             type_name = document_type_names.get(document.document_type_id, f"Тип #{document.document_type_id}")
-            details = [f"Документ #{document.id}", f"Тип: {type_name}", f"Файл: {filename}"]
-            if document.size_bytes is not None:
-                details.append(f"Размер: {document.size_bytes} байт")
             await message.answer_document(
                 document=BufferedInputFile(payload, filename=filename),
-                caption="\n".join(details),
+                caption=f"Тип: {type_name}",
             )
             sent_count += 1
         except Exception:
@@ -312,12 +309,7 @@ async def add_pet_document_file_handler(message: Message, state: FSMContext) -> 
 
     await state.clear()
     await message.answer(
-        (
-            f"Документ сохранён.\n"
-            f"ID: {doc.id}\n"
-            f"Тип: {document_types_map.get(str(doc.document_type_id), str(doc.document_type_id))}\n"
-            f"Файл: {filename}"
-        ),
+        f"Документ сохранён.\nТип: {document_types_map.get(str(doc.document_type_id), str(doc.document_type_id))}",
         reply_markup=build_pet_documents_actions_keyboard(can_manage_documents=True),
     )
 

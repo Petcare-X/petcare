@@ -10,6 +10,7 @@ from .pets import (
     UpdatePet,
 )
 from .documents import (
+    DocumentTypeResponse,
     PetDocumentCompleteRequest,
     PetDocumentDownloadUrlResponse,
     PetDocumentResponse,
@@ -35,6 +36,7 @@ __all__ = (
     "PetPhotoUploadUrlResponse",
     "PetPhotoCompleteRequest",
     "PetPhotoDownloadUrlResponse",
+    "DocumentTypeResponse",
     "PetDocumentUploadUrlRequest",
     "PetDocumentUploadUrlResponse",
     "PetDocumentCompleteRequest",

@@ -2,6 +2,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+
+class DocumentTypeResponse(BaseModel):
+    id: int
+    document_name: str
+
+
 class PetDocumentUploadUrlRequest(BaseModel):
     document_type_id: int
     filename: str = Field(min_length=1, max_length=255)
@@ -23,6 +29,7 @@ class PetDocumentResponse(BaseModel):
     id: int
     pet_id: int
     document_type_id: int
+    document_type_name: str | None = None
     object_key: str
     content_type: str | None
     size_bytes: int | None
@@ -31,6 +38,7 @@ class PetDocumentResponse(BaseModel):
 
 class PetDocumentDownloadUrlResponse(BaseModel):
     document_id: int
+    document_type_name: str | None = None
     object_key: str
     download_url: str
     expires_in: int

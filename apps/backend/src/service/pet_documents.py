@@ -4,8 +4,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions import AppError
-from src.models import PetDocument
-from src.schemas.documents import PetDocumentResponse, PetDocumentUpdateRequest
+from src.models import DocumentType, PetDocument
+from src.schemas.documents import (
+    DocumentTypeResponse,
+    PetDocumentResponse,
+    PetDocumentUpdateRequest,
+)
 from src.service.pets import PetsService
 from src.service.storage import StorageService
 
@@ -15,11 +19,12 @@ class PetDocumentsService:
         self.pets_service = PetsService()
         self.storage_service = StorageService()
 
-    def to_response(self, doc: PetDocument) -> PetDocumentResponse:
+    def to_response(self, doc: PetDocument, *, document_type_name: str | None = None) -> PetDocumentResponse:
         return PetDocumentResponse(
             id=doc.id,
             pet_id=doc.pet_id,
             document_type_id=doc.document_id,
+            document_type_name=document_type_name,
             object_key=doc.object_key,
             content_type=doc.content_type,
             size_bytes=doc.size_bytes,
@@ -27,10 +32,34 @@ class PetDocumentsService:
             uploaded_at=doc.uploaded_at,
         )
 
+    async def list_document_types(self, db: AsyncSession) -> list[DocumentTypeResponse]:
+        result = await db.execute(select(DocumentType).order_by(DocumentType.id))
+        return [
+            DocumentTypeResponse(id=document_type.id, document_name=document_type.document_name)
+            for document_type in result.scalars().all()
+        ]
+
+    async def get_document_type(self, db: AsyncSession, document_type_id: int) -> DocumentType:
+        result = await db.execute(
+            select(DocumentType).where(DocumentType.id == document_type_id)
+        )
+        document_type = result.scalar_one_or_none()
+        if document_type is None:
+            raise AppError("Document type not found", status_code=404)
+        return document_type
+
     async def list_for_pet(self, db: AsyncSession, pet_id: int, user_id: int) -> list[PetDocumentResponse]:
         await self.pets_service.get_pet_for_user(db, pet_id, user_id, allow_shared=True)
-        result = await db.execute(select(PetDocument).where(PetDocument.pet_id == pet_id))
-        return [self.to_response(doc) for doc in result.scalars().all()]
+        result = await db.execute(
+            select(PetDocument, DocumentType.document_name)
+            .join(DocumentType, DocumentType.id == PetDocument.document_id)
+            .where(PetDocument.pet_id == pet_id)
+            .order_by(PetDocument.id.desc())
+        )
+        return [
+            self.to_response(doc, document_type_name=document_type_name)
+            for doc, document_type_name in result.all()
+        ]
 
     async def get_one(self, db: AsyncSession, pet_id: int, document_row_id: int, user_id: int) -> PetDocument:
         await self.pets_service.get_pet_for_user(db, pet_id, user_id, allow_shared=True)
@@ -55,6 +84,7 @@ class PetDocumentsService:
         object_key: str,
     ) -> PetDocumentResponse:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
+        document_type = await self.get_document_type(db, document_type_id)
 
         allowed_prefix = f"users/{user_id}/pets/{pet_id}/documents/"
         if not object_key.startswith(allowed_prefix):
@@ -90,7 +120,7 @@ class PetDocumentsService:
                 ) from exc
             raise
         await db.refresh(doc)
-        return self.to_response(doc)
+        return self.to_response(doc, document_type_name=document_type.document_name)
 
     async def update(
         self,
@@ -104,12 +134,18 @@ class PetDocumentsService:
         doc = await self.get_one(db, pet_id, document_row_id, user_id)
 
         data = payload.model_dump(exclude_unset=True)
+        document_type_name: str | None = None
         if "document_type_id" in data and data["document_type_id"] is not None:
+            document_type = await self.get_document_type(db, data["document_type_id"])
             doc.document_id = data["document_type_id"]
+            document_type_name = document_type.document_name
+        else:
+            document_type = await self.get_document_type(db, doc.document_id)
+            document_type_name = document_type.document_name
 
         await db.commit()
         await db.refresh(doc)
-        return self.to_response(doc)
+        return self.to_response(doc, document_type_name=document_type_name)
 
     async def delete(self, db: AsyncSession, pet_id: int, document_row_id: int, user_id: int) -> None:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
