@@ -22,6 +22,14 @@ from .documents import (
 from .sharing import AcceptInvite, InviteCreate, InviteResponse, SharedUserResponce
 from .users import CreateUser, UpdateUser, UserPrivate, UserPublic, UserSettings
 
+from .vet_clinics import (
+    GetVetClinic, 
+    VetImportRow, 
+    ImportRowError, 
+    ImportCsvResponse,
+    VetCreate,
+)
+
 __all__ = (
     "CreateUser",
     "UpdateUser",
@@ -49,4 +57,8 @@ __all__ = (
     "InviteResponse",
     "AcceptInvite",
     "SharedUserResponce",
+    "GetVetClinic",
+    "VetImportRow",
+    "ImportRowError",
+    "ImportCsvResponse",
 )

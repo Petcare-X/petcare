@@ -2,6 +2,7 @@ from .users import users_router
 from .pets import pets_router
 from .sharing import sharing_router
 from .pet_documents import pet_documents_router
+from .vet_clinics import vet_router
 from .auth import Token, LoginRequest, RefreshRequest, TelegramAuth
 
 __all__ = (
@@ -9,6 +10,7 @@ __all__ = (
     'pets_router',
     'sharing_router',
     'pet_documents_router',
+    'vet_router',
     'Token',
     'LoginRequest',
     'RefreshRequest',
