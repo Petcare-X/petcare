@@ -15,6 +15,7 @@ class PetDocument(Base):
     id: Mapped[int_primary_key]
     pet_id: Mapped[int] = mapped_column(Integer, ForeignKey("pets_info.id", ondelete="CASCADE"))
     document_id: Mapped[int] = mapped_column(Integer, ForeignKey("documents_types.id", ondelete="CASCADE"))
+    custom_name: Mapped[str] = mapped_column(String(255))
     object_key: Mapped[str] = mapped_column(Text, unique=True)
     content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     size_bytes: Mapped[int | None] = mapped_column(BIGINT, nullable=True)

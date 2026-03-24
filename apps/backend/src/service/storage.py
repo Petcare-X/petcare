@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import mimetypes
+import re
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
@@ -14,6 +15,13 @@ from src.exceptions import AppError
 
 
 class StorageService:
+    @staticmethod
+    def build_pet_document_custom_name(document_name: str, sequence_number: int = 0) -> str:
+        safe_name = re.sub(r"\s+", "_", document_name.strip().lower())
+        safe_name = re.sub(r"[^0-9A-Za-zА-Яа-яЁё_-]", "", safe_name).strip("_")
+        base_name = safe_name or "document"
+        return f"{base_name}_{sequence_number}" if sequence_number > 0 else base_name
+
     def _ensure_configured(self) -> None:
         missing = [
             name
@@ -156,9 +164,8 @@ class StorageService:
         user_id: int,
         pet_id: int,
         document_type_id: int,
-        filename: str,
+        custom_name: str,
         content_type: str,
     ) -> str:
         ext = mimetypes.guess_extension(content_type) or ""
-        safe_name = filename.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
-        return f"users/{user_id}/pets/{pet_id}/documents/{document_type_id}/{uuid4().hex}_{safe_name or 'file'}{ext}"
+        return f"users/{user_id}/pets/{pet_id}/documents/{document_type_id}/{custom_name}{ext}"

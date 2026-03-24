@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +26,7 @@ class PetDocumentsService:
             pet_id=doc.pet_id,
             document_type_id=doc.document_id,
             document_type_name=document_type_name,
+            custom_name=doc.custom_name,
             object_key=doc.object_key,
             content_type=doc.content_type,
             size_bytes=doc.size_bytes,
@@ -74,6 +76,39 @@ class PetDocumentsService:
             raise AppError("Pet document not found", status_code=404)
         return doc
 
+    async def build_object_key(
+        self,
+        db: AsyncSession,
+        *,
+        pet_id: int,
+        user_id: int,
+        document_type_id: int,
+        content_type: str,
+    ) -> tuple[str, str]:
+        await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
+        document_type = await self.get_document_type(db, document_type_id)
+        result = await db.execute(
+            select(PetDocument.id)
+            .where(
+                PetDocument.pet_id == pet_id,
+                PetDocument.document_id == document_type_id,
+            )
+            .order_by(PetDocument.id)
+        )
+        sequence_number = len(result.scalars().all())
+        custom_name = self.storage_service.build_pet_document_custom_name(
+            document_type.document_name,
+            sequence_number=sequence_number,
+        )
+        object_key = self.storage_service.build_pet_document_object_key(
+            user_id=user_id,
+            pet_id=pet_id,
+            document_type_id=document_type_id,
+            custom_name=custom_name,
+            content_type=content_type,
+        )
+        return object_key, custom_name
+
     async def create_after_upload(
         self,
         db: AsyncSession,
@@ -86,7 +121,7 @@ class PetDocumentsService:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
         document_type = await self.get_document_type(db, document_type_id)
 
-        allowed_prefix = f"users/{user_id}/pets/{pet_id}/documents/"
+        allowed_prefix = f"users/{user_id}/pets/{pet_id}/documents/{document_type_id}/"
         if not object_key.startswith(allowed_prefix):
             raise AppError("Object key does not belong to this pet document", status_code=400)
 
@@ -98,6 +133,7 @@ class PetDocumentsService:
         doc = PetDocument(
             pet_id=pet_id,
             document_id=document_type_id,
+            custom_name=Path(object_key).stem,
             object_key=object_key,
             content_type=str(content_type) if content_type else None,
             size_bytes=int(size_bytes_raw) if isinstance(size_bytes_raw, int | float) else None,
@@ -138,6 +174,19 @@ class PetDocumentsService:
         if "document_type_id" in data and data["document_type_id"] is not None:
             document_type = await self.get_document_type(db, data["document_type_id"])
             doc.document_id = data["document_type_id"]
+            result = await db.execute(
+                select(PetDocument.id)
+                .where(
+                    PetDocument.pet_id == pet_id,
+                    PetDocument.document_id == data["document_type_id"],
+                    PetDocument.id != doc.id,
+                )
+                .order_by(PetDocument.id)
+            )
+            doc.custom_name = self.storage_service.build_pet_document_custom_name(
+                document_type.document_name,
+                sequence_number=len(result.scalars().all()),
+            )
             document_type_name = document_type.document_name
         else:
             document_type = await self.get_document_type(db, doc.document_id)
@@ -154,6 +203,7 @@ class PetDocumentsService:
             "id": doc.id,
             "pet_id": doc.pet_id,
             "document_id": doc.document_id,
+            "custom_name": doc.custom_name,
             "object_key": doc.object_key,
             "content_type": doc.content_type,
             "size_bytes": doc.size_bytes,

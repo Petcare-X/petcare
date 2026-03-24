@@ -270,28 +270,22 @@ async def add_pet_document_file_handler(message: Message, state: FSMContext) -> 
         await message.answer("Не удалось скачать документ из Telegram. Попробуйте снова.")
         return
 
-    filename = tg_document.file_name or f"document-{tg_document.file_unique_id}"
     content_type = tg_document.mime_type or "application/octet-stream"
-    object_key = storage_service.build_pet_document_object_key(
-        user_id=user.id,
-        pet_id=selected_pet_id,
-        document_type_id=int(document_type_id),
-        filename=filename,
-        content_type=content_type,
-    )
-
-    try:
-        await storage_service.upload_bytes(
-            object_key=object_key,
-            payload=payload,
-            content_type=content_type,
-        )
-    except Exception:
-        await message.answer("Не удалось загрузить документ в хранилище.", reply_markup=main_menu_keyboard)
-        return
 
     async with AsyncSessionLocal() as db:
         try:
+            object_key, _custom_name = await pet_documents_service.build_object_key(
+                db,
+                pet_id=selected_pet_id,
+                user_id=user.id,
+                document_type_id=int(document_type_id),
+                content_type=content_type,
+            )
+            await storage_service.upload_bytes(
+                object_key=object_key,
+                payload=payload,
+                content_type=content_type,
+            )
             doc = await pet_documents_service.create_after_upload(
                 db,
                 selected_pet_id,
@@ -301,10 +295,14 @@ async def add_pet_document_file_handler(message: Message, state: FSMContext) -> 
             )
         except Exception:
             try:
-                await storage_service.delete_object(object_key)
+                if "object_key" in locals():
+                    await storage_service.delete_object(object_key)
             except Exception:
                 pass
-            await message.answer("Не удалось сохранить документ. Изменения отменены.", reply_markup=main_menu_keyboard)
+            await message.answer(
+                "Не удалось сохранить документ. Изменения отменены.",
+                reply_markup=main_menu_keyboard,
+            )
             return
 
     await state.clear()

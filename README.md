@@ -65,3 +65,19 @@ cd apps/backend && uv run pytest -v
 cd apps/backend && uv run ruff check --fix . && uv run ruff format .
 ```
 > Фронтенд обращается к `/api/*` — Vite проксирует запросы на `http://localhost:8000`.
+
+## Документы питомца
+
+Текущий backend flow для документов:
+
+1. `GET /document-types`:
+   получить доступные типы документов.
+2. `POST /pets/{pet_id}/documents/upload-url`:
+   передать `document_type_id` и `content_type`.
+   `filename` больше не используется.
+3. Загрузить файл в MinIO по полученному `upload_url`.
+4. `POST /pets/{pet_id}/documents/complete`:
+   подтвердить загрузку через `document_type_id` и `object_key`.
+
+Имя документа формируется автоматически из типа документа и сохраняется в `custom_name`.
+При повторениях добавляется суффикс: `анализы`, `анализы_1`, `анализы_2`.

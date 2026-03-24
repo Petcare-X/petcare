@@ -10,10 +10,10 @@ class DocumentTypeResponse(BaseModel):
 
 class PetDocumentUploadUrlRequest(BaseModel):
     document_type_id: int
-    filename: str = Field(min_length=1, max_length=255)
     content_type: str = Field(min_length=1, max_length=100)
 
 class PetDocumentUploadUrlResponse(BaseModel):
+    custom_name: str
     object_key: str
     upload_url: str
     expires_in: int
@@ -30,6 +30,7 @@ class PetDocumentResponse(BaseModel):
     pet_id: int
     document_type_id: int
     document_type_name: str | None = None
+    custom_name: str
     object_key: str
     content_type: str | None
     size_bytes: int | None
@@ -39,6 +40,7 @@ class PetDocumentResponse(BaseModel):
 class PetDocumentDownloadUrlResponse(BaseModel):
     document_id: int
     document_type_name: str | None = None
+    custom_name: str
     object_key: str
     download_url: str
     expires_in: int

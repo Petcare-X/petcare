@@ -44,14 +44,11 @@ async def get_upload_url(
     db: AsyncSession = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id),
 ):
-    await pets_service.ensure_pet_owner(db, pet_id, current_user_id)
-    await pet_documents_service.get_document_type(db, payload.document_type_id)
-
-    object_key = storage_service.build_pet_document_object_key(
-        user_id=current_user_id,
+    object_key, custom_name = await pet_documents_service.build_object_key(
+        db,
         pet_id=pet_id,
+        user_id=current_user_id,
         document_type_id=payload.document_type_id,
-        filename=payload.filename,
         content_type=payload.content_type,
     )
     upload_url = await storage_service.create_upload_url(
@@ -59,6 +56,7 @@ async def get_upload_url(
         content_type=payload.content_type,
     )
     return PetDocumentUploadUrlResponse(
+        custom_name=custom_name,
         object_key=object_key,
         upload_url=upload_url,
         expires_in=settings.MINIO_PRESIGNED_UPLOAD_TTL_SEC,
@@ -102,6 +100,7 @@ async def get_download_url(
     return PetDocumentDownloadUrlResponse(
         document_id=doc.id,
         document_type_name=document_type.document_name,
+        custom_name=doc.custom_name,
         object_key=doc.object_key,
         download_url=download_url,
         expires_in=settings.MINIO_PRESIGNED_DOWNLOAD_TTL_SEC,
