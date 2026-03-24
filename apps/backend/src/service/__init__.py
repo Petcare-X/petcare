@@ -3,7 +3,7 @@ from .pets import PetsService
 from .sharing import SharingService
 from .storage import StorageService
 from .pet_documents import PetDocumentsService
-from .vet_clinics import VetImportService
+from .upload_data import ImportService
 
 __all__ = (
     'UsersService',
@@ -11,5 +11,5 @@ __all__ = (
     'SharingService',
     'StorageService',
     'PetDocumentsService',
-    "VetImportService"
+    "ImportService"
 )
