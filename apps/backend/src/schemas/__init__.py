@@ -31,6 +31,8 @@ from .upload_places import (
     ImportCsvResponse,
 )
 
+from .map import VetMapPoint, DogPlaceMapPoint
+
 __all__ = (
     "CreateUser",
     "UpdateUser",
@@ -64,4 +66,6 @@ __all__ = (
     "DogPlaceImportRow",
     "ImportRowError",
     "ImportCsvResponse",
+    "VetMapPoint",
+    "DogPlaceMapPoint",
 )
