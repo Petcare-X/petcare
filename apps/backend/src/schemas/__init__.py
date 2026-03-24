@@ -33,6 +33,15 @@ from .upload_places import (
 
 from .map import VetMapPoint, DogPlaceMapPoint
 
+from .llm_chat import (
+    MessageRole,
+    ChatCreate,
+    ChatResponse,
+    MessageCreate,
+    MessageResponse,
+    SendMessageResponse
+)
+
 __all__ = (
     "CreateUser",
     "UpdateUser",
@@ -68,4 +77,10 @@ __all__ = (
     "ImportCsvResponse",
     "VetMapPoint",
     "DogPlaceMapPoint",
+    "MessageRole",
+    "ChatCreate",
+    "ChatResponse",
+    "MessageCreate",
+    "MessageResponse",
+    "SendMessageResponse"
 )

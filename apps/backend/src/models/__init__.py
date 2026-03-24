@@ -19,7 +19,7 @@ from .SharedUser import SharedUser
 from .SmartDiet import SmartDiet
 
 from .LlmChat import LlmChat
-from .LlmMessages import LlmMessages
+from .LlmMessages import LlmMessage
 
 from .PetInvite import PetInvite
 from .RefreshToken import RefreshToken
@@ -39,7 +39,7 @@ __all__ = (
     'SharedUser',
     'SmartDiet',
     'LlmChat',
-    'LlmMessages',
+    'LlmMessage',
     'PetInvite',
     'RefreshToken'
 )

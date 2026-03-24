@@ -4,6 +4,7 @@ from .sharing import sharing_router
 from .pet_documents import pet_documents_router
 from .upload_data import upload_router
 from .map import map_router
+from .llm_chat import chat_router
 from .auth import Token, LoginRequest, RefreshRequest, TelegramAuth
 
 __all__ = (
@@ -13,6 +14,7 @@ __all__ = (
     'pet_documents_router',
     'upload_router',
     'map_router',
+    'chat_router',
     'Token',
     'LoginRequest',
     'RefreshRequest',

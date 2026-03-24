@@ -5,6 +5,8 @@ from .storage import StorageService
 from .pet_documents import PetDocumentsService
 from .upload_data import ImportService
 from .map import MapService
+from .openrouter import OpenRouterService
+from .llm_chat import LLMChatService
 
 __all__ = (
     'UsersService',
@@ -14,4 +16,6 @@ __all__ = (
     'PetDocumentsService',
     "ImportService",
     "MapService",
+    "OpenRouterService",
+    "LLMChatService"
 )
