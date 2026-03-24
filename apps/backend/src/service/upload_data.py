@@ -9,7 +9,7 @@ from fastapi import UploadFile, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.geocoder.geocoder import geocode_address
+from src.third_party.geocoder.geocoder import geocode_address
 
 from src.models import VetClinic, DogFriendlyPlace
 from src.schemas import VetImportRow, VetCreate, DogPlaceCreate, DogPlaceImportRow
