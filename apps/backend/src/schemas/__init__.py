@@ -21,6 +21,26 @@ from .documents import (
 from .sharing import AcceptInvite, InviteCreate, InviteResponse, SharedUserResponce
 from .users import CreateUser, UpdateUser, UserPrivate, UserPublic, UserSettings
 
+from .upload_places import ( 
+    VetImportRow, 
+    VetCreate,
+    DogPlaceCreate,
+    DogPlaceImportRow,
+    ImportRowError, 
+    ImportCsvResponse,
+)
+
+from .map import VetMapPoint, DogPlaceMapPoint
+
+from .llm_chat import (
+    MessageRole,
+    ChatCreate,
+    ChatResponse,
+    MessageCreate,
+    MessageResponse,
+    SendMessageResponse
+)
+
 __all__ = (
     "CreateUser",
     "UpdateUser",
@@ -47,4 +67,18 @@ __all__ = (
     "InviteResponse",
     "AcceptInvite",
     "SharedUserResponce",
+    "VetImportRow",
+    "VetCreate",
+    "DogPlaceCreate",
+    "DogPlaceImportRow",
+    "ImportRowError",
+    "ImportCsvResponse",
+    "VetMapPoint",
+    "DogPlaceMapPoint",
+    "MessageRole",
+    "ChatCreate",
+    "ChatResponse",
+    "MessageCreate",
+    "MessageResponse",
+    "SendMessageResponse"
 )

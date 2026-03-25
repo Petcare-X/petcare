@@ -17,7 +17,8 @@ from .SharedUser import SharedUser
 
 from .SmartDiet import SmartDiet
 
-from .LlmChatMessage import LlmChatMessage
+from .LlmChat import LlmChat
+from .LlmMessages import LlmMessage
 
 from .PetInvite import PetInvite
 from .RefreshToken import RefreshToken
@@ -35,7 +36,8 @@ __all__ = (
     'DocumentType',
     'SharedUser',
     'SmartDiet',
-    'LlmChatMessage',
+    'LlmChat',
+    'LlmMessage',
     'PetInvite',
     'RefreshToken'
 )
