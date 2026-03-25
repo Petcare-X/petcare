@@ -1,4 +1,4 @@
-"""fix vetclinics table
+"""fix vet clinics table
 
 Revision ID: f9cd5961f532
 Revises: ec43268b0a8e

@@ -1,8 +1,8 @@
-"""rename vet passport document type
+"""fix veterinary passport spelling
 
-Revision ID: e8b4c2d1f9a6
-Revises: d4c8e1a9b2f7
-Create Date: 2026-03-23 19:30:00.000000
+Revision ID: f4b2c8d1e6a3
+Revises: c1f4e2b7a9d8
+Create Date: 2026-03-25 19:10:00.000000
 
 """
 
@@ -12,13 +12,13 @@ from alembic import op
 
 
 # revision identifiers, used by Alembic.
-revision: str = "e8b4c2d1f9a6"
-down_revision: Union[str, Sequence[str], None] = "d4c8e1a9b2f7"
+revision: str = "f4b2c8d1e6a3"
+down_revision: Union[str, Sequence[str], None] = "c1f4e2b7a9d8"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-OLD_NAME = "Вет паспорт"
+OLD_NAME = "Ветиринарный паспорт"
 NEW_NAME = "Ветеринарный паспорт"
 
 

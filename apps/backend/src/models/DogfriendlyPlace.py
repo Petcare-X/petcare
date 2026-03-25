@@ -1,4 +1,4 @@
-from sqlalchemy import String, Text, Numeric, Boolean, DateTime, func, UniqueConstraint
+from sqlalchemy import String, Numeric, Boolean, DateTime, func, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.db import Base

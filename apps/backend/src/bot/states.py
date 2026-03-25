@@ -34,3 +34,7 @@ class AddPetDocumentStates(StatesGroup):
 
 class DeletePetDocumentStates(StatesGroup):
     document_row_id = State()
+
+
+class LlmChatStates(StatesGroup):
+    message = State()

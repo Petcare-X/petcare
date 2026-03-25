@@ -9,6 +9,8 @@ from .constants import (
     BACK_TO_PROFILE_BUTTON_TEXT,
     DELETE_PET_DOCUMENT_BUTTON_TEXT,
     DELETE_PET_PHOTO_BUTTON_TEXT,
+    LLM_CHAT_BUTTON_TEXT,
+    NEW_LLM_CHAT_BUTTON_TEXT,
     NO_BREED_BUTTON_TEXT,
     NO_TEXT,
     PROFILE_BUTTON_TEXT,
@@ -34,7 +36,7 @@ def _keyboard(rows: list[list[str]]) -> ReplyKeyboardMarkup:
 main_menu_keyboard = _keyboard(
     [
         [PROFILE_BUTTON_TEXT, ADD_PET_BUTTON_TEXT],
-        [ACCEPT_INVITE_BUTTON_TEXT],
+        [ACCEPT_INVITE_BUTTON_TEXT, LLM_CHAT_BUTTON_TEXT],
     ]
 )
 
@@ -68,10 +70,18 @@ def build_animal_breeds_keyboard(breeds: list[AnimalBreed]) -> ReplyKeyboardMark
 def build_profile_keyboard(pet_names: list[str]) -> ReplyKeyboardMarkup:
     rows = [
         [ADD_PET_BUTTON_TEXT],
-        [ACCEPT_INVITE_BUTTON_TEXT],
+        [ACCEPT_INVITE_BUTTON_TEXT, LLM_CHAT_BUTTON_TEXT],
     ]
     rows.extend([[pet_name] for pet_name in pet_names])
     return _keyboard(rows)
+
+
+llm_chat_keyboard = _keyboard(
+    [
+        [NEW_LLM_CHAT_BUTTON_TEXT],
+        [BACK_TO_PROFILE_BUTTON_TEXT],
+    ]
+)
 
 
 def build_pet_details_keyboard(

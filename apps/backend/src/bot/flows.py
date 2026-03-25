@@ -2,9 +2,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from .formatters import format_profile_message
-from .keyboards import build_profile_keyboard, main_menu_keyboard, registration_navigation_keyboard
+from .keyboards import (
+    build_profile_keyboard,
+    llm_chat_keyboard,
+    main_menu_keyboard,
+    registration_navigation_keyboard,
+)
 from .queries import ensure_telegram_user, get_shared_pet_names, get_user_pet_names
-from .states import AcceptInviteStates, AddPetStates
+from .states import AcceptInviteStates, AddPetStates, LlmChatStates
 
 
 async def show_profile(message: Message) -> None:
@@ -41,3 +46,12 @@ async def start_accept_invite(message: Message, state: FSMContext) -> None:
     await state.clear()
     await state.set_state(AcceptInviteStates.invite_code)
     await message.answer("Введите код доступа к питомцу.", reply_markup=main_menu_keyboard)
+
+
+async def start_llm_chat(message: Message, state: FSMContext) -> None:
+    await state.set_state(LlmChatStates.message)
+    await message.answer(
+        "Напишите сообщение для ИИ.\n"
+        "Можно продолжить текущий чат или создать новый кнопкой ниже.",
+        reply_markup=llm_chat_keyboard,
+    )

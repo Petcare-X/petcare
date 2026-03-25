@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
+
+from pydantic import AliasChoices, BaseModel, Field
 
 class MessageRole(str, Enum):
     USER = "user"
@@ -13,7 +14,9 @@ class ChatCreate(BaseModel):
 class ChatResponse(BaseModel):
     id: int
     chat_title: str
-    created_at: datetime
+    created_at: datetime = Field(
+        validation_alias=AliasChoices("created_at", "chat_created_at"),
+    )
 
     model_config = {"from_attributes": True}
 
@@ -27,7 +30,9 @@ class MessageResponse(BaseModel):
     chat_id: int
     role: MessageRole
     content: str
-    created_at: datetime
+    created_at: datetime = Field(
+        validation_alias=AliasChoices("created_at", "message_created_at"),
+    )
 
     model_config = {"from_attributes": True}
 

@@ -7,17 +7,15 @@ from src.core.config import settings
 class OpenRouterService:
     BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-    async def generate_answer(self, user_message: str) -> str:
+    async def generate_answer(self, messages: list[dict[str, str]]) -> str:
         headers = {
             "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
             "Content-Type": "application/json",
         }
-        
+
         payload = {
             "model": settings.OPENROUTER_MODEL,
-            "messages": [
-                {"role": "user", "content": user_message}
-            ],
+            "messages": messages,
         }
 
         async with httpx.AsyncClient(timeout=60.0) as client:

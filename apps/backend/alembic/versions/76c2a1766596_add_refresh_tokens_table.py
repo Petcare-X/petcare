@@ -1,4 +1,4 @@
-"""addded refresh_token
+"""add refresh tokens table
 
 Revision ID: 76c2a1766596
 Revises: b2bc761f460a

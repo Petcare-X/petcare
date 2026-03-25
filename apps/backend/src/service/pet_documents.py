@@ -172,21 +172,12 @@ class PetDocumentsService:
         data = payload.model_dump(exclude_unset=True)
         document_type_name: str | None = None
         if "document_type_id" in data and data["document_type_id"] is not None:
-            document_type = await self.get_document_type(db, data["document_type_id"])
-            doc.document_id = data["document_type_id"]
-            result = await db.execute(
-                select(PetDocument.id)
-                .where(
-                    PetDocument.pet_id == pet_id,
-                    PetDocument.document_id == data["document_type_id"],
-                    PetDocument.id != doc.id,
+            if data["document_type_id"] != doc.document_id:
+                raise AppError(
+                    "Changing document type for an uploaded file is not supported; upload a new file instead",
+                    status_code=400,
                 )
-                .order_by(PetDocument.id)
-            )
-            doc.custom_name = self.storage_service.build_pet_document_custom_name(
-                document_type.document_name,
-                sequence_number=len(result.scalars().all()),
-            )
+            document_type = await self.get_document_type(db, data["document_type_id"])
             document_type_name = document_type.document_name
         else:
             document_type = await self.get_document_type(db, doc.document_id)

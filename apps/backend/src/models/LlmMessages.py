@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Annotated
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
@@ -12,7 +12,7 @@ class LlmMessage(Base):
     __tablename__ = "llm_chats_messages"
 
     id: Mapped[int_primary_key]
-    chat_id: Mapped[int] = mapped_column(Integer, ForeignKey("llm_chats_messages.id", ondelete="CASCADE"), index=True)
+    chat_id: Mapped[int] = mapped_column(Integer, ForeignKey("llm_chats.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users_info.id", ondelete="CASCADE"))
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text, nullable=False)

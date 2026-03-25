@@ -1,9 +1,11 @@
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 import uuid
 
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.config import settings
 from src.exceptions import (
     DatabaseIntegrityAppError,
     InviteAlreadyAcceptedError,
@@ -17,7 +19,7 @@ from src.exceptions import (
     SharedUsersNotFoundError,
 )
 from src.models import PetInfo, PetInvite, SharedUser, UserInfo
-from src.schemas import InviteCreate, InviteResponse, AcceptInvite, SharedUserResponce, PetResponse
+from src.schemas import InviteCreate, InviteResponse, PetResponse, SharedUserResponse
 from src.service.pets import active_shared_access_clause
 
 class SharingService:
@@ -28,7 +30,10 @@ class SharingService:
         return dt.astimezone(timezone.utc)
 
     def _invite_to_response(self, invite: PetInvite) -> InviteResponse:
-        return InviteResponse(invite_code=invite.invite_code)
+        invite_url = None
+        if settings.INVITE_BASE_URL:
+            invite_url = f"{settings.INVITE_BASE_URL.rstrip('/')}/{invite.invite_code}"
+        return InviteResponse(invite_code=invite.invite_code, invite_url=invite_url)
 
     async def ensure_pet_owner(
         self,
@@ -46,7 +51,7 @@ class SharingService:
     async def create_invite(self, 
                             user_id: int, 
                             db: AsyncSession, 
-                            payload: InviteCreate) -> PetInvite:
+                            payload: InviteCreate) -> InviteResponse:
         await self.ensure_pet_owner(db, payload.pet_id, user_id)
         
         invite_code = uuid.uuid4().hex[:12]
@@ -81,7 +86,7 @@ class SharingService:
     async def accept_invite(self,
                             db: AsyncSession,
                             invite_code: str,
-                            user_id: int) -> AcceptInvite:
+                            user_id: int) -> None:
         invite_result = await db.execute(
             select(PetInvite).where(PetInvite.invite_code == invite_code)
         )
@@ -127,7 +132,7 @@ class SharingService:
             await db.flush()
 
         new_shared_user = SharedUser(
-            shared_user_id=shared_user_id,
+            shared_user_id=user_id,
             shared_pet_id=invite.pet_id,
             sharing_start=datetime.now(timezone.utc),
             sharing_end=self._to_utc(invite.expires_at) if invite.expires_at else None
@@ -140,10 +145,7 @@ class SharingService:
             await db.commit()
             await db.refresh(invite)
             await db.refresh(new_shared_user)
-            return {
-                "message": "Invite accepted",
-                "invite code": invite.invite_code
-            }
+            return None
         
         except IntegrityError as e:
             await db.rollback()
@@ -260,7 +262,7 @@ class SharingService:
     async def get_shared_users(self, 
                                 db: AsyncSession, 
                                 pet_id: int,
-                                user_id: int) -> list[SharedUserResponce]:
+                                user_id: int) -> list[SharedUserResponse]:
         pet = await self.ensure_pet_owner(db, pet_id, user_id)
         
         shared_users_result = await db.execute(
@@ -274,7 +276,7 @@ class SharingService:
             raise SharedUsersNotFoundError()
 
         return [
-            SharedUserResponce(
+            SharedUserResponse(
                 pet_id=shared_user.shared_pet_id,
                 pet_name=pet.pet_name,
                 shared_with_user_id=user.id,
@@ -286,7 +288,7 @@ class SharingService:
     
     async def get_invite(self, 
                         db: AsyncSession, 
-                        invite_code: str) -> PetInvite:
+                        invite_code: str) -> InviteResponse:
         invite_result = await db.execute(
             select(PetInvite).where(PetInvite.invite_code == invite_code)
         )
