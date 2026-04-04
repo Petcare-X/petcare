@@ -1,17 +1,14 @@
 from datetime import datetime, timezone
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-from src.core import settings
 
 
 class InviteCreate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     pet_id: int
-    max_uses: Optional[int] = Field(None, gt=0)
-    expires_at: Optional[datetime]
+    max_uses: int | None = Field(None, gt=0)
+    expires_at: datetime | None
 
     @field_validator("expires_at")
     def validate_expires_at(cls, v: datetime | None) -> datetime | None:
@@ -25,7 +22,7 @@ class InviteCreate(BaseModel):
 class InviteResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    invite_url: Optional[str] = None
+    invite_url: str | None = None
     invite_code: str
 
 

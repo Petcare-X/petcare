@@ -121,23 +121,24 @@ class PetDocumentsService:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
         document_type = await self.get_document_type(db, document_type_id)
 
-        allowed_prefix = f"users/{user_id}/pets/{pet_id}/documents/{document_type_id}/"
-        if not object_key.startswith(allowed_prefix):
+        if not self.storage_service.is_pet_document_key(
+            object_key,
+            user_id=user_id,
+            pet_id=pet_id,
+            document_type_id=document_type_id,
+        ):
             raise AppError("Object key does not belong to this pet document", status_code=400)
 
-        head = await self.storage_service.head_object(object_key)
-        content_type = head.get("ContentType")
-        size_bytes_raw = head.get("ContentLength")
-        etag_raw = head.get("ETag")
+        metadata = await self.storage_service.get_object_meta(object_key)
 
         doc = PetDocument(
             pet_id=pet_id,
             document_id=document_type_id,
             custom_name=Path(object_key).stem,
             object_key=object_key,
-            content_type=str(content_type) if content_type else None,
-            size_bytes=int(size_bytes_raw) if isinstance(size_bytes_raw, int | float) else None,
-            etag=str(etag_raw).strip('"') if etag_raw is not None else None,
+            content_type=metadata.content_type,
+            size_bytes=metadata.size_bytes,
+            etag=metadata.etag,
             uploaded_at=datetime.now(timezone.utc),
         )
 

@@ -13,13 +13,13 @@ from src.schemas.documents import (
     PetDocumentUploadUrlRequest,
     PetDocumentUploadUrlResponse,
 )
-from src.service import PetDocumentsService, PetsService, StorageService
+from src.service import PetDocumentFilesService, PetDocumentsService, StorageService
 
-pet_documents_router = APIRouter(prefix="/pets/{pet_id}/documents", tags=["pet-documents"])
-document_types_router = APIRouter(prefix="/document-types", tags=["pet-documents"])
+pet_documents_router = APIRouter(prefix="/documents", tags=["pet-documents"])
+document_types_router = APIRouter(prefix="/document-types", tags=["document-types"])
 
 pet_documents_service = PetDocumentsService()
-pets_service = PetsService()
+pet_document_files_service = PetDocumentFilesService()
 storage_service = StorageService()
 
 
@@ -37,6 +37,8 @@ async def list_documents(
     current_user_id: int = Depends(get_current_user_id),
 ):
     return await pet_documents_service.list_for_pet(db, pet_id, current_user_id)
+
+
 @pet_documents_router.post("/upload-url", response_model=PetDocumentUploadUrlResponse)
 async def get_upload_url(
     pet_id: int,
@@ -44,23 +46,14 @@ async def get_upload_url(
     db: AsyncSession = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id),
 ):
-    object_key, custom_name = await pet_documents_service.build_object_key(
+    return await pet_document_files_service.create_upload_url(
         db,
         pet_id=pet_id,
         user_id=current_user_id,
         document_type_id=payload.document_type_id,
         content_type=payload.content_type,
     )
-    upload_url = await storage_service.create_upload_url(
-        object_key=object_key,
-        content_type=payload.content_type,
-    )
-    return PetDocumentUploadUrlResponse(
-        custom_name=custom_name,
-        object_key=object_key,
-        upload_url=upload_url,
-        expires_in=settings.MINIO_PRESIGNED_UPLOAD_TTL_SEC,
-    )
+
 
 @pet_documents_router.post("/complete", response_model=PetDocumentResponse)
 async def complete_upload(
@@ -69,10 +62,10 @@ async def complete_upload(
     db: AsyncSession = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id),
 ):
-    return await pet_documents_service.create_after_upload(
+    return await pet_document_files_service.complete_upload(
         db,
-        pet_id,
-        current_user_id,
+        pet_id=pet_id,
+        user_id=current_user_id,
         document_type_id=payload.document_type_id,
         object_key=payload.object_key,
     )
@@ -85,9 +78,19 @@ async def update_document(
     db: AsyncSession = Depends(get_db),
     current_user_id: int = Depends(get_current_user_id),
 ):
-    return await pet_documents_service.update(db, pet_id, document_row_id, payload, current_user_id)
+    return await pet_documents_service.update(
+        db,
+        pet_id,
+        document_row_id,
+        payload,
+        current_user_id,
+    )
 
-@pet_documents_router.get("/{document_row_id}/download-url", response_model=PetDocumentDownloadUrlResponse)
+
+@pet_documents_router.get(
+    "/{document_row_id}/download-url",
+    response_model=PetDocumentDownloadUrlResponse,
+)
 async def get_download_url(
     pet_id: int,
     document_row_id: int,
@@ -105,6 +108,7 @@ async def get_download_url(
         download_url=download_url,
         expires_in=settings.MINIO_PRESIGNED_DOWNLOAD_TTL_SEC,
     )
+
 
 @pet_documents_router.delete("/{document_row_id}")
 async def delete_document(

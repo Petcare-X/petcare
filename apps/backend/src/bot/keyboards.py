@@ -8,6 +8,7 @@ from .constants import (
     ADD_PET_DOCUMENT_BUTTON_TEXT,
     BACK_TO_PROFILE_BUTTON_TEXT,
     DELETE_PET_DOCUMENT_BUTTON_TEXT,
+    DELETE_PET_BUTTON_TEXT,
     DELETE_PET_PHOTO_BUTTON_TEXT,
     LLM_CHAT_BUTTON_TEXT,
     NEW_LLM_CHAT_BUTTON_TEXT,
@@ -59,7 +60,7 @@ def build_animal_types_keyboard(animal_types: list[AnimalType]) -> ReplyKeyboard
 def build_animal_breeds_keyboard(breeds: list[AnimalBreed]) -> ReplyKeyboardMarkup:
     rows = [[NO_BREED_BUTTON_TEXT]]
     rows.extend(
-        [[breed.animal_breed]]
+        [breed.animal_breed]
         for breed in breeds
         if breed.animal_breed.strip().lower() != NO_BREED_BUTTON_TEXT
     )
@@ -89,11 +90,14 @@ def build_pet_details_keyboard(
     can_share: bool = False,
     can_revoke: bool = False,
     can_manage_photo: bool = False,
+    can_delete_pet: bool = False,
 ) -> ReplyKeyboardMarkup:
     rows = [[PROFILE_BUTTON_TEXT, ADD_PET_BUTTON_TEXT]]
     rows.append([SHOW_PET_DOCUMENTS_BUTTON_TEXT])
     if can_manage_photo:
         rows.append([UPDATE_PET_PHOTO_BUTTON_TEXT, DELETE_PET_PHOTO_BUTTON_TEXT])
+    if can_delete_pet:
+        rows.append([DELETE_PET_BUTTON_TEXT])
     if can_share:
         rows.append([SHARE_PET_BUTTON_TEXT])
     if can_revoke:

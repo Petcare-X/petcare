@@ -36,5 +36,9 @@ class DeletePetDocumentStates(StatesGroup):
     document_row_id = State()
 
 
+class DeletePetStates(StatesGroup):
+    confirmation = State()
+
+
 class LlmChatStates(StatesGroup):
     message = State()

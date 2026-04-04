@@ -14,7 +14,6 @@ from src.core.security import (
 from src.exceptions import (
     AuthProviderMismatchError,
     InvalidCredentialsError,
-    InviteExpiredError,
     InvalidTokenError,
     RefreshTokenError,
     RefreshTokenNotFoundError,

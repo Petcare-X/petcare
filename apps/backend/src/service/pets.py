@@ -5,8 +5,9 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions import PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError
-from src.models import PetInfo, SharedUser
+from src.models import PetDocument, PetInfo, SharedUser
 from src.schemas import PetCreate, PetResponse, UpdatePet
+from src.service.storage import StorageService
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +36,25 @@ def active_shared_access_clause(
     return conditions
 
 class PetsService:
+    SIMPLE_UPDATE_FIELDS = {
+        "pet_name": "pet_name",
+        "pet_date_of_birth": "pet_date_of_birth",
+        "animal_type_id": "animal_type_id",
+        "animal_breed_id": "animal_breed_id",
+        "pedigree": "pedigree",
+        "pet_length": "pet_length",
+        "pet_neck_girth": "pet_neck_girth",
+        "pet_breast_girth": "pet_breast_girth",
+        "pet_weight": "pet_weight",
+        "pet_is_sterylyzed": "pet_is_sterylyzed",
+    }
+    PHOTO_METADATA_FIELDS = (
+        "pet_photo_content_type",
+        "pet_photo_size_bytes",
+        "pet_photo_etag",
+        "pet_photo_uploaded_at",
+    )
+
     @staticmethod
     def photo_snapshot(pet: PetInfo) -> PetPhotoSnapshot | None:
         if not pet.pet_photo_object_key:
@@ -69,8 +89,8 @@ class PetsService:
             is_shared=pet.user_id != current_user_id,
         )
 
-    async def create_pet(self, db: AsyncSession, payload: PetCreate, user_id: int) -> PetInfo | None:
-        pet = PetInfo(
+    def _build_pet(self, payload: PetCreate, user_id: int) -> PetInfo:
+        return PetInfo(
             pet_name=payload.pet_name.strip(),
             animal_type_id=payload.animal_type_id,
             pet_date_of_birth=payload.pet_date_of_birth,
@@ -89,11 +109,58 @@ class PetsService:
             pet_photo_uploaded_at=payload.pet_photo_uploaded_at,
         )
 
+    async def create_pet(self, db: AsyncSession, payload: PetCreate, user_id: int) -> PetInfo | None:
+        pet = self._build_pet(payload, user_id)
         db.add(pet)
 
         await db.commit()
         await db.refresh(pet)
         return pet
+
+    async def create_pet_with_optional_photo(
+        self,
+        db: AsyncSession,
+        payload: PetCreate,
+        user_id: int,
+        *,
+        photo_bytes: bytes | None = None,
+        photo_content_type: str | None = None,
+        storage_service: StorageService | None = None,
+    ) -> PetResponse:
+        storage = storage_service or StorageService()
+        pet = self._build_pet(payload, user_id)
+        uploaded_object_key: str | None = None
+
+        db.add(pet)
+        try:
+            await db.flush()
+
+            if photo_bytes is not None and photo_content_type is not None:
+                uploaded_object_key = storage.build_pet_photo_object_key(
+                    user_id=user_id,
+                    pet_id=pet.id,
+                    content_type=photo_content_type,
+                )
+                put_result = await storage.upload_bytes(
+                    object_key=uploaded_object_key,
+                    payload=photo_bytes,
+                    content_type=photo_content_type,
+                )
+                etag_raw = put_result.get("ETag")
+                pet.pet_photo_object_key = uploaded_object_key
+                pet.pet_photo_content_type = photo_content_type
+                pet.pet_photo_size_bytes = len(photo_bytes)
+                pet.pet_photo_etag = str(etag_raw).strip('"') if etag_raw is not None else None
+                pet.pet_photo_uploaded_at = storage.now_utc()
+
+            await db.commit()
+            await db.refresh(pet)
+        except Exception:
+            await db.rollback()
+            await storage.delete_object_quietly(uploaded_object_key)
+            raise
+
+        return self.to_response(pet, user_id)
 
     async def list_all_pets(
         self,
@@ -164,63 +231,32 @@ class PetsService:
         pet = await self.ensure_pet_owner(db, pet_id, user_id)
         
         data = payload.model_dump(exclude_unset=True)
-
-        if "pet_name" in data and data["pet_name"] is not None:
-            pet.pet_name = data["pet_name"].strip()
-
-        if "pet_date_of_birth" in data and data["pet_date_of_birth"] is not None:
-            pet.pet_date_of_birth = data["pet_date_of_birth"]
-
-        if "animal_type_id" in data and data["animal_type_id"] is not None:
-            pet.animal_type_id = data["animal_type_id"]
-            
-        if "animal_breed_id" in data and data["animal_breed_id"] is not None:
-            pet.animal_breed_id = data["animal_breed_id"]
-
-        if "pedigree" in data and data["pedigree"] is not None:
-            pet.pedigree = data["pedigree"]
-
-        if "pet_length" in data and data["pet_length"] is not None:
-            pet.pet_length = data["pet_length"]
-
-        if "pet_neck_girth" in data and data["pet_neck_girth"] is not None:
-            pet.pet_neck_girth = data["pet_neck_girth"]
-
-        if "pet_breast_girth" in data and data["pet_breast_girth"] is not None:
-            pet.pet_breast_girth = data["pet_breast_girth"]
-
-        if "pet_weight" in data and data["pet_weight"] is not None:
-            pet.pet_weight = data["pet_weight"]
-
-        if "pet_is_sterylyzed" in data and data["pet_is_sterylyzed"] is not None:
-            pet.pet_is_sterylyzed = data["pet_is_sterylyzed"]
-
-        if "pet_photo_object_key" in data and data["pet_photo_object_key"] is not None:
-            pet.pet_photo_object_key = data["pet_photo_object_key"]
-            if "pet_photo_content_type" not in data:
-                pet.pet_photo_content_type = None
-            if "pet_photo_size_bytes" not in data:
-                pet.pet_photo_size_bytes = None
-            if "pet_photo_etag" not in data:
-                pet.pet_photo_etag = None
-            if "pet_photo_uploaded_at" not in data:
-                pet.pet_photo_uploaded_at = None
-
-        if "pet_photo_content_type" in data:
-            pet.pet_photo_content_type = data["pet_photo_content_type"]
-
-        if "pet_photo_size_bytes" in data:
-            pet.pet_photo_size_bytes = data["pet_photo_size_bytes"]
-
-        if "pet_photo_etag" in data:
-            pet.pet_photo_etag = data["pet_photo_etag"]
-
-        if "pet_photo_uploaded_at" in data:
-            pet.pet_photo_uploaded_at = data["pet_photo_uploaded_at"]
+        self._apply_simple_updates(pet, data)
+        self._apply_photo_updates(pet, data)
 
         await db.commit()
         await db.refresh(pet)
         return self.to_response(pet, user_id)
+
+    def _apply_simple_updates(self, pet: PetInfo, data: dict[str, object]) -> None:
+        for payload_field, model_field in self.SIMPLE_UPDATE_FIELDS.items():
+            value = data.get(payload_field)
+            if value is None:
+                continue
+            if payload_field == "pet_name":
+                value = str(value).strip()
+            setattr(pet, model_field, value)
+
+    def _apply_photo_updates(self, pet: PetInfo, data: dict[str, object]) -> None:
+        if "pet_photo_object_key" in data and data["pet_photo_object_key"] is not None:
+            pet.pet_photo_object_key = data["pet_photo_object_key"]
+            for field_name in self.PHOTO_METADATA_FIELDS:
+                if field_name not in data:
+                    setattr(pet, field_name, None)
+
+        for field_name in self.PHOTO_METADATA_FIELDS:
+            if field_name in data:
+                setattr(pet, field_name, data[field_name])
 
     async def delete_pet(self, db: AsyncSession, pet_id: int, user_id: int) -> bool:
         pet = await self.ensure_pet_owner(db, pet_id, user_id)
@@ -228,6 +264,21 @@ class PetsService:
         await db.delete(pet)
         await db.commit()
         return True
+
+    async def list_pet_object_keys_for_cleanup(
+        self,
+        db: AsyncSession,
+        pet_id: int,
+        user_id: int,
+    ) -> list[str]:
+        pet = await self.ensure_pet_owner(db, pet_id, user_id)
+        result = await db.execute(
+            select(PetDocument.object_key).where(PetDocument.pet_id == pet_id)
+        )
+        object_keys = [object_key for object_key in result.scalars().all() if object_key]
+        if pet.pet_photo_object_key:
+            object_keys.append(pet.pet_photo_object_key)
+        return object_keys
 
     async def set_pet_photo_metadata(
         self,

@@ -27,10 +27,10 @@ def format_pet_details_message(pet, animal_type_name: str, animal_breed_name: st
             f"Тип животного: {animal_type_name}",
             f"Порода: {animal_breed_name}",
             f"Родословная: {'Да' if pet.pedigree else 'Нет'}",
-            f"Обхват шеи: {pet.pet_neck_girth}",
-            f"Обхват груди: {pet.pet_breast_girth}",
-            f"Длина: {pet.pet_length}",
-            f"Вес: {pet.pet_weight}",
+            f"Обхват шеи: {pet.pet_neck_girth} см",
+            f"Обхват груди: {pet.pet_breast_girth} см",
+            f"Длина: {pet.pet_length} см",
+            f"Вес: {pet.pet_weight} кг",
             f"Стерилизован: {'Да' if pet.pet_is_sterylyzed else 'Нет'}",
         ]
     )

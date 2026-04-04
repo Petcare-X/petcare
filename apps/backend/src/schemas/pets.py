@@ -1,7 +1,8 @@
 from datetime import date, datetime
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from src.pet_measurements import PET_MEASUREMENT_RULES, validate_pet_measurements_consistency, validate_pet_measurement_value
 from src.schemas.users import UserPublic
 
 
@@ -50,6 +51,21 @@ class PetCreate(BaseModel):
     @field_validator("pet_name")
     def validate_name(cls, value: str) -> str:
         return value.strip()
+
+    @field_validator(*PET_MEASUREMENT_RULES.keys())
+    def validate_measurements(cls, value: float, info) -> float:
+        validate_pet_measurement_value(info.field_name, value)
+        return value
+
+    @model_validator(mode="after")
+    def validate_measurements_consistency(self):
+        validate_pet_measurements_consistency(
+            {
+                "pet_neck_girth": self.pet_neck_girth,
+                "pet_breast_girth": self.pet_breast_girth,
+            }
+        )
+        return self
 
 
 class PetResponse(BaseModel):
@@ -130,6 +146,23 @@ class UpdatePet(BaseModel):
         if value is None:
             return value
         return value.strip()
+
+    @field_validator(*PET_MEASUREMENT_RULES.keys())
+    def validate_optional_measurements(cls, value: float | None, info) -> float | None:
+        if value is None:
+            return value
+        validate_pet_measurement_value(info.field_name, value)
+        return value
+
+    @model_validator(mode="after")
+    def validate_optional_measurements_consistency(self):
+        validate_pet_measurements_consistency(
+            {
+                "pet_neck_girth": self.pet_neck_girth,
+                "pet_breast_girth": self.pet_breast_girth,
+            }
+        )
+        return self
 
 
 CreatePet = PetCreate

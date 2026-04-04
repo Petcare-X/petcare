@@ -1,7 +1,5 @@
-from contextlib import suppress
 from datetime import date
 from decimal import Decimal
-from io import BytesIO
 
 from aiogram import Router
 from aiogram.filters import Command
@@ -19,14 +17,23 @@ from src.bot.keyboards import (
 )
 from src.bot.queries import get_animal_breeds, get_animal_types
 from src.bot.states import AddPetStates
+from src.bot.telegram_media import download_telegram_file_bytes
+from src.bot.texts import YES_NO_REQUIRED_TEXT
 from src.bot.utils import normalize_text, parse_bool, parse_decimal
 from src.core.db import AsyncSessionLocal
-from src.models import PetInfo
+from src.pet_measurements import (
+    get_pet_measurement_rule,
+    validate_pet_measurements_consistency,
+    validate_pet_measurement_value,
+)
+from src.schemas import PetCreate
+from src.service import PetsService
 from src.service.storage import StorageService
 
 
 router = Router()
 storage_service = StorageService()
+pets_service = PetsService()
 
 
 def _find_by_text(items, attr_name: str, raw_value: str):
@@ -59,6 +66,24 @@ async def _handle_decimal_step(
     value = parse_decimal(message.text)
     if value is None:
         await message.answer(error_text)
+        return
+
+    try:
+        validate_pet_measurement_value(field_name, value)
+    except ValueError as exc:
+        await message.answer(str(exc))
+        return
+
+    current_data = await state.get_data()
+    next_data = {
+        "pet_neck_girth": current_data.get("pet_neck_girth"),
+        "pet_breast_girth": current_data.get("pet_breast_girth"),
+        field_name: value,
+    }
+    try:
+        validate_pet_measurements_consistency(next_data)
+    except ValueError as exc:
+        await message.answer(str(exc))
         return
 
     await state.update_data(**{field_name: str(value)})
@@ -155,7 +180,7 @@ async def add_pet_breed_handler(message, state: FSMContext) -> None:
             message,
             state,
             next_state=AddPetStates.pet_neck_girth,
-            text="Введите обхват шеи питомца числом.",
+            text=_build_measurement_prompt("pet_neck_girth"),
             reply_markup=registration_navigation_keyboard,
         )
         return
@@ -173,7 +198,7 @@ async def add_pet_breed_handler(message, state: FSMContext) -> None:
 async def add_pet_pedigree_handler(message, state: FSMContext) -> None:
     pedigree = parse_bool(message.text)
     if pedigree is None:
-        await message.answer("Ответ должен быть 'да' или 'нет'.", reply_markup=yes_no_keyboard)
+        await message.answer(YES_NO_REQUIRED_TEXT, reply_markup=yes_no_keyboard)
         return
 
     await state.update_data(pedigree=pedigree)
@@ -181,9 +206,14 @@ async def add_pet_pedigree_handler(message, state: FSMContext) -> None:
         message,
         state,
         next_state=AddPetStates.pet_neck_girth,
-        text="Введите обхват шеи питомца числом.",
+        text=_build_measurement_prompt("pet_neck_girth"),
         reply_markup=registration_navigation_keyboard,
     )
+
+
+def _build_measurement_prompt(field_name: str) -> str:
+    rule = get_pet_measurement_rule(field_name)
+    return f"Введите {rule.label} питомца в {rule.unit}. Допустимый диапазон: {rule.format_range()}."
 
 
 @router.message(AddPetStates.pet_neck_girth)
@@ -192,9 +222,9 @@ async def add_pet_neck_girth_handler(message, state: FSMContext) -> None:
         message,
         state,
         field_name="pet_neck_girth",
-        error_text="Введите число для обхвата шеи.",
+        error_text="Введите число для обхвата шеи в см.",
         next_state=AddPetStates.pet_breast_girth,
-        prompt_text="Введите обхват груди питомца числом.",
+        prompt_text=_build_measurement_prompt("pet_breast_girth"),
     )
 
 
@@ -204,9 +234,9 @@ async def add_pet_breast_girth_handler(message, state: FSMContext) -> None:
         message,
         state,
         field_name="pet_breast_girth",
-        error_text="Введите число для обхвата груди.",
+        error_text="Введите число для обхвата груди в см.",
         next_state=AddPetStates.pet_length,
-        prompt_text="Введите длину питомца числом.",
+        prompt_text=_build_measurement_prompt("pet_length"),
     )
 
 
@@ -216,9 +246,9 @@ async def add_pet_length_handler(message, state: FSMContext) -> None:
         message,
         state,
         field_name="pet_length",
-        error_text="Введите число для длины питомца.",
+        error_text="Введите число для длины питомца в см.",
         next_state=AddPetStates.pet_weight,
-        prompt_text="Введите вес питомца числом.",
+        prompt_text=_build_measurement_prompt("pet_weight"),
     )
 
 
@@ -228,7 +258,7 @@ async def add_pet_weight_handler(message, state: FSMContext) -> None:
         message,
         state,
         field_name="pet_weight",
-        error_text="Введите число для веса питомца.",
+        error_text="Введите число для веса питомца в кг.",
         next_state=AddPetStates.pet_is_sterylyzed,
         prompt_text="Стерилизован ли питомец? Ответьте: да / нет.",
         reply_markup=yes_no_keyboard,
@@ -239,7 +269,7 @@ async def add_pet_weight_handler(message, state: FSMContext) -> None:
 async def add_pet_sterylized_handler(message, state: FSMContext) -> None:
     pet_is_sterylyzed = parse_bool(message.text)
     if pet_is_sterylyzed is None:
-        await message.answer("Ответ должен быть 'да' или 'нет'.", reply_markup=yes_no_keyboard)
+        await message.answer(YES_NO_REQUIRED_TEXT, reply_markup=yes_no_keyboard)
         return
 
     await state.update_data(pet_is_sterylyzed=pet_is_sterylyzed)
@@ -266,73 +296,42 @@ async def add_pet_photo_object_key_handler(message: Message, state: FSMContext) 
         return
 
     data = await state.get_data()
-    async with AsyncSessionLocal() as db:
-        uploaded_object_key: str | None = None
+    photo_bytes: bytes | None = None
+    photo_content_type: str | None = None
+
+    if has_photo and message.photo:
         try:
-            pet = PetInfo(
-                user_id=data["user_id"],
-                pet_name=data["pet_name"],
-                pet_date_of_birth=date.fromisoformat(data["pet_date_of_birth"]),
-                animal_type_id=data["animal_type_id"],
-                animal_breed_id=data["animal_breed_id"],
-                pedigree=data["pedigree"],
-                pet_neck_girth=Decimal(data["pet_neck_girth"]),
-                pet_breast_girth=Decimal(data["pet_breast_girth"]),
-                pet_length=Decimal(data["pet_length"]),
-                pet_weight=Decimal(data["pet_weight"]),
-                pet_is_sterylyzed=data["pet_is_sterylyzed"],
-                pet_photo_object_key="",
+            photo_bytes = await download_telegram_file_bytes(message.bot, message.photo[-1].file_id)
+        except ValueError as exc:
+            await message.answer(str(exc))
+            return
+        photo_content_type = "image/jpeg"
+
+    payload = PetCreate(
+        pet_name=data["pet_name"],
+        pet_date_of_birth=data["pet_date_of_birth"],
+        animal_type_id=data["animal_type_id"],
+        animal_breed_id=data["animal_breed_id"],
+        pedigree=data["pedigree"],
+        pet_neck_girth=Decimal(data["pet_neck_girth"]),
+        pet_breast_girth=Decimal(data["pet_breast_girth"]),
+        pet_length=Decimal(data["pet_length"]),
+        pet_weight=Decimal(data["pet_weight"]),
+        pet_is_sterylyzed=data["pet_is_sterylyzed"],
+        pet_photo_object_key="",
+    )
+
+    async with AsyncSessionLocal() as db:
+        try:
+            pet = await pets_service.create_pet_with_optional_photo(
+                db,
+                payload,
+                data["user_id"],
+                photo_bytes=photo_bytes,
+                photo_content_type=photo_content_type,
+                storage_service=storage_service,
             )
-            db.add(pet)
-
-            await db.flush()
-
-            if has_photo and message.photo:
-                tg_photo = message.photo[-1]
-                tg_file = await message.bot.get_file(tg_photo.file_id)
-
-                if not tg_file.file_path:
-                    await db.rollback()
-                    await message.answer("Не удалось получить путь к файлу Telegram. Попробуйте снова.")
-                    return
-
-                destination = BytesIO()
-                await message.bot.download_file(tg_file.file_path, destination=destination)
-                payload = destination.getvalue()
-                if not payload:
-                    await db.rollback()
-                    await message.answer("Не удалось скачать фото из Telegram. Попробуйте снова.")
-                    return
-
-                content_type = "image/jpeg"
-                object_key = storage_service.build_pet_photo_object_key(
-                    user_id=data["user_id"],
-                    pet_id=pet.id,
-                    content_type=content_type,
-                )
-                uploaded_object_key = object_key
-
-                put_result = await storage_service.upload_bytes(
-                    object_key=object_key,
-                    payload=payload,
-                    content_type=content_type,
-                )
-                etag_raw = put_result.get("ETag")
-                etag = str(etag_raw).strip('"') if etag_raw is not None else None
-
-                pet.pet_photo_object_key = object_key
-                pet.pet_photo_content_type = content_type
-                pet.pet_photo_size_bytes = len(payload)
-                pet.pet_photo_etag = etag
-                pet.pet_photo_uploaded_at = storage_service.now_utc()
-
-            await db.commit()
-            await db.refresh(pet)
         except Exception:
-            await db.rollback()
-            if uploaded_object_key:
-                with suppress(Exception):
-                    await storage_service.delete_object(uploaded_object_key)
             await message.answer("Не удалось сохранить питомца с фото. Попробуйте снова позже.")
             return
 

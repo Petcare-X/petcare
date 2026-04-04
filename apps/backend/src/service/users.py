@@ -2,18 +2,15 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.phone import to_e164
 from src.core.security import hash_password
 from src.exceptions import (
     DatabaseIntegrityAppError,
     UserConflictError,
     UserNotFoundError,
 )
-from src.models import UserInfo, SharedUser, PetInfo
+from src.models import PetInfo, SharedUser, UserInfo
 from src.schemas import CreateUser, UpdateUser
-from src.models import UserInfo
-from src.schemas import CreateUser, UpdateUser
-
-from src.core.phone import to_e164
 from src.service.pets import active_shared_access_clause
 
 class UsersService:

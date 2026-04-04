@@ -18,7 +18,7 @@ from .documents import (
     PetDocumentUploadUrlRequest,
     PetDocumentUploadUrlResponse,
 )
-from .sharing import AcceptInvite, InviteCreate, InviteResponse, SharedUserResponse, SharedUserResponce
+from .sharing import AcceptInvite, InviteCreate, InviteResponse, SharedUserResponse
 from .users import CreateUser, UpdateUser, UserPrivate, UserPublic, UserSettings
 
 from .upload_places import ( 
@@ -67,7 +67,6 @@ __all__ = (
     "InviteResponse",
     "AcceptInvite",
     "SharedUserResponse",
-    "SharedUserResponce",
     "VetImportRow",
     "VetCreate",
     "DogPlaceCreate",

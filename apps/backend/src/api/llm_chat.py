@@ -8,9 +8,10 @@ from src.schemas import ChatCreate, ChatResponse, MessageCreate, MessageResponse
 from src.service import LLMChatService
 from src.models import UserInfo
 
-chat_router = APIRouter(prefix="/llm-chat", tags=["LLM chat"])
+chat_router = APIRouter(prefix="/llm-chat", tags=["llm-chat"])
 
-@chat_router.post("/", response_model=ChatResponse)
+
+@chat_router.post("", response_model=ChatResponse)
 async def create_chat(
     payload: ChatCreate,
     db: AsyncSession = Depends(get_db),
@@ -20,11 +21,11 @@ async def create_chat(
     return await service.create_chat(db=db, user_id=current_user.id, title=payload.chat_title)
 
 
-@chat_router.get("/", response_model=list[ChatResponse])
+@chat_router.get("", response_model=list[ChatResponse])
 async def get_user_chats(
     db: AsyncSession = Depends(get_db),
     current_user: UserInfo = Depends(get_current_user),
-    service: LLMChatService = Depends()
+    service: LLMChatService = Depends(),
 ):
     return await service.get_user_chats(db=db, user_id=current_user.id)
 
@@ -34,7 +35,7 @@ async def get_chat_messages(
     chat_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: UserInfo = Depends(get_current_user),
-    service: LLMChatService = Depends()
+    service: LLMChatService = Depends(),
 ):
     return await service.get_chat_messages(db=db, user_id=current_user.id, chat_id=chat_id)
 
@@ -45,7 +46,7 @@ async def send_message(
     payload: MessageCreate,
     db: AsyncSession = Depends(get_db),
     current_user: UserInfo = Depends(get_current_user),
-    service: LLMChatService = Depends()
+    service: LLMChatService = Depends(),
 ):
     user_message, assistant_message = await service.send_message(
         db=db,

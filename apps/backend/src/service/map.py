@@ -1,16 +1,23 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.schemas import VetMapPoint, DogPlaceMapPoint
-from src.models import VetClinic, DogFriendlyPlace
+from src.models import DogFriendlyPlace, VetClinic
+from src.schemas import DogPlaceMapPoint, VetMapPoint
+
 
 class MapService:
+    @staticmethod
+    def _is_24_7_label(value: bool) -> str:
+        return "да" if value else "нет"
+
+    async def _get_active_entities(self, db: AsyncSession, model, status_field: str):
+        result = await db.execute(
+            select(model).where(getattr(model, status_field) == "active")
+        )
+        return list(result.scalars().all())
+
     async def get_vet_clinics_map_points(self, db: AsyncSession) -> list[VetMapPoint]:
-        vet_points = await db.execute(
-            select(VetClinic).where(
-                VetClinic.vet_status == "active"
-            ))
-        result = list(vet_points.scalars().all())
+        result = await self._get_active_entities(db, VetClinic, "vet_status")
         return [
             VetMapPoint(
                 id=vet.id,
@@ -18,21 +25,20 @@ class MapService:
                 vet_lat=vet.vet_lat,
                 vet_lon=vet.vet_lon,
                 vet_working_hours=vet.vet_working_hours,
-                vet_is_24_7="да" if vet.vet_is_24_7 else "нет",
+                vet_is_24_7=self._is_24_7_label(vet.vet_is_24_7),
                 vet_street=vet.vet_street,
                 vet_building_number=vet.vet_building_number,
-                vet_phone="нет" if not vet.vet_phone else vet.vet_phone
+                vet_phone="нет" if not vet.vet_phone else vet.vet_phone,
             )
             for vet in result
         ]
-    
-    async def get_dog_places_map_points(self, db: AsyncSession) -> list[DogPlaceMapPoint]:
-        dog_places = await db.execute(
-            select(DogFriendlyPlace).where(
-                DogFriendlyPlace.dogfriendly_place_status == "active"
-                ))
-        result = list(dog_places.scalars().all())
 
+    async def get_dog_places_map_points(self, db: AsyncSession) -> list[DogPlaceMapPoint]:
+        result = await self._get_active_entities(
+            db,
+            DogFriendlyPlace,
+            "dogfriendly_place_status",
+        )
         return [
             DogPlaceMapPoint(
                 id=place.id,
@@ -42,7 +48,7 @@ class MapService:
                 dogfriendly_place_street=place.dogfriendly_place_street,
                 dogfriendly_place_building_number=place.dogfriendly_place_building_number,
                 dogfriendly_place_working_hours=place.dogfriendly_place_working_hours,
-                dogfriendly_place_is_24_7="да" if place.dogfriendly_place_is_24_7 else "нет"
+                dogfriendly_place_is_24_7=self._is_24_7_label(place.dogfriendly_place_is_24_7),
             )
             for place in result
         ]
