@@ -25,10 +25,14 @@ class StoredObjectMeta:
 
 class StorageService:
     @staticmethod
-    def build_pet_document_custom_name(document_name: str, sequence_number: int = 0) -> str:
-        safe_name = re.sub(r"\s+", "_", document_name.strip().lower())
+    def sanitize_document_name(value: str) -> str:
+        safe_name = re.sub(r"\s+", "_", value.strip().lower())
         safe_name = re.sub(r"[^0-9A-Za-zА-Яа-яЁё_-]", "", safe_name).strip("_")
-        base_name = safe_name or "document"
+        return safe_name or "document"
+
+    @staticmethod
+    def build_pet_document_custom_name(document_name: str, sequence_number: int = 0) -> str:
+        base_name = StorageService.sanitize_document_name(document_name)
         return f"{base_name}_{sequence_number}" if sequence_number > 0 else base_name
 
     def _ensure_configured(self) -> None:

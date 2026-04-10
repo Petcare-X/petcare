@@ -74,9 +74,12 @@ async def get_animal_types() -> list[AnimalType]:
         return list(result.scalars().all())
 
 
-async def get_animal_breeds() -> list[AnimalBreed]:
+async def get_animal_breeds(animal_type_id: int | None = None) -> list[AnimalBreed]:
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(AnimalBreed).order_by(AnimalBreed.id))
+        query = select(AnimalBreed).order_by(AnimalBreed.id)
+        if animal_type_id is not None:
+            query = query.where(AnimalBreed.animal_type_id == animal_type_id)
+        result = await db.execute(query)
         return list(result.scalars().all())
 
 

@@ -150,8 +150,8 @@ async def add_pet_type_handler(message, state: FSMContext) -> None:
         )
         return
 
-    breeds = await get_animal_breeds()
     await state.update_data(animal_type_id=animal_type.id)
+    breeds = await get_animal_breeds(animal_type.id)
     await _ask_next_registration_step(
         message,
         state,
@@ -164,7 +164,9 @@ async def add_pet_type_handler(message, state: FSMContext) -> None:
 @router.message(AddPetStates.animal_breed_id)
 async def add_pet_breed_handler(message, state: FSMContext) -> None:
     animal_breed_name = normalize_text(message.text)
-    breeds = await get_animal_breeds()
+    data = await state.get_data()
+    animal_type_id = data.get("animal_type_id")
+    breeds = await get_animal_breeds(animal_type_id)
     animal_breed = _find_by_text(breeds, "animal_breed", animal_breed_name)
     if animal_breed is None:
         await message.answer(

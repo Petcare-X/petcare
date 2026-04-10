@@ -34,7 +34,7 @@ class PetInfo(Base):
     pet_length: Mapped[int] = mapped_column(Numeric)
     pet_is_sterylyzed: Mapped[bool | None] = mapped_column(Boolean)
     pet_weight: Mapped[Decimal] = mapped_column(Numeric)
-    pet_photo_object_key: Mapped[str] = mapped_column(Text)
+    pet_photo_object_key: Mapped[str | None] = mapped_column(Text, nullable=True)
     pet_photo_content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     pet_photo_size_bytes: Mapped[int | None] = mapped_column(BIGINT, nullable=True)
     pet_photo_etag: Mapped[str | None] = mapped_column(String(128), nullable=True)

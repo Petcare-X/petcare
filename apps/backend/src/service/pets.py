@@ -248,7 +248,7 @@ class PetsService:
             setattr(pet, model_field, value)
 
     def _apply_photo_updates(self, pet: PetInfo, data: dict[str, object]) -> None:
-        if "pet_photo_object_key" in data and data["pet_photo_object_key"] is not None:
+        if "pet_photo_object_key" in data:
             pet.pet_photo_object_key = data["pet_photo_object_key"]
             for field_name in self.PHOTO_METADATA_FIELDS:
                 if field_name not in data:
@@ -326,7 +326,7 @@ class PetsService:
     async def clear_pet_photo(self, db: AsyncSession, pet_id: int, user_id: int) -> str | None:
         pet = await self.ensure_pet_owner(db, pet_id, user_id)
         previous_key = pet.pet_photo_object_key
-        pet.pet_photo_object_key = ""
+        pet.pet_photo_object_key = None
         pet.pet_photo_content_type = None
         pet.pet_photo_size_bytes = None
         pet.pet_photo_etag = None

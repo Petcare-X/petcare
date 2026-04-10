@@ -1,7 +1,5 @@
 from datetime import datetime, timezone
-from pathlib import Path
-
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions import AppError
@@ -84,30 +82,33 @@ class PetDocumentsService:
         user_id: int,
         document_type_id: int,
         content_type: str,
+        custom_name: str | None = None,
     ) -> tuple[str, str]:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
         document_type = await self.get_document_type(db, document_type_id)
-        result = await db.execute(
-            select(PetDocument.id)
-            .where(
+        display_name = (custom_name or document_type.document_name).strip()
+        if not display_name:
+            display_name = document_type.document_name
+        duplicate_count_result = await db.execute(
+            select(func.count(PetDocument.id)).where(
                 PetDocument.pet_id == pet_id,
                 PetDocument.document_id == document_type_id,
+                PetDocument.custom_name == display_name,
             )
-            .order_by(PetDocument.id)
         )
-        sequence_number = len(result.scalars().all())
-        custom_name = self.storage_service.build_pet_document_custom_name(
-            document_type.document_name,
-            sequence_number=sequence_number,
+        duplicate_count = int(duplicate_count_result.scalar_one())
+        object_key_name = self.storage_service.build_pet_document_custom_name(
+            display_name,
+            sequence_number=duplicate_count,
         )
         object_key = self.storage_service.build_pet_document_object_key(
             user_id=user_id,
             pet_id=pet_id,
             document_type_id=document_type_id,
-            custom_name=custom_name,
+            custom_name=object_key_name,
             content_type=content_type,
         )
-        return object_key, custom_name
+        return object_key, display_name
 
     async def create_after_upload(
         self,
@@ -117,6 +118,7 @@ class PetDocumentsService:
         *,
         document_type_id: int,
         object_key: str,
+        custom_name: str | None = None,
     ) -> PetDocumentResponse:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
         document_type = await self.get_document_type(db, document_type_id)
@@ -134,7 +136,7 @@ class PetDocumentsService:
         doc = PetDocument(
             pet_id=pet_id,
             document_id=document_type_id,
-            custom_name=Path(object_key).stem,
+            custom_name=(custom_name or document_type.document_name).strip() or document_type.document_name,
             object_key=object_key,
             content_type=metadata.content_type,
             size_bytes=metadata.size_bytes,
@@ -173,16 +175,18 @@ class PetDocumentsService:
         data = payload.model_dump(exclude_unset=True)
         document_type_name: str | None = None
         if "document_type_id" in data and data["document_type_id"] is not None:
-            if data["document_type_id"] != doc.document_id:
-                raise AppError(
-                    "Changing document type for an uploaded file is not supported; upload a new file instead",
-                    status_code=400,
-                )
             document_type = await self.get_document_type(db, data["document_type_id"])
+            doc.document_id = document_type.id
             document_type_name = document_type.document_name
         else:
             document_type = await self.get_document_type(db, doc.document_id)
             document_type_name = document_type.document_name
+
+        if "custom_name" in data:
+            resolved_name = (data["custom_name"] or "").strip()
+            if not resolved_name:
+                raise AppError("Custom name must not be empty", status_code=400)
+            doc.custom_name = resolved_name
 
         await db.commit()
         await db.refresh(doc)

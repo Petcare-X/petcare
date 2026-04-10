@@ -23,6 +23,7 @@ class PetDocumentFilesService:
         user_id: int,
         document_type_id: int,
         content_type: str,
+        custom_name: str | None = None,
     ) -> PetDocumentUploadUrlResponse:
         object_key, custom_name = await self.pet_documents_service.build_object_key(
             db,
@@ -30,6 +31,7 @@ class PetDocumentFilesService:
             user_id=user_id,
             document_type_id=document_type_id,
             content_type=content_type,
+            custom_name=custom_name,
         )
         upload_url = await self.storage_service.create_upload_url(
             object_key=object_key,
@@ -50,6 +52,7 @@ class PetDocumentFilesService:
         user_id: int,
         document_type_id: int,
         object_key: str,
+        custom_name: str | None = None,
     ) -> PetDocumentResponse:
         if not self.storage_service.is_pet_document_key(
             object_key,
@@ -64,6 +67,7 @@ class PetDocumentFilesService:
             user_id,
             document_type_id=document_type_id,
             object_key=object_key,
+            custom_name=custom_name,
         )
 
     async def create_from_bytes(
@@ -75,6 +79,7 @@ class PetDocumentFilesService:
         document_type_id: int,
         payload: bytes,
         content_type: str,
+        custom_name: str | None = None,
     ) -> PetDocumentResponse:
         object_key: str | None = None
         try:
@@ -84,6 +89,7 @@ class PetDocumentFilesService:
                 user_id=user_id,
                 document_type_id=document_type_id,
                 content_type=content_type,
+                custom_name=custom_name,
             )
             await self.storage_service.upload_bytes(
                 object_key=object_key,
@@ -96,6 +102,7 @@ class PetDocumentFilesService:
                 user_id=user_id,
                 document_type_id=document_type_id,
                 object_key=object_key,
+                custom_name=custom_name,
             )
         except Exception:
             await self._cleanup_uploaded_object(object_key)

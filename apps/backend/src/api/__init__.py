@@ -1,3 +1,4 @@
+from .animals import animal_types_router
 from .auth import auth_router
 from .llm_chat import chat_router
 from .map import map_router
@@ -11,6 +12,7 @@ from .users import users_router
 
 __all__ = (
     'api_router',
+    'animal_types_router',
     'auth_router',
     'chat_router',
     'document_types_router',

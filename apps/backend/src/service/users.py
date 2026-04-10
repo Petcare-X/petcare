@@ -22,7 +22,7 @@ class UsersService:
     # create
     async def create_user(self, db: AsyncSession, payload: CreateUser) -> UserInfo:
         phone_str = to_e164(payload.user_phone_number)
-        photo_str = str(payload.user_photo)
+        photo_str = str(payload.user_photo) if payload.user_photo is not None else None
 
         user = UserInfo(
             user_name=payload.user_name.strip(),
@@ -92,8 +92,8 @@ class UsersService:
         if "user_name" in data and data["user_name"] is not None:
             user.user_name = data["user_name"].strip()
 
-        if "user_photo" in data and data["user_photo"] is not None:
-            user.user_photo = str(data["user_photo"])
+        if "user_photo" in data:
+            user.user_photo = str(data["user_photo"]) if data["user_photo"] is not None else None
             
         if "user_email" in data and data["user_email"] is not None:
             user.user_email = str(data["user_email"])

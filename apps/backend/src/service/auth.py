@@ -43,7 +43,7 @@ class AuthService:
             user_password_hash="telegram_auth_only",
             user_phone_number=f"+100000{telegram_id}"[:16],
             user_date_of_birth=datetime(1970, 1, 1).date(),
-            user_photo=photo_url or "",
+            user_photo=photo_url,
             telegram_id=telegram_id,
             auth_provider="telegram",
         )

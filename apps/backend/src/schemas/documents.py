@@ -11,6 +11,7 @@ class DocumentTypeResponse(BaseModel):
 class PetDocumentUploadUrlRequest(BaseModel):
     document_type_id: int
     content_type: str = Field(min_length=1, max_length=100)
+    custom_name: str | None = Field(default=None, min_length=1, max_length=255)
 
 class PetDocumentUploadUrlResponse(BaseModel):
     custom_name: str
@@ -21,9 +22,11 @@ class PetDocumentUploadUrlResponse(BaseModel):
 class PetDocumentCompleteRequest(BaseModel):
     document_type_id: int
     object_key: str
+    custom_name: str | None = Field(default=None, min_length=1, max_length=255)
 
 class PetDocumentUpdateRequest(BaseModel):
     document_type_id: int | None = None
+    custom_name: str | None = Field(default=None, min_length=1, max_length=255)
 
 class PetDocumentResponse(BaseModel):
     id: int

@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from src.api.animals import animal_types_router
 
 from src.api.auth import auth_router
 from src.api.llm_chat import chat_router
@@ -11,6 +12,7 @@ from src.api.users import users_router
 
 api_router = APIRouter()
 
+api_router.include_router(animal_types_router)
 api_router.include_router(users_router)
 api_router.include_router(pets_router)
 api_router.include_router(document_types_router)

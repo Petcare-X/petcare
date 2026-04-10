@@ -36,7 +36,8 @@ class PetCreate(BaseModel):
         default=None,
         validation_alias=AliasChoices("pet_is_sterylyzed", "is_sterylized"),
     )
-    pet_photo_object_key: str = Field(
+    pet_photo_object_key: str | None = Field(
+        default=None,
         validation_alias=AliasChoices(
             "pet_photo_object_key",
             "pet_photo",
@@ -83,7 +84,7 @@ class PetResponse(BaseModel):
     pet_length: float
     pet_weight: float
     pet_is_sterylyzed: bool | None
-    pet_photo_object_key: str
+    pet_photo_object_key: str | None
     pet_photo_content_type: str | None
     pet_photo_size_bytes: int | None
     pet_photo_etag: str | None

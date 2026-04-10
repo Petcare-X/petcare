@@ -52,6 +52,7 @@ async def get_upload_url(
         user_id=current_user_id,
         document_type_id=payload.document_type_id,
         content_type=payload.content_type,
+        custom_name=payload.custom_name,
     )
 
 
@@ -68,6 +69,7 @@ async def complete_upload(
         user_id=current_user_id,
         document_type_id=payload.document_type_id,
         object_key=payload.object_key,
+        custom_name=payload.custom_name,
     )
 
 @pet_documents_router.patch("/{document_row_id}", response_model=PetDocumentResponse)

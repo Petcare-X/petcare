@@ -1,3 +1,4 @@
+from .animals import AnimalBreedResponse, AnimalTypeResponse
 from .pets import (
     CreatePet,
     PetCreate,
@@ -43,6 +44,8 @@ from .llm_chat import (
 
 __all__ = (
     "CreateUser",
+    "AnimalTypeResponse",
+    "AnimalBreedResponse",
     "UpdateUser",
     "UserPrivate",
     "UserPublic",

@@ -22,7 +22,8 @@ class CreateUser(BaseModel):
     user_date_of_birth: date = Field(
         validation_alias=AliasChoices("user_date_of_birth", "birth_date"),
     )
-    user_photo: str = Field(
+    user_photo: str | None = Field(
+        default=None,
         validation_alias=AliasChoices("user_photo", "photo_url"),
     )
 
@@ -66,7 +67,7 @@ class UserPublic(BaseModel):
 
     id: int
     user_name: str
-    user_photo: str
+    user_photo: str | None
 
 
 class UserPrivate(BaseModel):
@@ -77,7 +78,7 @@ class UserPrivate(BaseModel):
     user_email: EmailStr
     user_phone_number: str
     user_date_of_birth: date
-    user_photo: str
+    user_photo: str | None
     telegram_id: int | None
     auth_provider: str
 
@@ -88,6 +89,7 @@ class UserSettings(BaseModel):
 
 
 class PictureUpload(BaseModel):
-    user_photo: str = Field(
+    user_photo: str | None = Field(
+        default=None,
         validation_alias=AliasChoices("user_photo", "photo_url"),
     )
