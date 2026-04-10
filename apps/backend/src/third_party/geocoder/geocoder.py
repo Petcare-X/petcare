@@ -21,18 +21,6 @@ async def geocode_address(
     lang: str = "ru_RU",
     timeout: int = 10,
 ) -> dict[str, Any]:
-    """
-    Геокодирует адрес через Yandex Geocoder API.
-
-    Возвращает словарь:
-    {
-        "address": "Россия, Ростов-на-Дону, улица Пушкинская, 10",
-        "lat": 47.222222,
-        "lon": 39.777777,
-        "formatted_address": "...",
-        "precision": "exact|number|near|street|other",
-    }
-    """
     address = f"{country}, {city}, {street}, {str(house).strip()}"
 
     url = "https://geocode-maps.yandex.ru/v1"

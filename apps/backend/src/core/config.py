@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     MINIO_PRESIGNED_DOWNLOAD_TTL_SEC: int = 300
     YANDEX_GEOCODER_API_KEY: str | None = None
     OPENROUTER_API_KEY: str | None = None
-    OPENROUTER_MODEL: str = "google/gemma-3-27b-it:free"
+    OPENROUTER_MODEL: str | None = None
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1/chat/completions"
 
 settings = Settings()

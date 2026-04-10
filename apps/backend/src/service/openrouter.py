@@ -5,7 +5,7 @@ from src.core.config import settings
 
 
 class OpenRouterService:
-    BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
+    BASE_URL = settings.OPENROUTER_BASE_URL
 
     async def generate_answer(self, messages: list[dict[str, str]]) -> str:
         headers = {
