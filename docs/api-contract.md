@@ -545,11 +545,14 @@ Request:
   "custom_name": "Паспорт Пышки"
 }
 ```
+Примечание:
+- `custom_name` опционален;
+- если `custom_name` не задан, backend использует имя типа документа и при необходимости добавляет суффикс для уникальности.
 
 Response `200`:
 ```json
 {
-  "custom_name": "veterinary_passport",
+  "custom_name": "pasport_pyshki",
   "object_key": "string",
   "upload_url": "string",
   "expires_in": 900
@@ -574,6 +577,9 @@ Request:
   "custom_name": "Паспорт Пышки"
 }
 ```
+Примечание:
+- `custom_name` опционален;
+- если `custom_name` передан, он должен соответствовать ранее выданному `upload-url` (с учётом нормализации имени).
 
 Response `200`:
 - `PetDocumentResponse`
@@ -598,7 +604,8 @@ Request:
 
 Примечание:
 - пользователь может менять и `custom_name`, и `document_type_id`;
-- если `custom_name` не передан при загрузке, backend использует имя типа документа по умолчанию.
+- если `custom_name` не передан при загрузке, backend использует имя типа документа по умолчанию;
+- в ответах `custom_name` соответствует имени файла без расширения, сформированному на этапе `upload-url`.
 
 ### 8.6 `GET /pets/{pet_id}/documents/{document_row_id}/download-url`
 Назначение:
