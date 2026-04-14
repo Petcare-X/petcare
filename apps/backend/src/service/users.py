@@ -19,7 +19,6 @@ class UsersService:
 
         return UserPrivate.model_validate(user)
 
-    # create
     async def create_user(self, db: AsyncSession, payload: CreateUser) -> UserInfo:
         phone_str = to_e164(payload.user_phone_number)
         photo_str = str(payload.user_photo) if payload.user_photo is not None else None
@@ -47,14 +46,12 @@ class UsersService:
             constraint = getattr(orig, "constraint_name", None)
             msg = str(orig)
 
-            # duplicate email / phone
             if sqlstate == "23505":
                 if constraint and "email" in constraint:
                     raise UserConflictError("User with this email already exists")
                 if constraint and "phone" in constraint:
                     raise UserConflictError("User with this phone number already exists")
 
-            # check constraint (например формат телефона)
             if sqlstate == "23514":
                 raise DatabaseIntegrityAppError(
                     f"CHECK constraint failed: {constraint or 'unknown'}"
@@ -62,7 +59,6 @@ class UsersService:
 
             raise DatabaseIntegrityAppError(f"Database integrity error: {msg}")
     
-    # read
     async def get_user_by_id(self, db: AsyncSession, user_id: int) -> UserInfo | None:
         return await db.get(UserInfo, user_id)
 
@@ -81,7 +77,6 @@ class UsersService:
         res = await db.execute(select(UserInfo).offset(offset).limit(limit))
         return list(res.scalars().all())
 
-    # update profile data
     async def update_user(self, user_id: int, payload: UpdateUser, db: AsyncSession) -> UserInfo | None:
         user = await self.get_user_by_id(db, user_id)
         if not user:
@@ -113,7 +108,6 @@ class UsersService:
             await db.rollback()
             raise UserConflictError()
 
-    # delete
     async def delete_user(self, db: AsyncSession, user_id: int) -> bool:
         user = await self.get_user_by_id(db, user_id)
         if not user:
@@ -123,7 +117,6 @@ class UsersService:
         await db.commit()
         return True
     
-    # вывод всех питомцев юзера из SharedUsers
     async def list_user_pets(self, db: AsyncSession, user_id: int) -> list[PetInfo]:
         user_pet = await db.execute(
             select(PetInfo)
