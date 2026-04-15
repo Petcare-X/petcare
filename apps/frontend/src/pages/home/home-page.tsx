@@ -44,7 +44,7 @@ const pets: Pet[] = [
     {
         id: 1,
         name: 'Лола',
-        breed: 'Йоркширский терьер',
+        breed: 'ЙОРКШИРСКИЙ ТЕРЬЕР',
         age: '3 года',
         weight: '5 кг',
         image: photo1
@@ -52,7 +52,7 @@ const pets: Pet[] = [
     {
         id: 2,
         name: 'Чакки',
-        breed: 'Самоед',
+        breed: 'САМОЕД',
         age: '5 лет',
         weight: '10 кг',
         image: photo2
@@ -63,7 +63,7 @@ const services: Service[] = [
     {
         id: 1,
         icon: clinicIcon,
-        title: "Клиник",
+        title: "Клиники",
         description: "Советы и помощь"
     },
     {
@@ -86,14 +86,14 @@ const services: Service[] = [
     },
 ];
 
-const HomePage = () => {
+export const HomePage = () => {
     return (
         <div className="home-page">
-            <header className="home-header">PetCare
-                <div className="brand">
+            <header className="home-header">
+                <button type="button" className="brand">
                     <img src={petcareLogo} alt="PetCare" className="logo"/>
                     <div className="title">PetCare</div>
-                </div>
+                </button>
                 
                 <div className="header-content">
                     <button type="button" className="notifications-button">
@@ -109,7 +109,7 @@ const HomePage = () => {
             <section className="home-section">
                 <h2 className="section-title">Ближайшие события:</h2>
                 
-                <div className="event-card">
+                <button type="button" className="event-card">
                     <div className="event-date">
                         <span className="event-month">апр</span>
                         <span className="event-day">08</span>
@@ -119,7 +119,7 @@ const HomePage = () => {
                         <p className="event-title">Ежегодная вакцинация</p>
                         <p className="event-subtitle">{pets[0].name} • Ежегодная вакцинация</p>
                     </div>
-                </div>
+                </button>
             </section>
 
             <section className="pets-section">
@@ -130,7 +130,7 @@ const HomePage = () => {
 
                 <div className="pets-list">
                     {pets.map((pet) => (
-                        <div className="pet-card" key={pet.id}>
+                        <button type="button" className="pet-card" key={pet.id}>
                             <div className="pet-main">
                                 <img src={pet.image} alt={pet.name} className="pet-image"/>
                                 
@@ -153,7 +153,8 @@ const HomePage = () => {
                             </div>
                         
                         <img src={arrowIcon} alt="" className="arrow-icon"/>
-                    </div>
+                        
+                        </button>
                     ))} 
                 </div>
             </section>
@@ -163,13 +164,13 @@ const HomePage = () => {
 
                 <div className="service-list">
                     {services.map((service) => (
-                        <div className="service-card" key={service.id}>
+                        <button type="button" className="service-card" key={service.id}>
                             <img src={service.icon} alt={service.title} className="service-icon"/>
                             <div className="service-text">
                                 <p className="service-title">{service.title}</p>
                                 <p className="service-description">{service.description}</p>
                             </div>
-                        </div>
+                        </button>
                     ))}
                 </div>
             </section>
@@ -202,5 +203,3 @@ const HomePage = () => {
         </div>
     );
 };
-
-export default HomePage;
