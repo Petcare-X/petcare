@@ -86,7 +86,7 @@ const services: Service[] = [
     },
 ];
 
-const HomePage = () => {
+export const HomePage = () => {
     return (
         <div className="home-page">
             <header className="home-header">PetCare
@@ -202,5 +202,3 @@ const HomePage = () => {
         </div>
     );
 };
-
-export default HomePage;

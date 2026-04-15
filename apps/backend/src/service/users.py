@@ -31,6 +31,7 @@ class UsersService:
             user_password_hash=hash_password(payload.password),
             user_date_of_birth=payload.user_date_of_birth,
             user_photo=photo_str,
+            auth_provider="email",
         )
 
         db.add(user)
