@@ -8,7 +8,7 @@ app = FastAPI()
 register_exception_handlers(app)
 
 if settings.ENV == "dev":
-    origins = ["http://localhost:3000.com"]
+    origins = ["http://localhost:3000"]
 else:
     origins = ["https://prod_domain.com"]
 
