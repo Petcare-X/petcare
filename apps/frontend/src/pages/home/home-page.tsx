@@ -91,7 +91,7 @@ const services: Service[] = [
 
 export const HomePage = () => {
     return (
-        <div className="home-page">
+        <div className="home-page page-transition">
             <header className="home-header">
                 <button type="button" className="brand">
                     <img src={petcareLogo} alt="PetCare" className="logo"/>

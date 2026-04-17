@@ -1,15 +1,4 @@
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  font-family: 'Nunito', Arial, sans-serif;
-  background: #f4f4f4;
-  color: #222;
-}
-
 button, p, h2 {
-  margin: 0;
-  padding: 0;
   border: 0;
   background: transparent;
   font: inherit;
@@ -23,6 +12,7 @@ button { cursor: pointer; }
   margin: 0 auto;
   padding: 24px 16px 110px;
   background: #f4f4f4;
+  color: #222;
 }
 
 .home-header,
