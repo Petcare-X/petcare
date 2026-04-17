@@ -9,7 +9,7 @@ from src.schemas import ImportCsvResponse
 upload_router = APIRouter(prefix="/upload-data", tags=["upload-data"])
 
 
-@upload_router.post("/import-vet-csv", response_model=ImportCsvResponse)
+@upload_router.post("/import-vet-csv", response_model=ImportCsvResponse, include_in_schema=False)
 async def import_vet_clinics_csv(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
@@ -18,7 +18,7 @@ async def import_vet_clinics_csv(
     return await service.import_vet_clinics(file=file, db=db)
 
 
-@upload_router.post("/import-dogplace-csv", response_model=ImportCsvResponse)
+@upload_router.post("/import-dogplace-csv", response_model=ImportCsvResponse, include_in_schema=False)
 async def import_dogplaces_csv(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
