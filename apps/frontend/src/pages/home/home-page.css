@@ -15,6 +15,75 @@ button { cursor: pointer; }
   color: #222;
 }
 
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  background-color: #fff;
+  padding: 0px 15px;
+  position: sticky;
+  top: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.event-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  width: 100%;
+  gap: 16px;
+  padding: 18px 16px;
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.event-card:active {
+  transform: scale(0.98);
+}
+
+.pet-card {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pet-card:active {
+  transform: scale(0.98);
+}
+
+.pet-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .pet-meta {
   display: flex;
   align-items: center;
@@ -65,17 +134,6 @@ button { cursor: pointer; }
   align-items: center;
 }
 
-.section-row,
-.pet-card {
-  justify-content: space-between;
-}
-
-.brand,
-.header-content {
-  gap: 12px;
-}
-
-.home-header,
 .home-section,
 .pets-section,
 .service-section {
@@ -143,19 +201,10 @@ button { cursor: pointer; }
   margin-bottom: 20px;
 }
 
-.event-card,
-.pet-card,
 .service-card {
   background: #fff;
   border-radius: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-}
-
-.event-card {
-  width: 100%;
-  gap: 16px;
-  padding: 18px 16px;
-  text-align: left;
 }
 
 .event-date {
@@ -192,16 +241,6 @@ button { cursor: pointer; }
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.pet-card {
-  width: 100%;
-  padding: 16px;
-  text-align: left;
-}
-
-.pet-main {
-  gap: 14px;
 }
 
 .pet-image {
@@ -268,15 +307,11 @@ button { cursor: pointer; }
   line-height: 1;
 }
 
-.event-card,
-.pet-card,
 .service-card,
 .navbar-item {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.event-card:active,
-.pet-card:active,
 .service-card:active,
 .navbar-item:active {
   transform: scale(0.98);
