@@ -15,16 +15,51 @@ button { cursor: pointer; }
   color: #222;
 }
 
-.home-header,
-.brand,
-.header-content,
-.section-row,
-.event-card,
-.pet-card,
-.pet-main,
-.pet-meta,
-.pet-meta-item,
-.bottom-navbar,
+.pet-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.pet-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.pet-meta-icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.bottom-navbar {
+  display: flex;
+  align-items: center;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  max-width: 430px;
+  height: 84px;
+  padding: 12px 10px 10px;
+  justify-content: space-around;
+  align-items: flex-start;
+  background: #ffffff;
+  border-top: 1px solid #ececec;
+}
+
+.bottom-navbar .navbar-item:nth-child(3) {
+  width: 64px;
+  height: 64px;
+  margin-top: -22px;
+  border-radius: 50%;
+  background: #ff7a1a;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(255, 122, 26, 0.35);
+}
+
 .navbar-item {
   display: flex;
   align-items: center;
@@ -65,11 +100,24 @@ button { cursor: pointer; }
   justify-content: center;
 }
 
-.notifications-button-img,
-.logo,
-.service-icon,
-.navbar-icon,
-.pet-meta-icon,
+.notifications-button-img {
+  display: block;
+  flex-shrink: 0;
+}
+.logo {
+  display: block;
+  flex-shrink: 0;
+}
+
+.service-icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.navbar-icon {
+
+}
+
 .arrow-icon {
   display: block;
   flex-shrink: 0;
@@ -176,17 +224,6 @@ button { cursor: pointer; }
   margin-bottom: 15px;
 }
 
-.pet-meta {
-  gap: 14px;
-  margin-top: 6px;
-}
-
-.pet-meta-item {
-  gap: 4px;
-  font-size: 15px;
-  white-space: nowrap;
-}
-
 .service-list {
   display: flex;
   flex-wrap: wrap;
@@ -213,21 +250,6 @@ button { cursor: pointer; }
   color: #9a9a9a;
 }
 
-.bottom-navbar {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 430px;
-  height: 84px;
-  padding: 12px 10px 10px;
-  justify-content: space-around;
-  align-items: flex-start;
-  background: #fff;
-  border-top: 1px solid #ececec;
-}
-
 .navbar-item {
   min-width: 56px;
   flex-direction: column;
@@ -243,16 +265,6 @@ button { cursor: pointer; }
 .navbar-item span {
   font-size: 12px;
   line-height: 1;
-}
-
-.bottom-navbar .navbar-item:nth-child(3) {
-  width: 64px;
-  height: 64px;
-  margin-top: -22px;
-  border-radius: 50%;
-  background: #ff7a1a;
-  justify-content: center;
-  box-shadow: 0 8px 18px rgba(255, 122, 26, 0.35);
 }
 
 .event-card,
