@@ -106,74 +106,76 @@ export const HomePage = () => {
                 </div>
             </header>
 
-            <section className="home-section">
-                <h2 className="section-title">Ближайшие события:</h2>
-                
-                <button type="button" className="event-card">
-                    <div className="event-date">
-                        <span className="event-month">апр</span>
-                        <span className="event-day">08</span>
-                    </div>
+            <main>
+                <section className="home-section">
+                    <h2 className="section-title">Ближайшие события:</h2>
                     
-                    <div className="event-info">
-                        <p className="event-title">Ежегодная вакцинация</p>
-                        <p className="event-subtitle">{pets[0].name} • Ежегодная вакцинация</p>
+                    <button type="button" className="event-card">
+                        <div className="event-date">
+                            <span className="event-month">апр</span>
+                            <span className="event-day">08</span>
+                        </div>
+                        
+                        <div className="event-info">
+                            <p className="event-title">Ежегодная вакцинация</p>
+                            <p className="event-subtitle">{pets[0].name} • Ежегодная вакцинация</p>
+                        </div>
+                    </button>
+                </section>
+
+                <section className="pets-section">
+                    <div className="section-row">
+                        <h2 className="section-title">Мои питомцы</h2>
+                        <button type="button" className="add-pet-button">+ Добавить</button>
                     </div>
-                </button>
-            </section>
 
-            <section className="pets-section">
-                <div className="section-row">
-                    <h2 className="section-title">Мои питомцы</h2>
-                    <button type="button" className="add-pet-button">+ Добавить</button>
-                </div>
+                    <div className="pets-list">
+                        {pets.map((pet) => (
+                            <button type="button" className="pet-card" key={pet.id}>
+                                <div className="pet-main">
+                                    <img src={pet.image} alt={pet.name} className="pet-image"/>
+                                    
+                                    <div className="pet-info">
+                                        <p className='pet-name'>{pet.name}</p>
+                                        <p className='pet-breed'>{pet.breed}</p>
 
-                <div className="pets-list">
-                    {pets.map((pet) => (
-                        <button type="button" className="pet-card" key={pet.id}>
-                            <div className="pet-main">
-                                <img src={pet.image} alt={pet.name} className="pet-image"/>
-                                
-                                <div className="pet-info">
-                                    <p className='pet-name'>{pet.name}</p>
-                                    <p className='pet-breed'>{pet.breed}</p>
+                                        <div className="pet-meta">
+                                            <span className="pet-meta-item">
+                                                <img src={calendarPet} alt="" className="pet-meta-icon"/>
+                                                {pet.age}
+                                            </span>
 
-                                    <div className="pet-meta">
-                                        <span className="pet-meta-item">
-                                            <img src={calendarPet} alt="" className="pet-meta-icon"/>
-                                            {pet.age}
-                                        </span>
-
-                                        <span className="pet-meta-item">
-                                            <img src={weightPet} alt="" className="pet-meta-icon"/>
-                                            {pet.weight}
-                                        </span>
+                                            <span className="pet-meta-item">
+                                                <img src={weightPet} alt="" className="pet-meta-icon"/>
+                                                {pet.weight}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        
-                        <img src={arrowIcon} alt="" className="arrow-icon"/>
-                        
-                        </button>
-                    ))} 
-                </div>
-            </section>
+                            
+                            <img src={arrowIcon} alt="" className="arrow-icon"/>
+                            
+                            </button>
+                        ))} 
+                    </div>
+                </section>
 
-            <section className="service-section">
-                <h2 className="section-title">Сервисы</h2>
+                <section className="service-section">
+                    <h2 className="section-title">Сервисы</h2>
 
-                <div className="service-list">
-                    {services.map((service) => (
-                        <button type="button" className="service-card" key={service.id}>
-                            <img src={service.icon} alt={service.title} className="service-icon"/>
-                            <div className="service-text">
-                                <p className="service-title">{service.title}</p>
-                                <p className="service-description">{service.description}</p>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </section>
+                    <div className="service-list">
+                        {services.map((service) => (
+                            <button type="button" className="service-card" key={service.id}>
+                                <img src={service.icon} alt={service.title} className="service-icon"/>
+                                <div className="service-text">
+                                    <p className="service-title">{service.title}</p>
+                                    <p className="service-description">{service.description}</p>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            </main>
 
             <nav className="bottom-navbar">
                 <button type="button" className="navbar-item">
