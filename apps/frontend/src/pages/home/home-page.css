@@ -65,7 +65,6 @@ button { cursor: pointer; }
   align-items: center;
 }
 
-.home-header,
 .section-row,
 .pet-card {
   justify-content: space-between;
@@ -115,8 +114,10 @@ button { cursor: pointer; }
 }
 
 .navbar-icon {
-
+  display: block;
+  flex-shrink: 0;
 }
+
 
 .arrow-icon {
   display: block;
