@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Response, Cookie
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
@@ -30,18 +30,43 @@ def verify_telegram_bot_internal_token(
 
 
 @auth_router.post("/login", response_model=Token)
-async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
-    return await auth_service.login(db, payload)
+async def login(payload: LoginRequest, response: Response, db: AsyncSession = Depends(get_db)):
+    tokens = await auth_service.login(db, payload)
+    response.set_cookie(
+        key="refresh_token", 
+        value=tokens.refresh_token, 
+        httponly=True, 
+        secure=settings.ENV != "dev", 
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/auth"
+    )
+    return tokens
 
 
 @auth_router.post("/refresh", response_model=Token)
-async def refresh(payload: RefreshRequest, db: AsyncSession = Depends(get_db)):
-    return await auth_service.refresh(db, payload)
+async def refresh(response: Response, refresh_token: str | None = Cookie(None), db: AsyncSession = Depends(get_db)):
+    payload = RefreshRequest(refresh_token=refresh_token)
+    tokens = await auth_service.refresh(db, payload)
+    response.set_cookie(
+        key="refresh_token", 
+        value=tokens.refresh_token, 
+        httponly=True, 
+        secure=settings.ENV != "dev", 
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/auth"
+    )
+    return tokens
 
 
 @auth_router.post("/logout", response_model=SuccessResponse)
-async def logout(payload: RefreshRequest, db: AsyncSession = Depends(get_db)):
-    await auth_service.logout(db, payload.refresh_token)
+async def logout(response: Response, refresh_token: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db)):
+    await auth_service.logout(db, refresh_token)
+    response.delete_cookie(
+        key="refresh_token", 
+        path="/auth"
+    )
     return {"success": True}
 
 
@@ -54,8 +79,18 @@ async def logout_all(
     return {"success": True}
 
 @auth_router.post("/telegram", response_model=Token)
-async def telegram_auth(payload: TelegramAuth, db: AsyncSession = Depends(get_db)):
-    return await auth_service.telegram_auth(db, payload)
+async def telegram_auth(payload: TelegramAuth, response: Response, db: AsyncSession = Depends(get_db)):
+    tokens = await auth_service.telegram_auth(db, payload)
+    response.set_cookie(
+        key="refresh_token", 
+        value=tokens.refresh_token, 
+        httponly=True, 
+        secure=settings.ENV != "dev", 
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/auth"
+    )
+    return tokens
 
 
 @auth_router.post("/telegram/bot", response_model=Token)
