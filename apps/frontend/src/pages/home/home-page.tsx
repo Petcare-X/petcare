@@ -1,3 +1,6 @@
+import { Link } from "@tanstack/react-router";
+import { appRoutes } from "@/shared/constants/routes";
+
 import './home-page.css';
 
 import aichatIcon from './assets/aichatIcon.svg';
@@ -88,7 +91,7 @@ const services: Service[] = [
 
 export const HomePage = () => {
     return (
-        <div className="home-page">
+        <div className="home-page page-transition">
             <header className="home-header">
                 <button type="button" className="brand">
                     <img src={petcareLogo} alt="PetCare" className="logo"/>
@@ -179,7 +182,7 @@ export const HomePage = () => {
 
             <nav className="bottom-navbar">
                 <button type="button" className="navbar-item">
-                    <img src={heartNavbar} alt="" className="navbar-icon"/>
+                    <img src={mainNavbar} alt="" className="navbar-icon"/>
                     <span className="main-button">главная</span>
                 </button>
 
@@ -197,10 +200,10 @@ export const HomePage = () => {
                     <span className="main-button">календарь</span>
                 </button>
 
-                <button type="button" className="navbar-item">
-                    <img src={mainNavbar} alt="" className="navbar-icon"/>
-                    <span className="main-button">главная</span>
-                </button>
+                <Link to={appRoutes.userProfile} className="navbar-item">
+                    <img src={heartNavbar} alt="" className="navbar-icon"/>
+                    <span className="main-button">профиль</span>
+                </Link>
             </nav>
         </div>
     );
