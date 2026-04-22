@@ -19,9 +19,13 @@ from src.exceptions import (
     RefreshTokenNotFoundError,
 )
 from src.models import RefreshToken, UserInfo, AuthIdentities
+from src.repositories import UsersRepository
 from src.schemas.auth import LoginRequest, RefreshRequest, TelegramAuth, TelegramBotAuth, Token
 
 class AuthService:
+    def __init__(self):
+        self.repo = UsersRepository()
+
     async def get_or_create_user_by_telegram(
         self,
         db: AsyncSession,
@@ -29,14 +33,11 @@ class AuthService:
         first_name: str,
         photo_url: str | None = None,
     ) -> tuple[UserInfo, bool]:
-        result = await db.execute(
-            select(AuthIdentities).where(AuthIdentities.user_telegram_id == telegram_id)
-        )
-        auth_identity = result.scalar_one_or_none()
+        auth_identity = await self.repo.get_auth_by_tg(db, telegram_id)
 
         if auth_identity:
             user_id = auth_identity.user_id
-            user = await db.get(UserInfo, user_id)
+            user = await self.repo.get_by_id(db, user_id)
             return user, False
 
         user = UserInfo(
@@ -59,10 +60,7 @@ class AuthService:
         return user, True
 
     async def login(self, db: AsyncSession, payload: LoginRequest) -> Token:
-        result = await db.execute(
-            select(AuthIdentities).where(AuthIdentities.user_email == str(payload.email))
-        )
-        auth_identity = result.scalar_one_or_none()
+        auth_identity = await self.repo.get_auth_by_email(db, str(payload.email))
 
         if not auth_identity:
             raise InvalidCredentialsError()
@@ -70,8 +68,8 @@ class AuthService:
         if not verify_password(payload.password, auth_identity.user_password_hash):
             raise InvalidCredentialsError()
 
-        access_token = create_access_token(auth_identity.id)
-        refresh_token = await create_refresh_token(auth_identity.id, db)
+        access_token = create_access_token(auth_identity.user_id)
+        refresh_token = await create_refresh_token(auth_identity.user_id, db)
         await db.commit()
 
         return Token(

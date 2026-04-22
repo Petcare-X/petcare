@@ -1,4 +1,3 @@
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,14 +8,16 @@ from src.exceptions import (
     UserConflictError,
     UserNotFoundError,
 )
-from src.models import PetInfo, SharedUser, UserInfo, AuthIdentities
-from src.schemas import CreateUser, UpdateUser
-from src.service.pets import active_shared_access_clause
+from src.models import PetInfo, UserInfo, AuthIdentities
+from src.schemas import CreateUser, UpdateUser, UserPrivate
+from src.repositories import UsersRepository, PetsRepository
 
 class UsersService:
-    def to_private_response(self, user: UserInfo):
-        from src.schemas.users import UserPrivate
+    def __init__(self):
+        self.repo = UsersRepository()
+        self.repo_pets = PetsRepository()
 
+    def to_private_response(self, user: UserInfo):
         return UserPrivate.model_validate(user)
 
     async def create_user(self, db: AsyncSession, payload: CreateUser) -> UserInfo:
@@ -49,22 +50,19 @@ class UsersService:
         return user
     
     async def get_user_by_id(self, db: AsyncSession, user_id: int) -> UserInfo | None:
-        return await db.get(UserInfo, user_id)
+        return await self.repo.get_by_id(db, user_id)
 
     async def get_user_by_email(self, db: AsyncSession, email: str) -> UserInfo | None:
-        res = await db.execute(select(UserInfo).where(UserInfo.user_email == email))
-        return res.scalar_one_or_none()
+        return await self.repo.get_by_email(db, email)
 
     async def get_user_by_phone(self, db: AsyncSession, phone: str) -> UserInfo | None:
-        res = await db.execute(select(UserInfo).where(UserInfo.user_phone_number == phone))
-        return res.scalar_one_or_none()
+        return await self.repo.get_by_phone(db, phone)
 
     async def list_all_users(self, db: AsyncSession, offset: int = 0, limit: int = 50) -> list[UserInfo]:
-        res = await db.execute(select(UserInfo).offset(offset).limit(limit))
-        return list(res.scalars().all())
+        return await self.repo.get_all(db, offset, limit)
 
     async def update_user(self, user_id: int, payload: UpdateUser, db: AsyncSession) -> UserInfo | None:
-        user = await self.get_user_by_id(db, user_id)
+        user = await self.repo.get_by_id(db, user_id)
         if not user:
             raise UserNotFoundError()
 
@@ -92,7 +90,7 @@ class UsersService:
             raise UserConflictError()
 
     async def delete_user(self, db: AsyncSession, user_id: int) -> bool:
-        user = await self.get_user_by_id(db, user_id)
+        user = await self.repo.get_by_id(db, user_id)
         if not user:
             raise UserNotFoundError()
 
@@ -101,15 +99,45 @@ class UsersService:
         return True
     
     async def list_user_pets(self, db: AsyncSession, user_id: int) -> list[PetInfo]:
-        user_pet = await db.execute(
-            select(PetInfo)
-            .join(SharedUser, SharedUser.shared_pet_id == PetInfo.id)
-            .where(*active_shared_access_clause(user_id))
-        )
-        return list(user_pet.scalars().all())
+        return await self.repo_pets.get_by_user_id(db, user_id)
     
     async def link_telegram_login(self, db: AsyncSession, user_id: int, telegram_id: int) -> UserInfo:
-        pass
+        user = await self.repo.get_by_id(db, user_id)
+        if not user:
+            raise UserNotFoundError()
+        
+        auth_identity = await self.repo.get_auth_by_tg(db, telegram_id)
+        if auth_identity:
+            raise UserConflictError() # уже привязан
+        
+        new_auth_identity = AuthIdentities(
+            user_id=user.id,
+            provider="telegram",
+            user_telegram_id=telegram_id,
+        )
+
+        await db.add(new_auth_identity)
+        await db.commit()
+        return True
 
     async def link_email_login(self, db: AsyncSession, user_id: int, email: str) -> UserInfo:
-        pass
+        user = await self.repo.get_by_id(db, user_id)
+        if not user:
+            raise UserNotFoundError()
+        
+        auth_identity = await self.repo.get_auth_by_email(db, email)
+        if auth_identity:
+            raise UserConflictError() # уже привязан
+        
+        new_auth_identity = AuthIdentities(
+            user_id=user.id,
+            provider="email",
+            user_email=email,
+        )
+
+        if user.user_email is None:
+            await self.update_user(user_id=user_id, payload=UpdateUser(user_email=email), db=db)
+
+        await db.add(new_auth_identity)
+        await db.commit()
+        return True
