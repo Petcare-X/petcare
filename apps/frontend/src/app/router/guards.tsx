@@ -1,12 +1,25 @@
 import { redirect } from "@tanstack/react-router";
-import { getAccessToken } from "@/shared/api/auth-session";
 
-export function requireAuth() {
-    const token = getAccessToken();
+import { getAuthStatus } from "@/shared/api/auth-session";
+import { appRoutes } from "@/shared/constants/routes";
 
-    if(!token) {
+
+export function ensureAuth() {
+    const authStatus = getAuthStatus();
+
+    if (authStatus !== "authenticated") {
         throw redirect({
-            to: "/auth/login",
+        to: appRoutes.login,
         });
-    };
-};
+    }
+}
+
+export function redirectIfAuthenticated() {
+    const authStatus = getAuthStatus();
+
+    if (authStatus === "authenticated") {
+        throw redirect({
+        to: appRoutes.home,
+        });
+    }
+}

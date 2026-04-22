@@ -1,28 +1,13 @@
-import { FormEvent, useState } from "react";
-import { useLogin } from "@/features/auth/model/use-login";
-
-import "./auth-page.css";
 import { Link } from "@tanstack/react-router";
+
 import { appRoutes } from "@/shared/constants/routes";
 
-export function LoginPage() {
-    const login = useLogin();
+import "./auth-page.css"
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-
-        login.mutate({
-            email,
-            password,
-        });
-    };
-
+export function SignupPage() {
     return (
         <main className="auth-page page-transition">
-            <form className="auth-form" onSubmit={handleSubmit}>
+            <form className="auth-form">
                 <div className="auth-top">
                     <svg className="auth-logo" viewBox="0 0 70 71" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14.1256 42.9278C10.0725 43.398 6.32058 39.7592 5.74636 34.8015C5.00017 28.3652 7.59955 22.0661 11.6532 21.5967C15.7063 21.1266 19.7321 27.132 20.4241 33.1002C20.9983 38.0579 18.1795 42.4578 14.1256 42.9278Z" fill="#FAFAFA"/>
@@ -31,33 +16,21 @@ export function LoginPage() {
                         <path d="M18.8245 19.0646C18.4536 12.5965 21.414 6.45865 25.4879 6.22553C29.5612 5.99154 33.2322 12.2205 33.5762 18.2182C33.8625 23.2013 30.7922 27.43 26.7189 27.6639C22.6448 27.8979 19.1108 24.0478 18.8245 19.0646Z" fill="#FAFAFA"/>
                         <path d="M55.312 44.0849C51.2913 43.3883 48.7232 38.8365 49.5749 33.9186C50.6008 27.9995 54.9584 22.2295 58.9782 22.9267C62.999 23.6233 65.2409 30.0579 64.1346 36.4416C63.2823 41.3594 59.332 44.7813 55.312 44.0849Z" fill="#FAFAFA"/>
                     </svg>
-                    <h1>PetCare</h1>
-                    <p>Ваша забота в одном приложении</p>
+                    <h1 className="auth-title">Регистрация</h1>
                 </div>
+
                 <div className="auth-inputs-conteiner">
+                    <label>ИМЯ</label>
+                    <input className="auth-input" type="text" placeholder="Пользователь"></input>
                     <label>ПОЧТА</label>
-                    <input
-                        className="auth-input"
-                        type="email" 
-                        value={email} 
-                        onChange={(event) => setEmail(event.target.value)}
-                        placeholder="user@mail.ru"
-                        required
-                    />
+                    <input className="auth-input" type="email" placeholder="user@example.com"></input>
                     <label>ПАРОЛЬ</label>
-                    <input
-                        className="auth-input"
-                        type="password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        placeholder="●●●●●●●●"
-                        required
-                    />
+                    <input className="auth-input" type="password" placeholder="●●●●●●●●"></input>
                 </div>
 
                 <div>
-                    <button className="auth-button" type="submit">Войти</button>
-                    <p className="login-register">Нет аккаунта? <Link to={appRoutes.signup}>Зарегистрироваться</Link></p>
+                    <button className="auth-button" type="submit">Зарегистрироваться</button>
+                    <p className="login-register">Уже есть аккаунт? <Link to={appRoutes.login}>Войти</Link></p>
                 </div>
             </form>
         </main>

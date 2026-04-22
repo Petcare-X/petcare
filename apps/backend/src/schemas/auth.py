@@ -1,10 +1,13 @@
 from pydantic import BaseModel, EmailStr, HttpUrl
 from typing import Literal
 
-class Token(BaseModel):
+class AccessToken(BaseModel):
     access_token: str
-    refresh_token: str
     token_type: Literal["bearer"] = "bearer"
+
+
+class Token(AccessToken):
+    refresh_token: str
 
 class LoginRequest(BaseModel):
     email: EmailStr

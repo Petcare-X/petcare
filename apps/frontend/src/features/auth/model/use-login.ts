@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { login } from "@/entities/auth/api/auth.api";
 import { setAuthSession } from "@/shared/api/auth-session";
 import { petQueryKeys } from "@/entities/pet/model/pet.queries";
+import { appRoutes } from "@/shared/constants/routes";
 
 export function useLogin() {
     const navigate = useNavigate();
@@ -14,11 +15,16 @@ export function useLogin() {
         onSuccess: async (tokens) => {
             setAuthSession(tokens);
 
-            await queryClient.invalidateQueries({
-                queryKey: petQueryKeys.all,
+            await navigate({
+                to: appRoutes.home,
             });
 
-            await navigate({to: "/"});
+            void queryClient.invalidateQueries({
+                queryKey: petQueryKeys.all,
+            });
+        },
+        onError: (error) => {
+            console.error("login failed", error);
         },
     });
 };
