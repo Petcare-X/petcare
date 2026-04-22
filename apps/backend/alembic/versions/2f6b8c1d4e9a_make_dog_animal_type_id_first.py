@@ -18,7 +18,67 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def normalize_pet_type_fk_name() -> None:
+    op.execute(
+        """
+        DO $$
+        DECLARE
+            existing_constraint_name text;
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conrelid = 'pets_info'::regclass
+                  AND conname = 'pets_info_animal_type_id_fkey'
+            ) THEN
+                RETURN;
+            END IF;
+
+            SELECT constraint_info.conname INTO existing_constraint_name
+            FROM (
+                SELECT c.conname
+                FROM pg_constraint AS c
+                JOIN pg_attribute AS a
+                  ON a.attrelid = c.conrelid
+                 AND a.attnum = ANY(c.conkey)
+                WHERE c.conrelid = 'pets_info'::regclass
+                  AND c.confrelid = 'animals_types'::regclass
+                  AND c.contype = 'f'
+                  AND a.attname = 'animal_type_id'
+                LIMIT 1
+            ) AS constraint_info;
+
+            IF existing_constraint_name IS NULL THEN
+                RAISE EXCEPTION 'pets_info animal_type_id foreign key was not found';
+            END IF;
+
+            EXECUTE format(
+                'ALTER TABLE pets_info RENAME CONSTRAINT %I TO pets_info_animal_type_id_fkey',
+                existing_constraint_name
+            );
+        END $$;
+        """
+    )
+
+
+def ensure_dog_animal_type() -> None:
+    op.execute(
+        """
+        INSERT INTO animals_types (animal_name)
+        SELECT 'Dog'
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM animals_types
+            WHERE lower(animal_name) LIKE 'dog%'
+               OR lower(animal_name) LIKE 'собак%'
+        );
+        """
+    )
+
+
 def upgrade() -> None:
+    normalize_pet_type_fk_name()
+    ensure_dog_animal_type()
     op.execute(
         """
         ALTER TABLE pets_info
@@ -108,6 +168,7 @@ def upgrade() -> None:
         """
     )
 def downgrade() -> None:
+    normalize_pet_type_fk_name()
     op.execute(
         """
         ALTER TABLE pets_info

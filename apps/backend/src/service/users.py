@@ -9,7 +9,7 @@ from src.exceptions import (
     UserConflictError,
     UserNotFoundError,
 )
-from src.models import PetInfo, SharedUser, UserInfo
+from src.models import PetInfo, SharedUser, UserInfo, AuthIdentities
 from src.schemas import CreateUser, UpdateUser
 from src.service.pets import active_shared_access_clause
 
@@ -27,51 +27,37 @@ class UsersService:
             user_name=payload.user_name.strip(),
             user_email=str(payload.user_email),
             user_phone_number=phone_str,
-            user_password_hash=hash_password(payload.password),
             user_date_of_birth=payload.user_date_of_birth,
             user_photo=photo_str,
         )
 
         db.add(user)
 
-        try:
-            await db.commit()
-            await db.refresh(user)
-            return user
-        except IntegrityError as e:
-            await db.rollback()
+        await db.commit()
+        await db.refresh(user)
 
-            orig = getattr(e, "orig", None)
-            sqlstate = getattr(orig, "sqlstate", None)
-            constraint = getattr(orig, "constraint_name", None)
-            msg = str(orig)
+        auth_identity = AuthIdentities(
+            user_id=user.id,
+            provider="email",
+            user_email=str(payload.user_email),
+            user_password_hash=hash_password(payload.password)
+        )
 
-            if sqlstate == "23505":
-                if constraint and "email" in constraint:
-                    raise UserConflictError("User with this email already exists")
-                if constraint and "phone" in constraint:
-                    raise UserConflictError("User with this phone number already exists")
-
-            if sqlstate == "23514":
-                raise DatabaseIntegrityAppError(
-                    f"CHECK constraint failed: {constraint or 'unknown'}"
-                )
-
-            raise DatabaseIntegrityAppError(f"Database integrity error: {msg}")
+        db.add(auth_identity)
+        await db.commit()
+        await db.refresh(auth_identity)
+        return user
     
     async def get_user_by_id(self, db: AsyncSession, user_id: int) -> UserInfo | None:
         return await db.get(UserInfo, user_id)
-
 
     async def get_user_by_email(self, db: AsyncSession, email: str) -> UserInfo | None:
         res = await db.execute(select(UserInfo).where(UserInfo.user_email == email))
         return res.scalar_one_or_none()
 
-
     async def get_user_by_phone(self, db: AsyncSession, phone: str) -> UserInfo | None:
         res = await db.execute(select(UserInfo).where(UserInfo.user_phone_number == phone))
         return res.scalar_one_or_none()
-
 
     async def list_all_users(self, db: AsyncSession, offset: int = 0, limit: int = 50) -> list[UserInfo]:
         res = await db.execute(select(UserInfo).offset(offset).limit(limit))
@@ -95,9 +81,6 @@ class UsersService:
 
         if payload.user_phone_number is not None:
             user.user_phone_number = to_e164(payload.user_phone_number)
-
-        if "password" in data and data["password"] is not None:
-            user.user_password_hash = hash_password(data["password"])
 
         
         try:
@@ -124,3 +107,9 @@ class UsersService:
             .where(*active_shared_access_clause(user_id))
         )
         return list(user_pet.scalars().all())
+    
+    async def link_telegram_login(self, db: AsyncSession, user_id: int, telegram_id: int) -> UserInfo:
+        pass
+
+    async def link_email_login(self, db: AsyncSession, user_id: int, email: str) -> UserInfo:
+        pass
