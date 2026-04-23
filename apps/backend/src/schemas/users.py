@@ -12,7 +12,8 @@ class CreateUser(BaseModel):
         max_length=50,
         validation_alias=AliasChoices("user_name", "name"),
     )
-    user_email: EmailStr = Field(
+    user_email: EmailStr | None = Field(
+        default=None,
         validation_alias=AliasChoices("user_email", "email"),
     )
     user_phone_number: PhoneNumber | None = Field(
@@ -95,3 +96,9 @@ class PictureUpload(BaseModel):
         default=None,
         validation_alias=AliasChoices("user_photo", "photo_url"),
     )
+
+class LinkEmail(BaseModel):
+    user_email: EmailStr
+
+class LinkTelegram(BaseModel):
+    telegram_id: int
