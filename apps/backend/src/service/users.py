@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.phone import to_e164
 from src.core.security import hash_password
 from src.exceptions import (
-    DatabaseIntegrityAppError,
     UserConflictError,
     UserNotFoundError,
 )

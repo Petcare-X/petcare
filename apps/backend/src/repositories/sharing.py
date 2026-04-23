@@ -1,8 +1,8 @@
 from typing import List
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import PetInvite, PetInfo, UserInfo, SharedUser
+from src.models import PetInvite, UserInfo, SharedUser
 from src.service.pets import active_shared_access_clause
 
 class SharingRepository:

@@ -33,7 +33,7 @@ def upgrade() -> None:
     op.alter_column('users_info', 'user_email',
                existing_type=sa.VARCHAR(length=50),
                nullable=True)
-    op.drop_index(op.f('ix_users_info_telegram_id'), table_name='users_info')
+    op.execute(sa.text("DROP INDEX IF EXISTS ix_users_info_telegram_id"))
     op.drop_column('users_info', 'telegram_id')
     op.drop_column('users_info', 'user_password_hash')
     # ### end Alembic commands ###

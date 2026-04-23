@@ -20,7 +20,7 @@ type AccessTokenResponse = {
 };
 
 export async function signup(payload: SignupPayload) {
-    const response = await apiClient.post<AccessTokenResponse>("/auth/signup", payload);
+    const response = await apiClient.post<AccessTokenResponse>("/users", payload);
     return response.data;
 }
 

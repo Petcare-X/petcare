@@ -12,7 +12,6 @@ from src.core.security import (
     verify_password,
 )
 from src.exceptions import (
-    AuthProviderMismatchError,
     InvalidCredentialsError,
     InvalidTokenError,
     RefreshTokenError,

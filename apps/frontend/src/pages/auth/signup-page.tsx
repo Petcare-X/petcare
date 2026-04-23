@@ -1,19 +1,34 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { FormEvent } from "react";
 
 import { appRoutes } from "@/shared/constants/routes";
+import { UseSignup } from "@/features/auth/model/use-signup";
 
 import "./auth-page.css"
 
 export function SignupPage() {
+    const signup = UseSignup();
+
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
-    const [birthDate, setBirthDate] = useState("");
+    const [birth_date, setBirthDate] = useState("");
     const [password, setPassword] = useState("");
+
+    async function handleSubmit(event: FormEvent<HTMLFormElement>)  {
+        event.preventDefault();
+
+        signup.mutate({
+            name,
+            email,
+            birth_date,
+            password,
+        });
+    };
 
     return (
         <main className="auth-page page-transition">
-            <form className="auth-form">
+            <form className="auth-form" onSubmit={handleSubmit}>
                 <div className="auth-top">
                     <svg className="auth-logo" viewBox="0 0 70 71" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14.1256 42.9278C10.0725 43.398 6.32058 39.7592 5.74636 34.8015C5.00017 28.3652 7.59955 22.0661 11.6532 21.5967C15.7063 21.1266 19.7321 27.132 20.4241 33.1002C20.9983 38.0579 18.1795 42.4578 14.1256 42.9278Z" fill="#FAFAFA"/>
@@ -26,39 +41,49 @@ export function SignupPage() {
                 </div>
 
                 <div className="auth-inputs-conteiner">
-                    <label>ИМЯ</label>
+                    <label htmlFor="name">ИМЯ</label>
                     <input
+                        id="name"
                         className="auth-input" 
                         type="text" 
                         placeholder="Пользователь"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
+                        autoComplete="username"
+                        required
                     />
 
-                    <label>ПОЧТА</label>
-                    <input 
+                    <label htmlFor="email">ПОЧТА</label>
+                    <input
+                        id="email"
                         className="auth-input" 
                         type="email" 
                         placeholder="user@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        autoComplete="email"
+                        required
                     />
                     
-                    <label>ДАТА РОЖДЕНИЯ</label>
-                    <input 
+                    <label htmlFor="birth_date">ДАТА РОЖДЕНИЯ</label>
+                    <input
+                        id="birth_date"
                         className="auth-input" 
                         type="date" 
-                        value={birthDate}
+                        value={birth_date}
                         onChange={(e) => setBirthDate(e.target.value)}
+                        required
                     />
                     
-                    <label>ПАРОЛЬ</label>
-                    <input 
+                    <label htmlFor="password">ПАРОЛЬ</label>
+                    <input
+                        id="password"
                         className="auth-input" 
                         type="password" 
                         placeholder="●●●●●●●●"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        required
                     />
                 </div>
 
