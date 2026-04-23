@@ -7,7 +7,7 @@ from src.service import UsersService
 from src.core.security import get_current_user
 from src.models import UserInfo
 
-from src.schemas.users import CreateUser, UpdateUser, UserPrivate
+from src.schemas.users import CreateUser, UpdateUser, UserPrivate, LinkEmail, LinkTelegram
 
 users_router = APIRouter(prefix="/users", tags=["users"])
 
@@ -60,3 +60,21 @@ async def get(user_id: int, db: AsyncSession = Depends(get_db)):
 async def list_users(db: AsyncSession = Depends(get_db), offset: int = 0, limit: int = 50):
     users = await users_service.list_all_users(db=db, offset=offset, limit=limit)
     return [users_service.to_private_response(user) for user in users]
+
+@users_router.get("/link-email/{user_id}")
+async def link_email_login(
+    payload: LinkEmail,
+    current_user: UserInfo = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    ok = await users_service.link_email_login(db, current_user.id, payload.user_email)
+    return {"linked": ok}
+
+@users_router.get("/link-telegram/{user_id}")
+async def link_telegram_login(
+    payload: LinkTelegram,
+    current_user: UserInfo = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    ok = await users_service.link_telegram_login(db, current_user.id, payload.telegram_id)
+    return {"linked": ok}
