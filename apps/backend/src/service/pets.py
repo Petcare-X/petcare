@@ -9,6 +9,7 @@ from src.models import PetInfo, SharedUser
 from src.schemas import PetCreate, PetResponse, UpdatePet
 from src.service.storage import StorageService
 from src.repositories import PetsRepository
+from src.sharing_active import active_shared_access_clause
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,23 +19,6 @@ class PetPhotoSnapshot:
     size_bytes: int | None
     etag: str | None
     uploaded_at: datetime | None
-
-
-def active_shared_access_clause(
-    shared_user_id: int | None = None,
-    pet_id: int | None = None,
-):
-    conditions = [
-        or_(
-            SharedUser.sharing_end.is_(None),
-            SharedUser.sharing_end > datetime.now(timezone.utc),
-        ),
-    ]
-    if shared_user_id is not None:
-        conditions.append(SharedUser.shared_user_id == shared_user_id)
-    if pet_id is not None:
-        conditions.append(SharedUser.shared_pet_id == pet_id)
-    return conditions
 
 class PetsService:
     def __init__(self):

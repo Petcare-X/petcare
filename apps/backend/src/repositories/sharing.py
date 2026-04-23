@@ -2,8 +2,8 @@ from typing import List
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import PetInvite, UserInfo, SharedUser
-from src.service.pets import active_shared_access_clause
+from src.models import PetInvite, PetInfo, UserInfo, SharedUser
+from src.sharing_active import active_shared_access_clause
 
 class SharingRepository:
     async def get_by_code(self, db: AsyncSession, invite_code: str) -> PetInvite:
