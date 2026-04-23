@@ -1,10 +1,16 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { appRoutes } from "@/shared/constants/routes";
 
 import "./auth-page.css"
 
 export function SignupPage() {
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [birthDate, setBirthDate] = useState("");
+    const [password, setPassword] = useState("");
+
     return (
         <main className="auth-page page-transition">
             <form className="auth-form">
@@ -21,16 +27,48 @@ export function SignupPage() {
 
                 <div className="auth-inputs-conteiner">
                     <label>ИМЯ</label>
-                    <input className="auth-input" type="text" placeholder="Пользователь"></input>
+                    <input
+                        className="auth-input" 
+                        type="text" 
+                        placeholder="Пользователь"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+
                     <label>ПОЧТА</label>
-                    <input className="auth-input" type="email" placeholder="user@example.com"></input>
+                    <input 
+                        className="auth-input" 
+                        type="email" 
+                        placeholder="user@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    
+                    <label>ДАТА РОЖДЕНИЯ</label>
+                    <input 
+                        className="auth-input" 
+                        type="date" 
+                        value={birthDate}
+                        onChange={(e) => setBirthDate(e.target.value)}
+                    />
+                    
                     <label>ПАРОЛЬ</label>
-                    <input className="auth-input" type="password" placeholder="●●●●●●●●"></input>
+                    <input 
+                        className="auth-input" 
+                        type="password" 
+                        placeholder="●●●●●●●●"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
                 </div>
 
                 <div>
-                    <button className="auth-button" type="submit">Зарегистрироваться</button>
-                    <p className="login-register">Уже есть аккаунт? <Link to={appRoutes.login}>Войти</Link></p>
+                    <button className="auth-button" type="submit">
+                        Зарегистрироваться
+                    </button>
+                    <p className="login-register">
+                        Уже есть аккаунт? <Link to={appRoutes.login}>Войти</Link>
+                    </p>
                 </div>
             </form>
         </main>

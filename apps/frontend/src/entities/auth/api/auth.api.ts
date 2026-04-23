@@ -3,7 +3,7 @@ import { apiClient } from '@/shared/api/client';
 type SignupPayload = {
     name: string,
     email: string,
-    phone: string,
+    phone_number?: string,
     birth_date: string,
     password: string,
     photo_url?: string,

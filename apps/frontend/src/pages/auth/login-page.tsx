@@ -35,28 +35,34 @@ export function LoginPage() {
                     <p>Ваша забота в одном приложении</p>
                 </div>
                 <div className="auth-inputs-conteiner">
-                    <label>ПОЧТА</label>
+                    <label htmlFor="email">ПОЧТА</label>
                     <input
+                        id="email"
                         className="auth-input"
                         type="email" 
                         value={email} 
                         onChange={(event) => setEmail(event.target.value)}
                         placeholder="user@mail.ru"
+                        autoComplete="email"
                         required
                     />
-                    <label>ПАРОЛЬ</label>
+                    <label htmlFor="password">ПАРОЛЬ</label>
                     <input
+                        id="password"
                         className="auth-input"
                         type="password"
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         placeholder="●●●●●●●●"
+                        autoComplete="current-password"
                         required
                     />
                 </div>
 
                 <div>
-                    <button className="auth-button" type="submit">Войти</button>
+                    <button className="auth-button" type="submit" disabled={login.isPending}>
+                        {login.isPending ? "Входим..." : "Войти"}
+                    </button>
                     <p className="login-register">Нет аккаунта? <Link to={appRoutes.signup}>Зарегистрироваться</Link></p>
                 </div>
             </form>

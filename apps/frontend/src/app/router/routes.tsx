@@ -20,8 +20,11 @@ import { ensureAuth, redirectIfAuthenticated } from "./guards";
 import { FullAppShell } from "@/widgets/app-shell/full-app-shell";
 import { MainOnlyShell } from "@/widgets/app-shell/main-only-shell";
 
+import { NotFoundPage } from "@/pages/not-found/not-found-page";
+
 const rootRoute = createRootRoute ({
-    component: () => <Outlet />
+    component: () => <Outlet />,
+    notFoundComponent: NotFoundPage,
 });
 
 const protectedRoute = createRoute ({
