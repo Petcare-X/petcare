@@ -3,7 +3,7 @@ from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import PetInfo, SharedUser, PetDocument
-from src.service.pets import active_shared_access_clause
+from src.sharing_active import active_shared_access_clause
 
 class PetsRepository:
     async def get_all(self, db: AsyncSession, offset: int = 0, limit: int = 50) -> List[PetInfo]:
