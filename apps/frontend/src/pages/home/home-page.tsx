@@ -1,17 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { appRoutes } from "@/shared/constants/routes";
 
-import { Link } from "@tanstack/react-router";
-import { appRoutes } from "@/shared/constants/routes";
-
 import './home-page.css';
 
 import aichatIcon from './assets/aichatIcon.svg';
 
 import arrowIcon from './assets/arrowIcon.svg';
 
-import homeNavbar from './assets/heartNavbar.svg';
-import profileNavbar from './assets/mainNavbar.svg';
+import heartNavbar from './assets/heartNavbar.svg';
+import mainNavbar from './assets/mainNavbar.svg';
 import searchNavbar from './assets/searchNavbar.svg';
 import calendarNavbar from './assets/calendarNavbar.svg';
 
@@ -94,7 +91,6 @@ const services: Service[] = [
 
 export const HomePage = () => {
     return (
-        <div className="home-page page-transition">
         <div className="home-page page-transition">
             <header className="home-header">
                 <button type="button" className="brand">
