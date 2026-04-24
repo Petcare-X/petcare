@@ -42,3 +42,9 @@ class UsersRepository:
             .where(AuthIdentities.user_email == email)
         )
         return res.scalar_one_or_none()
+
+    async def get_auth_identities_by_user_id(self, db: AsyncSession, user_id: int) -> List[AuthIdentities]:
+        res = await db.execute(
+            select(AuthIdentities).where(AuthIdentities.user_id == user_id)
+        )
+        return list(res.scalars().all())

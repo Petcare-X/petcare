@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions import PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError

@@ -3,8 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { signup } from "@/entities/auth/api/auth.api";
 import { appRoutes } from "@/shared/constants/routes";
-import { clearAuthSession, setAuthSession } from "@/shared/api/auth-session";
-import { petQueryKeys } from "@/entities/pet/model/pet.queries";
+import { clearAuthSession } from "@/shared/api/auth-session";
 
 export function UseSignup() {
     const navigate = useNavigate();
@@ -12,15 +11,9 @@ export function UseSignup() {
 
     return useMutation({
         mutationFn: signup,
-        onSuccess: async (tokens) => {
-            setAuthSession(tokens);
-
+        onSuccess: async () => {
             await navigate({
-                to: appRoutes.home,
-            });
-
-            void queryClient.invalidateQueries({
-                queryKey: petQueryKeys.all,
+                to: appRoutes.login,
             });
         },
         onError: (error) => {

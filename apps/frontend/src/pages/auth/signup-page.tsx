@@ -1,34 +1,67 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { FormEvent } from "react";
+import { useForm } from "react-hook-form"; 
+import { z } from "zod"; 
+import { zodResolver } from "@hookform/resolvers/zod"
 
 import { appRoutes } from "@/shared/constants/routes";
 import { UseSignup } from "@/features/auth/model/use-signup";
 
 import "./auth-page.css"
 
+const signupSchema = z.object({
+    name: z
+        .string()
+        .trim()
+        .min(2, "Имя должно содержать минимум 2 символа")
+        .max(50, "Имя должно содержать не более 50 символов"),
+
+    email: z.email("Введите корректный email"),
+    
+    birth_date: z.string().refine((value) => {
+        const date = new Date(value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return !Number.isNaN(date.getTime()) && date <= today;
+    }, "Введите корректную дату рождения"),
+    
+    password: z
+        .string()
+        .min(8, "Пароль должен содержать минимум 8 символов")
+});
+
+    type SignUpFormValues = z.infer<typeof signupSchema>;
+
 export function SignupPage() {
-    const signup = UseSignup();
+    const signupMutation = UseSignup();
 
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [birth_date, setBirthDate] = useState("");
-    const [password, setPassword] = useState("");
-
-    async function handleSubmit(event: FormEvent<HTMLFormElement>)  {
-        event.preventDefault();
-
-        signup.mutate({
-            name,
-            email,
-            birth_date,
-            password,
-        });
-    };
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+        setError,
+    } = useForm<SignUpFormValues>({
+        resolver: zodResolver(signupSchema),
+        defaultValues: {
+            name: "",
+            email: "",
+            birth_date: "",
+            password: "",
+        },
+        mode: "onBlur",
+    });
+        const onSubmit = async (value: SignUpFormValues) => {
+            try {
+                await signupMutation.mutateAsync(value);
+            } catch (error) {
+                setError("root", {
+                    message: "Произошла ошибка при регистрации. Попробуйте снова.",
+                });
+            }
+        };
 
     return (
         <main className="auth-page page-transition">
-            <form className="auth-form" onSubmit={handleSubmit}>
+            <form className="auth-form" onSubmit={handleSubmit(onSubmit)}>
                 <div className="auth-top">
                     <svg className="auth-logo" viewBox="0 0 70 71" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14.1256 42.9278C10.0725 43.398 6.32058 39.7592 5.74636 34.8015C5.00017 28.3652 7.59955 22.0661 11.6532 21.5967C15.7063 21.1266 19.7321 27.132 20.4241 33.1002C20.9983 38.0579 18.1795 42.4578 14.1256 42.9278Z" fill="#FAFAFA"/>
@@ -45,35 +78,35 @@ export function SignupPage() {
                     <input
                         id="name"
                         className="auth-input" 
-                        type="text" 
+                        type="text"
+                        {...register("name")}
                         placeholder="Пользователь"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        autoComplete="username"
+                        autoComplete="name"
                         required
                     />
+                    {errors.name && <p>{errors.name.message}</p>}
 
                     <label htmlFor="email">ПОЧТА</label>
                     <input
                         id="email"
                         className="auth-input" 
-                        type="email" 
+                        type="email"
+                        {...register("email")}
                         placeholder="user@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
                         autoComplete="email"
                         required
                     />
+                    {errors.email && <p>{errors.email.message}</p>}
                     
                     <label htmlFor="birth_date">ДАТА РОЖДЕНИЯ</label>
                     <input
                         id="birth_date"
                         className="auth-input" 
-                        type="date" 
-                        value={birth_date}
-                        onChange={(e) => setBirthDate(e.target.value)}
+                        type="date"
+                        {...register("birth_date")}
                         required
                     />
+                    {errors.birth_date && <p>{errors.birth_date.message}</p>}
                     
                     <label htmlFor="password">ПАРОЛЬ</label>
                     <input
@@ -81,15 +114,15 @@ export function SignupPage() {
                         className="auth-input" 
                         type="password" 
                         placeholder="●●●●●●●●"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        {...register("password")}
                         required
                     />
+                    {errors.password && <p>{errors.password.message}</p>}
                 </div>
 
                 <div>
-                    <button className="auth-button" type="submit">
-                        Зарегистрироваться
+                    <button className="auth-button" type="submit" disabled={isSubmitting || signupMutation.isPending}>
+                        {isSubmitting || signupMutation.isPending ? "Регистрируем..." : "Зарегистрироваться"}
                     </button>
                     <p className="login-register">
                         Уже есть аккаунт? <Link to={appRoutes.login}>Войти</Link>
@@ -97,5 +130,5 @@ export function SignupPage() {
                 </div>
             </form>
         </main>
-    )
+    );
 }

@@ -16,11 +16,24 @@ class UsersService:
         self.repo = UsersRepository()
         self.repo_pets = PetsRepository()
 
-    def to_private_response(self, user: UserInfo):
-        return UserPrivate.model_validate(user)
+    async def to_private_response(self, db: AsyncSession, user: UserInfo):
+        auth_identities = await self.repo.get_auth_identities_by_user_id(db, user.id)
+        telegram_identity = next((item for item in auth_identities if item.provider == "telegram"), None)
+        primary_identity = next((item for item in auth_identities if item.provider), None)
+
+        return UserPrivate(
+            id=user.id,
+            user_name=user.user_name,
+            user_email=user.user_email,
+            user_phone_number=user.user_phone_number,
+            user_date_of_birth=user.user_date_of_birth,
+            user_photo=user.user_photo,
+            telegram_id=telegram_identity.user_telegram_id if telegram_identity else None,
+            auth_provider=primary_identity.provider if primary_identity else "unknown",
+        )
 
     async def create_user(self, db: AsyncSession, payload: CreateUser) -> UserInfo:
-        phone_str = to_e164(payload.user_phone_number)
+        phone_str = to_e164(payload.user_phone_number) if payload.user_phone_number is not None else None
         photo_str = str(payload.user_photo) if payload.user_photo is not None else None
 
         user = UserInfo(
@@ -29,7 +42,6 @@ class UsersService:
             user_phone_number=phone_str,
             user_date_of_birth=payload.user_date_of_birth,
             user_photo=photo_str,
-            auth_provider="email",
         )
 
         db.add(user)
@@ -77,8 +89,11 @@ class UsersService:
         if "user_email" in data and data["user_email"] is not None:
             user.user_email = str(data["user_email"])
 
-        if payload.user_phone_number is not None:
-            user.user_phone_number = to_e164(payload.user_phone_number)
+        if "user_phone_number" in data:
+            if payload.user_phone_number is not None:
+                user.user_phone_number = to_e164(payload.user_phone_number)
+            else:
+                user.user_phone_number = None
 
         
         try:

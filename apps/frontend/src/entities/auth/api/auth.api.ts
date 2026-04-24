@@ -14,13 +14,24 @@ type LoginPayload = {
     password: string;
 };
 
+type SignupResponse = {
+    id: number;
+    user_name: string;
+    user_email: string;
+    user_phone_number: string | null;
+    user_date_of_birth: string;
+    user_photo: string | null;
+    telegram_id: number | null;
+    auth_provider: string;
+};
+
 type AccessTokenResponse = {
     access_token: string;
     token_type: "bearer";
-};
+}
 
 export async function signup(payload: SignupPayload) {
-    const response = await apiClient.post<AccessTokenResponse>("/users", payload);
+    const response = await apiClient.post<SignupResponse>("/users", payload);
     return response.data;
 }
 
