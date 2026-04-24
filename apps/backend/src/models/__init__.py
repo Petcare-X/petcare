@@ -22,6 +22,7 @@ from .LlmMessages import LlmMessage
 
 from .PetInvite import PetInvite
 from .RefreshToken import RefreshToken
+from .AuthIdentities import AuthIdentities
 
 __all__ = (
     'UserInfo',
@@ -39,5 +40,6 @@ __all__ = (
     'LlmChat',
     'LlmMessage',
     'PetInvite',
-    'RefreshToken'
+    'RefreshToken',
+    'AuthIdentities'
 )

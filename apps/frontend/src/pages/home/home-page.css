@@ -1,21 +1,5 @@
-button, p, h2 {
-  border: 0;
-  background: transparent;
-  font: inherit;
-}
-
-button { cursor: pointer; }
-
-main {
-  max-width: 430px;
-  margin: auto;
-}
-
 .home-page {
   min-height: 100vh;
-  margin: 0 auto;
-  padding-bottom: 110px;
-  background: #f4f4f4;
   color: #222;
 }
 
@@ -48,10 +32,14 @@ main {
   justify-content: space-between;
 }
 
+.events-section {
+  margin-bottom: 30px;
+}
+
 .event-card {
   display: flex;
   align-items: center;
-  background: #fff;
+  background: #ffffff;
   border-radius: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
   width: 100%;
@@ -61,24 +49,70 @@ main {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.event-card:active {
+.event-card:hover {
   transform: scale(0.98);
+  box-shadow:
+    0 0 0 4px rgba(249, 115, 22, 0.23),
+    0 14px 34px rgba(249, 115, 22, 0.12);
+}
+
+.event-date {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: #ffe6d6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-month {
+  margin-bottom: 4px;
+  font-size: 1.1rem;
+  color: #ff7a1a;
+}
+
+.event-day {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #ff7a1a;
+}
+
+.event-title {
+  font-size: 1.04rem;
+  font-weight: 700;
+}
+
+.event-subtitle {
+  margin-top: 6px;
+  font-size: 0.87rem;
+  color: #8f8f8f;
 }
 
 .pet-card {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+
   width: 100%;
   padding: 16px;
+
+  text-decoration: none;
+  color: black;
   text-align: left;
-  justify-content: space-between;
-  background: #fff;
+  
+  background: #ffffff;
   border-radius: 24px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.pet-card:active {
+.pet-card:hover {
+  box-shadow:
+    0 0 0 4px rgba(249, 115, 22, 0.23),
+    0 14px 34px rgba(249, 115, 22, 0.12);
   transform: scale(0.98);
 }
 
@@ -91,11 +125,17 @@ main {
 .navbar-item {
   display: flex;
   align-items: center;
+  gap: 4px;
+  font-size: 0.93rem;
+  white-space: nowrap;
 }
 
-.home-section,
-.pets-section,
-.service-section {
+.pet-meta-icon {
+  display: block;
+  flex-shrink: 0;
+}
+
+.pets-section {
   margin-bottom: 30px;
 }
 
@@ -136,21 +176,6 @@ main {
   flex-shrink: 0;
 }
 
-.notifications-button-img {
-  display: block;
-  flex-shrink: 0;
-}
-
-.pet-meta-icon {
-  display: block;
-  flex-shrink: 0;
-}
-
-.profile-button {
-  overflow: hidden;
-}
-
-.profile-button img,
 .pet-image {
   display: block;
   width: 100%;
@@ -163,60 +188,6 @@ main {
   font-size: 1rem;
   font-weight: 700;
   margin-bottom: 20px;
-}
-
-.service-card {
-  background: #fff;
-  border-radius: 24px;
-  box-shadow: 0 2px 30px rgba(0, 0, 0, 0.12);
-}
-
-.service-card:hover {
-    box-shadow:
-        0 0 0 4px rgba(249, 115, 22, 0.20),
-        0 14px 34px rgba(249, 115, 22, 0.12);
-}
-
-.event-card:hover {
-    box-shadow:
-        0 0 0 4px rgba(249, 115, 22, 0.20),
-        0 14px 34px rgba(249, 115, 22, 0.12);
-}
-
-.pet-card:hover {
-    box-shadow:
-        0 0 0 4px rgba(249, 115, 22, 0.20),
-        0 14px 34px rgba(249, 115, 22, 0.12);
-}
-
-.event-date {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background: #ffe6d6;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.event-month {
-  margin-bottom: 4px;
-  font-size: 1.15rem;
-  color: #ff7a1a;
-}
-
-.event-day {
-  font-size: 1.2rem;
-  font-weight: 700;
-  line-height: 1;
-  color: #ff7a1a;
-}
-
-.event-subtitle {
-  margin-top: 6px;
-  font-size: 0.9rem;
-  color: #8f8f8f;
 }
 
 .pets-list {
@@ -241,7 +212,7 @@ main {
 
 .pet-breed {
   margin-top: 4px;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   color: #a0a0a0;
   margin-bottom: 15px;
 }
@@ -268,22 +239,33 @@ main {
 }
 
 .service-card {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
   width: calc(50% - 8px);
   min-height: 136px;
   padding: 16px;
   text-align: left;
+  text-decoration: none;
+  color: black;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.service-icon {
+  width: 52px;
+  height: 52px;
 }
 
 .service-title {
   margin-top: 18px;
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .service-description {
   margin-top: 4px;
-  font-size: 0.9rem;
+  font-size: 0.87rem;
   color: #9a9a9a;
 }
 
@@ -336,4 +318,7 @@ main {
 .service-card:active,
 .navbar-item:active {
   transform: scale(0.98);
+  box-shadow:
+    0 0 0 4px rgba(249, 115, 22, 0.23),
+    0 14px 34px rgba(249, 115, 22, 0.12);
 }

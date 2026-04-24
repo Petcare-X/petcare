@@ -1,13 +1,15 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions import PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError
-from src.models import PetDocument, PetInfo, SharedUser
+from src.models import PetInfo, SharedUser
 from src.schemas import PetCreate, PetResponse, UpdatePet
 from src.service.storage import StorageService
+from src.repositories import PetsRepository
+from src.sharing_active import active_shared_access_clause
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,24 +20,10 @@ class PetPhotoSnapshot:
     etag: str | None
     uploaded_at: datetime | None
 
-
-def active_shared_access_clause(
-    shared_user_id: int | None = None,
-    pet_id: int | None = None,
-):
-    conditions = [
-        or_(
-            SharedUser.sharing_end.is_(None),
-            SharedUser.sharing_end > datetime.now(timezone.utc),
-        ),
-    ]
-    if shared_user_id is not None:
-        conditions.append(SharedUser.shared_user_id == shared_user_id)
-    if pet_id is not None:
-        conditions.append(SharedUser.shared_pet_id == pet_id)
-    return conditions
-
 class PetsService:
+    def __init__(self):
+        self.repo = PetsRepository()
+
     SIMPLE_UPDATE_FIELDS = {
         "pet_name": "pet_name",
         "pet_date_of_birth": "pet_date_of_birth",
@@ -194,7 +182,7 @@ class PetsService:
         return [self.to_response(pet, user_id) for pet in pets]
 
     async def get_pet_by_id(self, db: AsyncSession, pet_id: int) -> PetInfo | None:
-        return await db.get(PetInfo, pet_id)
+        return await self.repo.get_by_id(db, pet_id)
 
     async def get_pet_for_user(
         self,
@@ -220,7 +208,7 @@ class PetsService:
         raise PetAccessDeniedError()
 
     async def ensure_pet_owner(self, db: AsyncSession, pet_id: int, user_id: int) -> PetInfo:
-        pet = await self.get_pet_by_id(db, pet_id)
+        pet = await self.repo.get_by_id(db, pet_id)
         if not pet:
             raise PetNotFoundError()
         if pet.user_id != user_id:
@@ -272,10 +260,7 @@ class PetsService:
         user_id: int,
     ) -> list[str]:
         pet = await self.ensure_pet_owner(db, pet_id, user_id)
-        result = await db.execute(
-            select(PetDocument.object_key).where(PetDocument.pet_id == pet_id)
-        )
-        object_keys = [object_key for object_key in result.scalars().all() if object_key]
+        object_keys = await self.repo.get_docs_keys(db, pet_id)
         if pet.pet_photo_object_key:
             object_keys.append(pet.pet_photo_object_key)
         return object_keys

@@ -1,0 +1,14 @@
+.profile-page {
+    display: flex;
+    flex-direction: column;
+}
+
+.logout-button {
+    width: 100%;
+    background-color: red;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 50px;
+}

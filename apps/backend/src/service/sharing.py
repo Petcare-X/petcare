@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,14 +16,17 @@ from src.exceptions import (
     SharedPetsNotFoundError,
     SharedUsersNotFoundError,
 )
-from src.models import PetInfo, PetInvite, SharedUser, UserInfo
+from src.models import PetInvite, SharedUser
 from src.schemas import InviteCreate, InviteResponse, PetResponse, SharedUserResponse
-from src.service.pets import PetsService, active_shared_access_clause
+from src.service.pets import PetsService
+from src.repositories import SharingRepository, PetsRepository
 
 
 class SharingService:
     def __init__(self) -> None:
         self.pets_service = PetsService()
+        self.repo_sharing = SharingRepository()
+        self.repo_pets = PetsRepository()
 
     @staticmethod
     def _to_utc(dt: datetime) -> datetime:
@@ -45,10 +47,7 @@ class SharingService:
         raise DatabaseIntegrityAppError(f"Database integrity error: {msg}")
 
     async def _get_invite(self, db: AsyncSession, invite_code: str) -> PetInvite:
-        invite_result = await db.execute(
-            select(PetInvite).where(PetInvite.invite_code == invite_code)
-        )
-        invite = invite_result.scalar_one_or_none()
+        invite = await self.repo_sharing.get_by_code(db, invite_code)
         if not invite:
             raise InviteNotFoundError()
         return invite
@@ -111,14 +110,7 @@ class SharingService:
             raise PetNotFoundError()
         if user_id == pet.user_id:
             raise InviteOwnerAcceptError()
-
-        existing_shared_user_result = await db.execute(
-            select(SharedUser).where(
-                SharedUser.shared_pet_id == invite.pet_id,
-                SharedUser.shared_user_id == user_id,
-            )
-        )
-        existing_shared_user = existing_shared_user_result.scalar_one_or_none()
+        existing_shared_user = self.repo_sharing.existing_shared_user_result(pet_id=invite.pet_id, user_id=user_id)
         if existing_shared_user:
             if (
                 existing_shared_user.sharing_end is None
@@ -168,12 +160,7 @@ class SharingService:
         db: AsyncSession,
         user_id: int,
     ) -> list[PetResponse]:
-        shared_pets_result = await db.execute(
-            select(PetInfo)
-            .join(SharedUser, SharedUser.shared_pet_id == PetInfo.id)
-            .where(*active_shared_access_clause(user_id))
-        )
-        shared_pets = list(shared_pets_result.scalars().all())
+        shared_pets = await self.repo_pets.get_by_user_id(db, user_id)
 
         if not shared_pets:
             raise SharedPetsNotFoundError()
@@ -189,13 +176,7 @@ class SharingService:
         shared_user_id: int,
     ) -> None:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
-        shared_user_result = await db.execute(
-            select(SharedUser).where(
-                SharedUser.shared_pet_id == pet_id,
-                SharedUser.shared_user_id == shared_user_id,
-            )
-        )
-        shared_user = shared_user_result.scalar_one_or_none()
+        shared_user = await self.repo_sharing.existing_shared_user_result(db, pet_id, user_id=shared_user_id)
         if not shared_user:
             raise SharedAccessNotFoundError()
 
@@ -213,12 +194,7 @@ class SharingService:
         user_id: int,
     ) -> list[SharedUserResponse]:
         pet = await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
-        shared_users_result = await db.execute(
-            select(SharedUser, UserInfo)
-            .join(UserInfo, UserInfo.id == SharedUser.shared_user_id)
-            .where(*active_shared_access_clause(pet_id=pet_id))
-        )
-        shared_users = shared_users_result.all()
+        shared_users = await self.repo_sharing.get_shared_users(db, pet_id)
 
         if not shared_users:
             raise SharedUsersNotFoundError()

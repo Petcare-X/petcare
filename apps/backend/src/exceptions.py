@@ -133,7 +133,6 @@ class DatabaseIntegrityAppError(AppError):
     status_code = 400
     message = "Database integrity error"
 
-
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content=exc.to_response(request))
 
