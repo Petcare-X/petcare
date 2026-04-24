@@ -1,7 +1,1 @@
-export const UserProfile = () => {
-    return (
-        <div>
-            <p>hi</p>
-        </div>
-    );
-};
+export const UserProfile = () => <div>Profile Page</div>
