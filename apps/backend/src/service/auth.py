@@ -12,7 +12,6 @@ from src.core.security import (
     verify_password,
 )
 from src.exceptions import (
-    AuthProviderMismatchError,
     InvalidCredentialsError,
     InvalidTokenError,
     RefreshTokenError,
@@ -20,7 +19,7 @@ from src.exceptions import (
 )
 from src.models import RefreshToken, UserInfo, AuthIdentities
 from src.repositories import UsersRepository
-from src.schemas.auth import LoginRequest, RefreshRequest, TelegramAuth, TelegramBotAuth, Token
+from src.schemas.auth import LoginRequest, TelegramAuth, TelegramBotAuth, Token
 
 class AuthService:
     def __init__(self):
@@ -77,10 +76,10 @@ class AuthService:
             refresh_token=refresh_token,
         )
     
-    async def refresh(self, db: AsyncSession, payload: RefreshRequest) -> Token:
+    async def refresh(self, db: AsyncSession, refresh_token: str) -> Token:
         await delete_expired_refresh_tokens(db)
 
-        token_payload = decode_token(payload.refresh_token)
+        token_payload = decode_token(refresh_token)
         if not token_payload:
             raise RefreshTokenError()
 

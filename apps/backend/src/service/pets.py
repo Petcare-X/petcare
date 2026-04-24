@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions import PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError
-from src.models import PetDocument, PetInfo, SharedUser
+from src.models import PetInfo, SharedUser
 from src.schemas import PetCreate, PetResponse, UpdatePet
 from src.service.storage import StorageService
 from src.repositories import PetsRepository
@@ -23,6 +23,7 @@ class PetPhotoSnapshot:
 class PetsService:
     def __init__(self):
         self.repo = PetsRepository()
+
     SIMPLE_UPDATE_FIELDS = {
         "pet_name": "pet_name",
         "pet_date_of_birth": "pet_date_of_birth",

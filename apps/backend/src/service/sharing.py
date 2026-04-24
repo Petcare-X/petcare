@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,9 +16,9 @@ from src.exceptions import (
     SharedPetsNotFoundError,
     SharedUsersNotFoundError,
 )
-from src.models import PetInfo, PetInvite, SharedUser, UserInfo
+from src.models import PetInvite, SharedUser
 from src.schemas import InviteCreate, InviteResponse, PetResponse, SharedUserResponse
-from src.service.pets import PetsService, active_shared_access_clause
+from src.service.pets import PetsService
 from src.repositories import SharingRepository, PetsRepository
 
 

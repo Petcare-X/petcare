@@ -79,7 +79,7 @@ class UserPrivate(BaseModel):
     id: int
     user_name: str
     user_email: EmailStr
-    user_phone_number: str
+    user_phone_number: str | None
     user_date_of_birth: date
     user_photo: str | None
     telegram_id: int | None
