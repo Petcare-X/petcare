@@ -30,6 +30,7 @@ class UsersService:
             user_phone_number=phone_str,
             user_date_of_birth=payload.user_date_of_birth,
             user_photo=photo_str,
+            auth_provider="email",
         )
 
         db.add(user)

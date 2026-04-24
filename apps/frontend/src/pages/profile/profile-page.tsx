@@ -1,0 +1,1 @@
+export const UserProfile = () => <div>Profile Page</div>
