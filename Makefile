@@ -4,13 +4,13 @@ dev:
 	cd apps/backend && uv run uvicorn src.main:app --reload --reload-dir src
 
 build:
-	docker compose up --build
+	docker compose --env-file .env.docker up --build
 
 up:
-	docker compose up
+	docker compose --env-file .env.docker up
 
 up-bot:
-	docker compose --profile bot up --build
+	docker compose --env-file .env.docker --profile bot up --build
 
 down:
-	docker compose down
+	docker compose --env-file .env.docker down
