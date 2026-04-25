@@ -131,7 +131,7 @@ class UsersService:
             user_telegram_id=telegram_id,
         )
 
-        await db.add(new_auth_identity)
+        db.add(new_auth_identity)
         await db.commit()
         return True
 
@@ -153,6 +153,6 @@ class UsersService:
         if user.user_email is None:
             await self.update_user(user_id=user_id, payload=UpdateUser(user_email=email), db=db)
 
-        await db.add(new_auth_identity)
+        db.add(new_auth_identity)
         await db.commit()
         return True

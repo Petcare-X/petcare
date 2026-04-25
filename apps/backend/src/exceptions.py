@@ -106,7 +106,7 @@ class ConflictError(AppError):
 
 
 class UserConflictError(ConflictError):
-    message = "Email or phone already exists"
+    message = "Credential already exists"
 
 
 class AuthProviderMismatchError(AppError):

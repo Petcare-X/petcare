@@ -61,7 +61,7 @@ async def list_users(db: AsyncSession = Depends(get_db), offset: int = 0, limit:
     users = await users_service.list_all_users(db=db, offset=offset, limit=limit)
     return [await users_service.to_private_response(db, user) for user in users]
 
-@users_router.get("/link-email/{user_id}")
+@users_router.post("/link-email/{user_id}")
 async def link_email_login(
     payload: LinkEmail,
     current_user: UserInfo = Depends(get_current_user),
@@ -70,7 +70,7 @@ async def link_email_login(
     ok = await users_service.link_email_login(db, current_user.id, payload.user_email)
     return {"linked": ok}
 
-@users_router.get("/link-telegram/{user_id}")
+@users_router.post("/link-telegram/{user_id}")
 async def link_telegram_login(
     payload: LinkTelegram,
     current_user: UserInfo = Depends(get_current_user),
