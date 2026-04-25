@@ -35,6 +35,7 @@ from .map import VetMapPoint, DogPlaceMapPoint
 
 from .llm_chat import (
     MessageRole,
+    MessageStatus,
     ChatCreate,
     ChatResponse,
     MessageCreate,
@@ -79,6 +80,7 @@ __all__ = (
     "VetMapPoint",
     "DogPlaceMapPoint",
     "MessageRole",
+    "MessageStatus",
     "ChatCreate",
     "ChatResponse",
     "MessageCreate",

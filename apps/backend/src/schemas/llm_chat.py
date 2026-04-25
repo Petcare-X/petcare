@@ -8,8 +8,15 @@ class MessageRole(str, Enum):
     ASSISTANT = "assistant"
     SYSTEM = "system"
 
+class MessageStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROCESS = "in_process"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
 class ChatCreate(BaseModel):
     chat_title: str = Field(default="New Chat", min_length=1, max_length=255)
+    chat_custom_instructions: str | None = Field(default=None, min_length=0, max_length=5000)
 
 class ChatResponse(BaseModel):
     id: int
@@ -22,6 +29,9 @@ class ChatResponse(BaseModel):
 
 
 class MessageCreate(BaseModel):
+    chat_id: int
+    user_id: int
+    role: MessageRole
     content: str = Field(..., min_length=1, max_length=5000)
 
 
@@ -36,6 +46,8 @@ class MessageResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class SendMessages(BaseModel):
+    content: str
 
 class SendMessageResponse(BaseModel):
     user_message: MessageResponse

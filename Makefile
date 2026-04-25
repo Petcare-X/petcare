@@ -14,3 +14,6 @@ up-bot:
 
 down:
 	docker compose --env-file .env.docker down
+
+clean:
+	docker compose --env-file .env.docker down --rmi all -v

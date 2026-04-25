@@ -15,5 +15,5 @@ class LlmChat(Base):
     id: Mapped[int_primary_key]
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users_info.id", ondelete="CASCADE"))
     chat_title: Mapped[str] = mapped_column(String(255))
-    chat_custom_instructions: Mapped[str] = mapped_column(Text, nullable=True)
+    chat_custom_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     chat_created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
