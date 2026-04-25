@@ -5,7 +5,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.exceptions import PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError
-from src.models import PetInfo, SharedUser
+from src.models import AnimalBreed, PetInfo, SharedUser
 from src.schemas import PetCreate, PetResponse, UpdatePet
 from src.service.storage import StorageService
 from src.repositories import PetsRepository
@@ -77,13 +77,13 @@ class PetsService:
             is_shared=pet.user_id != current_user_id,
         )
 
-    def _build_pet(self, payload: PetCreate, user_id: int) -> PetInfo:
+    def _build_pet(self, payload: PetCreate, user_id: int, animal_breed_id: int) -> PetInfo:
         return PetInfo(
             pet_name=payload.pet_name.strip(),
             animal_type_id=payload.animal_type_id,
             pet_date_of_birth=payload.pet_date_of_birth,
             user_id=user_id,
-            animal_breed_id=payload.animal_breed_id,
+            animal_breed_id=animal_breed_id,
             pedigree=payload.pedigree,
             pet_neck_girth=payload.pet_neck_girth,
             pet_breast_girth=payload.pet_breast_girth,
@@ -98,7 +98,8 @@ class PetsService:
         )
 
     async def create_pet(self, db: AsyncSession, payload: PetCreate, user_id: int) -> PetInfo | None:
-        pet = self._build_pet(payload, user_id)
+        animal_breed_id = await self._resolve_animal_breed_id(db, payload)
+        pet = self._build_pet(payload, user_id, animal_breed_id)
         db.add(pet)
 
         await db.commit()
@@ -116,7 +117,8 @@ class PetsService:
         storage_service: StorageService | None = None,
     ) -> PetResponse:
         storage = storage_service or StorageService()
-        pet = self._build_pet(payload, user_id)
+        animal_breed_id = await self._resolve_animal_breed_id(db, payload)
+        pet = self._build_pet(payload, user_id, animal_breed_id)
         uploaded_object_key: str | None = None
 
         db.add(pet)
@@ -149,6 +151,30 @@ class PetsService:
             raise
 
         return self.to_response(pet, user_id)
+
+    async def _resolve_animal_breed_id(self, db: AsyncSession, payload: PetCreate) -> int:
+        if payload.animal_breed_name:
+            breed_name = payload.animal_breed_name.strip()
+            result = await db.execute(
+                select(AnimalBreed).where(AnimalBreed.animal_breed == breed_name)
+            )
+            existing_breed = result.scalar_one_or_none()
+
+            if existing_breed:
+                return existing_breed.id
+
+            breed = AnimalBreed(
+                animal_breed=breed_name,
+                animal_type_id=payload.animal_type_id,
+            )
+            db.add(breed)
+            await db.flush()
+            return breed.id
+
+        if payload.animal_breed_id is None:
+            raise ValueError("Animal breed id or breed name is required.")
+
+        return payload.animal_breed_id
 
     async def list_all_pets(
         self,

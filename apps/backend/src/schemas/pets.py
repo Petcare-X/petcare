@@ -16,8 +16,13 @@ class PetCreate(BaseModel):
     animal_type_id: int = Field(
         validation_alias=AliasChoices("animal_type_id", "type"),
     )
-    animal_breed_id: int = Field(
+    animal_breed_id: int | None = Field(
+        default=None,
         validation_alias=AliasChoices("animal_breed_id", "breed"),
+    )
+    animal_breed_name: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("animal_breed_name", "breed_name"),
     )
     pedigree: bool = Field(
         validation_alias=AliasChoices("pedigree", "pet_pedigree"),
@@ -53,6 +58,12 @@ class PetCreate(BaseModel):
     def validate_name(cls, value: str) -> str:
         return value.strip()
 
+    @field_validator("animal_breed_name")
+    def validate_breed_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        return value.strip()
+
     @field_validator(*PET_MEASUREMENT_RULES.keys())
     def validate_measurements(cls, value: float, info) -> float:
         validate_pet_measurement_value(info.field_name, value)
@@ -60,6 +71,9 @@ class PetCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_measurements_consistency(self):
+        if self.animal_breed_id is None and not self.animal_breed_name:
+            raise ValueError("Animal breed id or breed name is required.")
+
         validate_pet_measurements_consistency(
             {
                 "pet_neck_girth": self.pet_neck_girth,

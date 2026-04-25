@@ -14,6 +14,7 @@ import { MapPage } from "@/pages/map/map-page";
 import { ChatPage } from "@/pages/chat/chat-page";
 import { CalendarPage } from "@/pages/calendar/calendar-page";
 import { SignupPage } from "@/pages/auth/signup-page";
+import { PetDetailsPage } from "@/pages/pets/pet-details-page";
 
 import { ensureAuth, redirectIfAuthenticated } from "./guards";
 
@@ -53,6 +54,13 @@ const signUpRoute = createRoute ({
     beforeLoad: redirectIfAuthenticated,
 });
 
+const authRoute = createRoute ({
+    getParentRoute: () => rootRoute,
+    path: appRoutes.auth,
+    component: LoginPage,
+    beforeLoad: redirectIfAuthenticated,
+});
+
 const loginRoute = createRoute ({
     getParentRoute: () => rootRoute,
     path: appRoutes.login,
@@ -78,6 +86,12 @@ const calendarRoute = createRoute ({
     component: CalendarPage,
 });
 
+const petDetailsRoute = createRoute ({
+    getParentRoute: () => fullAppLayoutRoute,
+    path: appRoutes.petProfile,
+    component: PetDetailsPage,
+});
+
 const mapRoute = createRoute ({
     getParentRoute: () => mainOnlyLayoutRoute,
     path: appRoutes.map,
@@ -91,6 +105,7 @@ const chatRoute = createRoute ({
 });
 
 const routeTree = rootRoute.addChildren([
+    authRoute,
     loginRoute,
     signUpRoute,
     
@@ -99,6 +114,7 @@ const routeTree = rootRoute.addChildren([
             homeRoute,
             profileRoute,
             calendarRoute,
+            petDetailsRoute,
         ]),
 
         mainOnlyLayoutRoute.addChildren([

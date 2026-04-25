@@ -1,50 +1,19 @@
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
+import { mapPetToCardView, useDogBreedsQuery, usePetsQuery } from "@/entities/pet/model/pet.queries";
+import { CreatePetForm } from "@/features/create-pet/ui/create-pet-form";
 import { appRoutes } from '@/shared/constants/routes';
+import { EmptyState } from "@/shared/ui/empty-state";
+import { PetCard } from "@/widgets/pet-card/pet-card";
 
 import './home-page.css';
-
-import arrowIcon from './assets/arrowIcon.svg';
-
-import photo1 from './assets/photo1.png';
-import photo2 from './assets/photo2.png';
-
-import calendarPet from './assets/calendarPet.svg';
-import weightPet from './assets/weightPet.svg';
-
-type Pet = {
-    id: number;
-    name: string;
-    breed: string;
-    age: string;
-    weight: string;
-    image: string;
-}
 
 type Service = {
     id: number;
     title: string;
     description: string;
 }
-
-const pets: Pet[] = [
-    {
-        id: 1,
-        name: 'Лола',
-        breed: 'ЙОРКШИРСКИЙ ТЕРЬЕР',
-        age: '3 года',
-        weight: '5 кг',
-        image: photo1
-    },
-    {
-        id: 2,
-        name: 'Чакки',
-        breed: 'САМОЕД',
-        age: '5 лет',
-        weight: '10 кг',
-        image: photo2
-    },
-];
 
 const services: Service[] = [
     {
@@ -70,6 +39,16 @@ const services: Service[] = [
 ];
 
 export function HomePage() {
+    const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
+    const petsQuery = usePetsQuery();
+    const breedsQuery = useDogBreedsQuery();
+
+    const pets = useMemo(
+        () => (petsQuery.data ?? []).map((pet) => mapPetToCardView(pet, breedsQuery.data ?? [])),
+        [breedsQuery.data, petsQuery.data],
+    );
+    const firstPetName = pets[0]?.name ?? "питомец";
+
     return (
         <div className="home-page">
             <section className="events-section">
@@ -83,7 +62,7 @@ export function HomePage() {
                     
                     <div className="event-info">
                         <p className="event-title">Ежегодная вакцинация</p>
-                        <p className="event-subtitle">{pets[0].name} • Ежегодная вакцинация</p>
+                        <p className="event-subtitle">{firstPetName} • Ежегодная вакцинация</p>
                     </div>
                 </button>
             </section>
@@ -91,43 +70,43 @@ export function HomePage() {
             <section className="pets-section">
                 <div className="section-row">
                     <h2 className="section-title">Мои питомцы</h2>
-                    <button type="button" className="add-pet-button">+ Добавить</button>
+                    <button
+                        type="button"
+                        className="add-pet-button"
+                        onClick={() => setIsCreateFormOpen((value) => !value)}
+                    >
+                        + Добавить
+                    </button>
                 </div>
 
-                <div className="pets-list">
-                    {pets.map((pet) => (
-                        <Link
-                        className="pet-card"
-                        to={appRoutes.petProfile}
-                        params={{petId: String(pet.id)}}
-                        >
-                            
-                            <div className="pet-main">
-                                <img src={pet.image} alt={pet.name} className="pet-image"/>
-                                
-                                <div className="pet-info">
-                                    <p className='pet-name'>{pet.name}</p>
-                                    <p className='pet-breed'>{pet.breed}</p>
+                {isCreateFormOpen ? (
+                    <CreatePetForm onCreated={() => setIsCreateFormOpen(false)} />
+                ) : null}
 
-                                    <div className="pet-meta">
-                                        <span className="pet-meta-item">
-                                            <img src={calendarPet} alt="" className="pet-meta-icon"/>
-                                            {pet.age}
-                                        </span>
+                {petsQuery.isLoading || breedsQuery.isLoading ? (
+                    <div className="pets-loading">Загружаем питомцев...</div>
+                ) : null}
 
-                                        <span className="pet-meta-item">
-                                            <img src={weightPet} alt="" className="pet-meta-icon"/>
-                                            {pet.weight}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        
-                        <img src={arrowIcon} alt="" className="arrow-icon"/>
-                        
-                        </Link>
-                    ))} 
-                </div>
+                {petsQuery.isError ? (
+                    <div className="pets-error">Не удалось загрузить питомцев</div>
+                ) : null}
+
+                {!petsQuery.isLoading && !petsQuery.isError && pets.length === 0 ? (
+                    <EmptyState
+                        title="У вас пока нет питомцев"
+                        description="Добавьте первого питомца, чтобы видеть его профиль, вес и документы."
+                        actionText="Добавить питомца"
+                        onAction={() => setIsCreateFormOpen(true)}
+                    />
+                ) : null}
+
+                {pets.length > 0 ? (
+                    <div className="pets-list">
+                        {pets.map((pet) => (
+                            <PetCard key={pet.id} pet={pet} />
+                        ))}
+                    </div>
+                ) : null}
             </section>
 
             <section className="services-section">
@@ -167,7 +146,7 @@ export function HomePage() {
                     <Link className="service-card" to={appRoutes.documents}>
                         <svg className="service-icon" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <rect width="42" height="42" rx="9" fill="#F9B116"/>
-                            <path d="M23.1668 10.1667H14.5002C13.9255 10.1667 13.3744 10.395 12.9681 10.8013C12.5618 11.2076 12.3335 11.7587 12.3335 12.3334V29.6667C12.3335 30.2413 12.5618 30.7924 12.9681 31.1988C13.3744 31.6051 13.9255 31.8334 14.5002 31.8334H27.5002C28.0748 31.8334 28.6259 31.6051 29.0322 31.1988C29.4386 30.7924 29.6668 30.2413 29.6668 29.6667V16.6667M23.1668 10.1667L29.6668 16.6667M23.1668 10.1667L23.1668 16.6667H29.6668M25.3335 22.0834H16.6668M25.3335 26.4167H16.6668M18.8335 17.75H16.6668" stroke="#FAFAFA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M23.1668 10.1667H14.5002C13.9255 10.1667 13.3744 10.395 12.9681 10.8013C12.5618 11.2076 12.3335 11.7587 12.3335 12.3334V29.6667C12.3335 30.2413 12.5618 30.7924 12.9681 31.1988C13.3744 31.6051 13.9255 31.8334 14.5002 31.8334H27.5002C28.0748 31.8334 28.6259 31.6051 29.0322 31.1988C29.4386 30.7924 29.6668 30.2413 29.6668 29.6667V16.6667M23.1668 10.1667L29.6668 16.6667M23.1668 10.1667L23.1668 16.6667H29.6668M25.3335 22.0834H16.6668M25.3335 26.4167H16.6668M18.8335 17.75H16.6668" stroke="#FAFAFA" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                         <div className="service-text">
                             <p className="service-title">Документы</p>
