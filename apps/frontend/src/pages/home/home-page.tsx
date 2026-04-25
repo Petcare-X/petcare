@@ -9,34 +9,6 @@ import { PetCard } from "@/widgets/pet-card/pet-card";
 
 import './home-page.css';
 
-type Service = {
-    id: number;
-    title: string;
-    description: string;
-}
-
-const services: Service[] = [
-    {
-        id: 1,
-        title: "Места",
-        description: "Где погулять"
-    },
-    {
-        id: 2,
-        title: "Клиники",
-        description: "Подходящие врачи"
-    },
-    {
-        id: 3,
-        title: "Салоны",
-        description: "Уход и забота"
-    },
-    {
-        id: 4,
-        title: "Документы",
-        description: "Паспорта и справки"
-    },
-];
 
 export function HomePage() {
     const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
