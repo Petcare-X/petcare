@@ -1,7 +1,8 @@
 export const appRoutes = {
+    auth: "/",
     login: "/login",
     signup: "/signup",
-    home: "/",
+    home: "/home",
     petProfile: "/pets/$petId",
     userProfile: "/user",
     chat: "/chat",

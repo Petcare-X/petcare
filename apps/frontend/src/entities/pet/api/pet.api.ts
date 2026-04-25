@@ -1,13 +1,9 @@
 import { apiClient } from "@/shared/api/client";
 
-type PetPayload = {
-    id: number;
-    pet_name: string;
-    pet_photo_object_key: string | null;
-};
+import type { CreatePetPayload, Pet } from "@/entities/pet/model/pet.types";
 
-export async function getPets() {
-    const response = await apiClient.get<PetPayload[]>("/pets", {
+export async function getPets(): Promise<Pet[]> {
+    const response = await apiClient.get<Pet[]>("/pets", {
         params: {
             offset: 0,
             limit: 50,
@@ -16,3 +12,9 @@ export async function getPets() {
 
     return response.data;
 };
+
+export async function createPet(payload: CreatePetPayload): Promise<Pet> {
+    const response = await apiClient.post<Pet>("/pets", payload);
+
+    return response.data;
+}
