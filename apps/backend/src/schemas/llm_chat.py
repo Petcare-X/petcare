@@ -10,7 +10,7 @@ class MessageRole(str, Enum):
 
 class MessageStatus(str, Enum):
     PENDING = "pending"
-    IN_PROCESS = "in_process"
+    IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     FAILED = "failed"
 
@@ -29,17 +29,19 @@ class ChatResponse(BaseModel):
 
 
 class MessageCreate(BaseModel):
-    chat_id: int
-    user_id: int
-    role: MessageRole
+    chat_id: int | None
     content: str = Field(..., min_length=1, max_length=5000)
 
 
 class MessageResponse(BaseModel):
     id: int
     chat_id: int
+    user_id: int
     role: MessageRole
     content: str
+    parent_message_id: int | None
+    status: MessageStatus
+    error_message: str | None
     created_at: datetime = Field(
         validation_alias=AliasChoices("created_at", "message_created_at"),
     )
@@ -50,5 +52,5 @@ class SendMessages(BaseModel):
     content: str
 
 class SendMessageResponse(BaseModel):
-    user_message: MessageResponse
-    assistant_message: MessageResponse
+    user_message: MessageResponse | None
+    assistant_message: MessageResponse | None

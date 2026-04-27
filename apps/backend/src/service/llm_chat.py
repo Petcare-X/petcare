@@ -1,10 +1,19 @@
 from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, session
 
 from src.models import LlmChat, LlmMessage
 from src.schemas import MessageRole, ChatCreate, MessageCreate, MessageStatus, SendMessageResponse
 from src.service.openrouter import OpenRouterService
 from src.repositories import LlmChatRepository, LlmMessageRepository
+from src.exceptions import (ChatNotFound, 
+                            UserMessageError, 
+                            AssistantMessageNotFound, 
+                            AssistantMessageError, 
+                            ChatHistoryNotFound, 
+                            UserMessageError,
+                            UserMessageNotFound, 
+                            UserPermissionError,
+                            MessageGenerationError)
 
 class LLMChatService:
     def __init__(self):
@@ -12,7 +21,7 @@ class LLMChatService:
         self.chat_repo = LlmChatRepository()
         self.message_repo = LlmMessageRepository()
 
-    def _build_openrouter_messages(
+    def build_openrouter_messages(
         self,
         chat: LlmChat,
         history: list[LlmMessage],
@@ -42,6 +51,14 @@ class LLMChatService:
             }
         )
         return messages
+    
+    async def failed_message(self, db: AsyncSession, message_id: int, error_message: str) -> LlmMessage:
+        assistant_message = await self.message_repo.get_by_id(db, message_id)
+        assistant_message.status = MessageStatus.FAILED
+        assistant_message.error_message = error_message
+        await db.commit()
+        await db.refresh(assistant_message)
+        return assistant_message
 
     async def create_chat(self, db: AsyncSession, user_id: int, payload: ChatCreate) -> LlmChat:
         chat = LlmChat(
@@ -54,111 +71,132 @@ class LLMChatService:
         return chat
     
     async def get_user_chat(self, db: AsyncSession, user_id: int, chat_id: int) -> LlmChat:
-        result = await self.get_user_chat(db, user_id, chat_id)
+        result = await self.chat_repo.get_user_chat(db, user_id, chat_id)
         return result
 
     async def get_user_chats(self, db: AsyncSession, user_id: int) -> list[LlmChat]:
         result = await self.chat_repo.get_by_user_id(db, user_id)
         return result
 
-    async def get_chat_messages(self, db: AsyncSession, chat_id: int) -> list[LlmMessage]:
-        result = await self.message_repo.get_by_chat_id(db, chat_id)
-        return list(result.scalars().all())
-
-    async def accept_message(self, db: AsyncSession, payload: MessageCreate) -> tuple[LlmMessage, LlmMessage]:
-        chat = await self.get_user_chat(db, payload.user_id, payload.chat_id)
+    async def get_chat_messages(self, db: AsyncSession, user_id: int, chat_id: int) -> list[LlmMessage]:
+        chat = await self.chat_repo.get_user_chat(db, user_id, chat_id)
         if not chat:
-            raise HTTPException(status_code=404, detail="Chat not found") #ChatNotFoundError
+            raise UserPermissionError("User does not have permission to access this chat")
+        messages = await self.message_repo.get_by_chat_id(db, chat_id)
+        return messages
+
+    async def accept_message(self, db: AsyncSession, user_id: int, chat_id: int, payload: MessageCreate) -> tuple[LlmMessage, LlmMessage]:
+        chat = await self.get_user_chat(db, user_id, chat_id)
+        if not chat:
+            raise ChatNotFound("Chat not found")
         
         if not payload.content:
-            raise HTTPException(status_code=400, detail="Message content is required") #MessageContentRequiredError
+            raise UserMessageError("Message content is required")
         
         user_message = LlmMessage(
-            chat_id=chat.id,
-            user_id=chat.user_id,
+            chat_id=chat_id,
+            user_id=user_id,
             role=MessageRole.USER,
             content=payload.content,
             status=MessageStatus.COMPLETED
         )
+        db.add(user_message)
+        await db.commit()
+        await db.refresh(user_message)
 
         assistant_message = LlmMessage(
-            chat_id=chat.id,
-            user_id=chat.user_id,
+            chat_id=chat_id,
+            user_id=user_id,
             role=MessageRole.ASSISTANT,
             content="",
             parent_message_id=user_message.id,
             status=MessageStatus.PENDING
         )
-        db.add(user_message)
         db.add(assistant_message)
-
         await db.commit()
-        await db.refresh(user_message)
         await db.refresh(assistant_message)
 
-        return SendMessageResponse(user_message, assistant_message)
+        return user_message, assistant_message
 
-# только pending 
-    async def start_generation(self, db: AsyncSession, assistant_message_id: int, user_id: int) -> LlmMessage:
+    async def start_generation(self, db: AsyncSession, assistant_message_id: int, user_id: int) -> LlmMessage | None:
         assistant_message = await self.message_repo.get_by_id(db, assistant_message_id)
         if not assistant_message:
-            raise HTTPException(status_code=404, detail="Assistant message not found") #AssistantMessageNotFoundError
+            raise AssistantMessageNotFound("Assistant message not found")
         
         if assistant_message.user_id != user_id:
-            raise HTTPException(status_code=403, detail="User does not have permission to access this message") #UserPermissionError
+            raise UserPermissionError("User does not have permission to access this message")
         
-        if assistant_message.status != MessageStatus.PENDING:
-            pass
-
         if assistant_message.role != MessageRole.ASSISTANT:
-            raise HTTPException(status_code=400, detail="Assistant message is not valid") #AssistantMessageInvalidError
+            raise AssistantMessageError("Assistant message is not valid")
+        
+        if assistant_message.status == MessageStatus.PENDING or assistant_message.status == MessageStatus.FAILED:
+            pass
+        else:
+            assistant_message.status = MessageStatus.IN_PROGRESS
+            assistant_message.error_message = None
 
-        assistant_message.status = MessageStatus.IN_PROGRESS
-        assistant_message.error_message = None
+            await db.commit()
+            await db.refresh(assistant_message)
+            return assistant_message
 
-        db.commit(assistant_message)
-        await db.refresh(assistant_message)
-        return assistant_message
-
-    async def build_generation_context(self, db: AsyncSession, assistant_message_id: int) -> tuple[LlmChat, LlmMessage, list[LlmMessage], str]:
+    async def build_generation_context(self, db: AsyncSession, assistant_message_id: int) -> tuple[LlmChat, list[LlmMessage], str]:
         assistant_message = await self.message_repo.get_by_id(db, assistant_message_id)
         if not assistant_message:
-            raise HTTPException(status_code=404, detail="Assistant message not found") #AssistantMessageNotFoundError
+            raise AssistantMessageNotFound("Assistant message not found")
+        
         chat = await self.chat_repo.get_by_id(db, assistant_message.chat_id)
         if not chat:
-            raise HTTPException(status_code=404, detail="Chat not found") #ChatNotFoundError
+            assistant_message = await self.failed_message(db, assistant_message.id, "Chat not found")
+            raise ChatNotFound("Chat not found")
+        
         user_message = await self.message_repo.get_by_id(db, assistant_message.parent_message_id)
         if not user_message:
-            raise HTTPException(status_code=404, detail="User message not found") #UserMessageNotFoundError
+            assistant_message = await self.failed_message(db, assistant_message.id, "User message not found")
+            raise UserMessageNotFound("User message not found")
+        if user_message.role != MessageRole.USER:
+            assistant_message = await self.failed_message(db, assistant_message.id, "User message is not valid")
+            raise UserMessageError("User message is not valid")
+        
         chat_history = await self.message_repo.get_by_chat_id(db, chat.id)
         if not chat_history:
-            raise HTTPException(status_code=404, detail="Chat history not found") #ChatHistoryNotFoundError
+            assistant_message = await self.failed_message(db, assistant_message.id, "Chat history not found")
+            raise ChatHistoryNotFound("Chat history not found")
+        if chat_history[-1].role == MessageRole.ASSISTANT:
+            chat_history = chat_history[:-1]
 
-        return (
-            chat,
-            assistant_message,
-            chat_history,
-            user_message.content
-        )
+        return (chat,
+                chat_history,
+                user_message.content)
     
-    async def generate_answer(self, db: AsyncSession, assistant_message_id: int) -> LlmMessage:
-        async with db.begin():
-            assistant_message = self.start_generation(db, assistant_message_id)
-            context = self.build_generation_context(db, assistant_message_id)
-            
+    async def generate_answer(self, assistant_message_id: int) -> LlmMessage:
+        async with session as db:
+            assistant_message = await self.message_repo.get_by_id(db, assistant_message_id)
+            context = await self.build_generation_context(db, assistant_message_id)
             try:
                 assistant_text = await self.openrouter_service.generate_answer(
-                    self._build_openrouter_messages(*context))
+                    self.build_openrouter_messages(*context))
+                if assistant_text:
+                    assistant_message.content = assistant_text
+                    assistant_message.status = MessageStatus.COMPLETED
+                    assistant_message.error_message = None
+
+                    await db.commit()
+                    await db.refresh(assistant_message)
+                    return assistant_message
+
             except Exception as e:
-                return {
-                    "detail": str(e) # GenerationError
-                }
+                error_message = f"Error generating answer: {str(e)}"
+                assistant_message = await self.failed_message(db, assistant_message_id, error_message)
+                raise MessageGenerationError(error_message)
 
 # для бота
-    async def send_message(self, db: AsyncSession, payload: MessageCreate) -> tuple[LlmMessage, LlmMessage]:
-        chat = await self.get_user_chat(db, payload.user_id, payload.chat_id)
-        history = await self.get_chat_messages(db, payload.user_id, payload.chat_id)
-
+    async def send_message(self, db: AsyncSession, user_id: int, payload: MessageCreate) -> tuple[LlmMessage, LlmMessage]:
+        chat = await self.get_user_chat(db, user_id, payload.chat_id)
+        if not chat:
+            raise ChatNotFound("Chat not found")
+        chat_history = await self.message_repo.get_by_chat_id(db, payload.chat_id)
+        if not chat_history:
+            raise ChatHistoryNotFound("Chat history not found")
         user_message = LlmMessage(
             chat_id=chat.id,
             user_id=chat.user_id,
@@ -170,7 +208,7 @@ class LLMChatService:
         await db.flush()
 
         assistant_text = await self.openrouter_service.generate_answer(
-            self._build_openrouter_messages(chat, history, payload.content)
+            self.build_openrouter_messages(chat, chat_history, payload.content)
         )
 
         assistant_message = LlmMessage(

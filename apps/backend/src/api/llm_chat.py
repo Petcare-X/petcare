@@ -11,7 +11,7 @@ from src.models import UserInfo
 chat_router = APIRouter(prefix="/llm-chat", tags=["llm-chat"])
 
 
-@chat_router.post("{user_id}/create-chat", response_model=ChatResponse, status_code=200)
+@chat_router.post("/create-chat", response_model=ChatResponse, status_code=200)
 async def create_chat(
     payload: ChatCreate,
     db: AsyncSession = Depends(get_db),
@@ -21,7 +21,7 @@ async def create_chat(
     return await service.create_chat(db=db, user_id=current_user.id, payload=payload)
 
 
-@chat_router.get("{user_id}/chats", response_model=list[ChatResponse])
+@chat_router.get("/chats", response_model=list[ChatResponse])
 async def get_user_chats(
     db: AsyncSession = Depends(get_db),
     current_user: UserInfo = Depends(get_current_user),
@@ -29,7 +29,7 @@ async def get_user_chats(
 ):
     return await service.get_user_chats(db=db, user_id=current_user.id)
 
-@chat_router.post("/{chat_id}/send-message", response_model=SendMessageResponse, status_code=201)
+@chat_router.post("/{chat_id}/send-message", response_model=SendMessageResponse, status_code=202)
 async def accept_message(
     chat_id: int,
     payload: MessageCreate,
@@ -37,13 +37,11 @@ async def accept_message(
     current_user: UserInfo = Depends(get_current_user),
     service: LLMChatService = Depends(),
 ):
-    user_message = await service.accept_message(
-        db=db,
-        user_id=current_user.id,
-        chat_id=chat_id,
-        content=payload.content,
-    )
-    return await SendMessageResponse(user_message=user_message)
+    user_message, assistant_message = await service.accept_message(db, current_user.id, chat_id, payload)
+    generating_message = await service.start_generation(db, assistant_message.id, current_user.id)
+    if generating_message:
+        await service.generate_answer(generating_message.id)
+    return SendMessageResponse(user_message, assistant_message)
 
 @chat_router.get("/{chat_id}/messages", response_model=list[MessageResponse])
 async def get_chat_messages(
