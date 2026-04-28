@@ -471,3 +471,29 @@
     0 0 0 4px rgba(249, 115, 22, 0.23),
     0 14px 34px rgba(249, 115, 22, 0.12);
 }
+
+.create-pet-overlay {
+  inset: 0;
+  position: fixed;
+  top: 70px;
+  right: 0;
+  bottom: 75px;
+  left: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.create-pet-modal {
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+}
+
+.create-pet-modal .create-pet-form {
+  margin-bottom: 0;
+}
