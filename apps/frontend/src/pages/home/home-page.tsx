@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 
 import { mapPetToCardView, useDogBreedsQuery, usePetsQuery } from "@/entities/pet/model/pet.queries";
@@ -41,17 +42,24 @@ export function HomePage() {
             <section className="pets-section">
                 <div className="section-row">
                     <h2 className="section-title">Мои питомцы</h2>
-                    <button
-                        type="button"
-                        className="add-pet-button"
-                        onClick={() => setIsCreateFormOpen((value) => !value)}
-                    >
-                        + Добавить
-                    </button>
+                    {pets.length > 0 ? (
+                        <button
+                            type="button"
+                            className="add-pet-button"
+                            onClick={() => setIsCreateFormOpen((value) => !value)}
+                        >
+                            + Добавить
+                        </button>
+                    ) : null}
                 </div>
 
-                {isCreateFormOpen ? (
-                    <CreatePetForm onCreated={() => setIsCreateFormOpen(false)} />
+                {isCreateFormOpen ? createPortal(
+                    <div className="create-pet-overlay">
+                        <div className="create-pet-modal">
+                            <CreatePetForm onCreated={() => setIsCreateFormOpen(false)} />
+                        </div>
+                    </div>,
+                    document.body,
                 ) : null}
 
                 {petsQuery.isLoading || breedsQuery.isLoading ? (
