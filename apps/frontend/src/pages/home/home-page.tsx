@@ -9,7 +9,6 @@ import { PetCard } from "@/widgets/pet-card/pet-card";
 
 import './home-page.css';
 
-
 export function HomePage() {
     const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
     const petsQuery = usePetsQuery();
