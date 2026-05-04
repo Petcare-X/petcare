@@ -4,7 +4,7 @@ dev:
 	cd apps/backend && uv run uvicorn src.main:app --reload --reload-dir src
 
 build:
-	docker compose --env-file .env.docker up --build -d
+	docker compose --env-file .env.docker up --build
 
 up:
 	docker compose --env-file .env.docker up

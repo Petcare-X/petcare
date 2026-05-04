@@ -20,6 +20,7 @@ class ChatCreate(BaseModel):
 
 class ChatResponse(BaseModel):
     id: int
+    pet_id: int
     chat_title: str
     created_at: datetime = Field(
         validation_alias=AliasChoices("created_at", "chat_created_at"),

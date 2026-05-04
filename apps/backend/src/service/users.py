@@ -139,10 +139,12 @@ class UsersService:
         user = await self.repo.get_by_id(db, user_id)
         if not user:
             raise UserNotFoundError()
+        if user.user_email is not None:
+            raise UserConflictError("Auth identity already exists")
         
         auth_identity = await self.repo.get_auth_by_email(db, email)
         if auth_identity:
-            raise UserConflictError() # уже привязан
+            raise UserConflictError("Auth identity already exists")
         
         new_auth_identity = AuthIdentities(
             user_id=user.id,
