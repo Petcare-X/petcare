@@ -89,17 +89,7 @@
   justify-content: center;
 }
 
-.logo {
-  display: block;
-  flex-shrink: 0;
-}
-
 .service-icon {
-  display: block;
-  flex-shrink: 0;
-}
-
-.navbar-icon {
   display: block;
   flex-shrink: 0;
 }
