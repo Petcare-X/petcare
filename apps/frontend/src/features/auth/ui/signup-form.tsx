@@ -3,35 +3,37 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { appRoutes } from "@/shared/constants/routes";
-import { useLogin } from "@/features/auth/model/use-login";
-import { loginSchema, type LoginFormValues } from "@/features/auth/model/login.schema";
+import { UseSignup } from "@/features/auth/model/use-signup";
+import { signupSchema, type SignupFormValues } from "@/features/auth/model/signup.schema";
 
-export function LoginForm() {
-    const loginMutation = useLogin();
+export function SignupForm() {
+    const signupMutation = UseSignup();
 
     const {
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
         setError,
-    } = useForm<LoginFormValues>({
-        resolver: zodResolver(loginSchema),
+    } = useForm<SignupFormValues>({
+        resolver: zodResolver(signupSchema),
         defaultValues: {
+            name: "",
             email: "",
+            birth_date: "",
             password: "",
         },
         mode: "onBlur",
     });
+        const onSubmit = async (value: SignupFormValues) => {
+            try {
+                await signupMutation.mutateAsync(value);
+            } catch (error) {
+                setError("root", {
+                    message: "Произошла ошибка при регистрации. Попробуйте снова.",
+                });
+            }
+        };
 
-    const onSubmit = async (values: LoginFormValues) => {
-        try {
-            await loginMutation.mutate(values)
-        } catch {
-            setError("root", {
-                message: "Неверный логин или пароль",
-            });
-        }
-    };
 
     return (
         <form className="auth-form" onSubmit={handleSubmit(onSubmit)}>
@@ -43,49 +45,64 @@ export function LoginForm() {
                     <path d="M18.8245 19.0646C18.4536 12.5965 21.414 6.45865 25.4879 6.22553C29.5612 5.99154 33.2322 12.2205 33.5762 18.2182C33.8625 23.2013 30.7922 27.43 26.7189 27.6639C22.6448 27.8979 19.1108 24.0478 18.8245 19.0646Z" fill="#FAFAFA"/>
                     <path d="M55.312 44.0849C51.2913 43.3883 48.7232 38.8365 49.5749 33.9186C50.6008 27.9995 54.9584 22.2295 58.9782 22.9267C62.999 23.6233 65.2409 30.0579 64.1346 36.4416C63.2823 41.3594 59.332 44.7813 55.312 44.0849Z" fill="#FAFAFA"/>
                 </svg>
-                <h1>PetCare</h1>
-                <p>Ваша забота в одном приложении</p>
+                <h1 className="auth-title">Регистрация</h1>
             </div>
+
             <div className="auth-inputs-conteiner">
+                <label htmlFor="name">ИМЯ</label>
+                <input
+                    id="name"
+                    className="auth-input" 
+                    type="text"
+                    {...register("name")}
+                    placeholder="Пользователь"
+                    autoComplete="name"
+                    required
+                />
+                {errors.name && <p className="signup-input-error">{errors.name.message}</p>}
+
                 <label htmlFor="email">ПОЧТА</label>
                 <input
                     id="email"
-                    className="auth-input"
-                    type="email" 
+                    className="auth-input" 
+                    type="email"
                     {...register("email")}
-                    placeholder="user@mail.ru"
+                    placeholder="user@example.com"
                     autoComplete="email"
                     required
                 />
-                {errors.email && <p>{errors.email.message}</p>}
-
+                {errors.email && <p className="signup-input-error">{errors.email.message}</p>}
+                
+                <label htmlFor="birth_date">ДАТА РОЖДЕНИЯ</label>
+                <input
+                    id="birth_date"
+                    className="auth-input" 
+                    type="date"
+                    {...register("birth_date")}
+                    required
+                />
+                {errors.birth_date && <p className="signup-input-error">{errors.birth_date.message}</p>}
+                
                 <label htmlFor="password">ПАРОЛЬ</label>
                 <input
                     id="password"
-                    className="auth-input"
-                    type="password"
-                    {...register("password")}
+                    className="auth-input" 
+                    type="password" 
                     placeholder="●●●●●●●●"
-                    autoComplete="current-password"
+                    {...register("password")}
                     required
                 />
-                {errors.password && <p>{errors.password.message}</p>}
-
-                {errors.root && <p>{errors.root.message}</p>}
+                {errors.password && <p className="signup-input-error">{errors.password.message}</p>}
             </div>
 
             <div>
-                <button 
-                    className="auth-button" 
-                    type="submit" 
-                    disabled={isSubmitting || loginMutation.isPending}
-                >
-                    {isSubmitting || loginMutation.isPending ? "Входим..." : "Войти"}
+                <button className="auth-button" type="submit" disabled={isSubmitting || signupMutation.isPending}>
+                    {isSubmitting || signupMutation.isPending ? "Регистрируем..." : "Зарегистрироваться"}
                 </button>
                 <p className="login-register">
-                    Нет аккаунта? <Link to={appRoutes.signup}>Зарегистрироваться</Link>
+                    Уже есть аккаунт? <Link to={appRoutes.login}>Войти</Link>
                 </p>
             </div>
         </form>
-    );
+    )
 }

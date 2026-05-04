@@ -5,7 +5,8 @@ export const appRoutes = {
     home: "/home",
     petProfile: "/pets/$petId",
     userProfile: "/user",
-    chat: "/chat",
+    chatSelectPet: "/chat",
+    chat: "/chat/$petId/$chatId",
     map: "/map",
     calendar: "/calendar",
     documents: "/pets/$petId/documents/"

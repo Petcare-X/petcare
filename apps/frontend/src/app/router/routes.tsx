@@ -8,18 +8,23 @@ import {
 import { appRoutes } from "@/shared/constants/routes";
 
 import { LoginPage } from "@/pages/auth/login-page";
+import { SignupPage } from "@/pages/auth/signup-page";
+
 import { HomePage } from "@/pages/home/home-page";
 import { UserProfile } from "@/pages/profile/profile-page";
 import { MapPage } from "@/pages/map/map-page";
-import { ChatPage } from "@/pages/chat/chat-page";
 import { CalendarPage } from "@/pages/calendar/calendar-page";
-import { SignupPage } from "@/pages/auth/signup-page";
 import { PetDetailsPage } from "@/pages/pets/pet-details-page";
+
+import { ChatPetSelectPage } from "@/pages/chat/chat-pet-select-page";
+import { ChatPage } from "@/pages/chat/chat-page";
+
 
 import { ensureAuth, redirectIfAuthenticated } from "./guards";
 
 import { FullAppShell } from "@/widgets/app-shell/full-app-shell";
 import { MainOnlyShell } from "@/widgets/app-shell/main-only-shell";
+import { NavbarOnlyShell } from "@/widgets/app-shell/navbar-only-shell";
 
 import { NotFoundPage } from "@/pages/not-found/not-found-page";
 
@@ -45,6 +50,12 @@ const mainOnlyLayoutRoute = createRoute({
     getParentRoute: () => protectedRoute,
     id: "main-only-layout",
     component: MainOnlyShell,
+});
+
+const navbarOnlyLayoutRoute = createRoute({
+    getParentRoute: () => protectedRoute,
+    id: "navbar-only-layout",
+    component: NavbarOnlyShell,
 });
 
 const signUpRoute = createRoute ({
@@ -98,6 +109,12 @@ const mapRoute = createRoute ({
     component: MapPage,
 });
 
+const chatPetSelectRoute = createRoute ({
+    getParentRoute: () => navbarOnlyLayoutRoute,
+    path: appRoutes.chatSelectPet,
+    component: ChatPetSelectPage,
+});
+
 const chatRoute = createRoute ({
     getParentRoute: () => mainOnlyLayoutRoute,
     path: appRoutes.chat,
@@ -120,6 +137,10 @@ const routeTree = rootRoute.addChildren([
         mainOnlyLayoutRoute.addChildren([
             mapRoute,
             chatRoute,
+        ]),
+
+        navbarOnlyLayoutRoute.addChildren([
+            chatPetSelectRoute,
         ]),
     ]),
 ]);

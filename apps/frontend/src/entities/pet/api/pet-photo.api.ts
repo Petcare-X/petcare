@@ -2,12 +2,6 @@ import { apiClient } from "@/shared/api/client";
 
 import type { Pet } from "@/entities/pet/model/pet.types";
 
-type PetPhotoUploadUrlResponse = {
-    object_key: string;
-    upload_url: string;
-    expires_in: number;
-};
-
 type PetPhotoDownloadUrlResponse = {
     object_key: string;
     download_url: string;

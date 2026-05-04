@@ -1,11 +1,15 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 
-import { mapPetToCardView, useDogBreedsQuery, usePetsQuery } from "@/entities/pet/model/pet.queries";
+import { useDogBreedsQuery, usePetsQuery } from "@/entities/pet/model/pet.queries";
+
 import { CreatePetForm } from "@/features/create-pet/ui/create-pet-form";
+import { PetCard } from "@/widgets/pet-card/pet-card";
+import { mapPetToCardView } from "@/widgets/pet-card/model/pet-info-formating";
+
 import { appRoutes } from '@/shared/constants/routes';
 import { EmptyState } from "@/shared/ui/empty-state";
-import { PetCard } from "@/widgets/pet-card/pet-card";
+
 
 import './home-page.css';
 
@@ -73,11 +77,13 @@ export function HomePage() {
                 ) : null}
 
                 {pets.length > 0 ? (
-                    <div className="pets-list">
+                    <ul className="pets-list">
                         {pets.map((pet) => (
-                            <PetCard key={pet.id} pet={pet} />
+                            <li key={pet.id}>
+                                <PetCard pet={pet} />
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 ) : null}
             </section>
 

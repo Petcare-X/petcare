@@ -47,10 +47,14 @@
   object-fit: cover;
 }
 
-.main-content {
+.main-content-with-shell {
   max-width: 430px;
   margin: auto;
   padding: 30px 0 120px;
+}
+
+.main-content-without-shell {
+  width: 100%;
 }
 
 .navbar {

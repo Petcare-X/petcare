@@ -6,10 +6,10 @@ import "./app-shell.css";
 
 export function FullAppShell() {
     return (
-        <div className="app-shell">
+        <div>
             <Header />
 
-            <main className="main-content page-transition">
+            <main className="main-content-with-shell page-transition">
                 <Outlet />
             </main>
             
