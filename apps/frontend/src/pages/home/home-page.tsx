@@ -14,7 +14,6 @@ import { EmptyState } from "@/shared/ui/empty-state";
 
 import './home-page.css';
 
-
 export function HomePage() {
     const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
     const petsQuery = usePetsQuery();
