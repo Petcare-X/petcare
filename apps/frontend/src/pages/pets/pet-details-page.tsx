@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { appRoutes } from "@/shared/constants/routes";
 
+import { mapPetToCardView } from "@/widgets/pet-card/model/pet-info-formating";
+
 import {
-    mapPetToCardView,
     useDogBreedsQuery,
     usePetsQuery,
     usePetPhotoQuery
