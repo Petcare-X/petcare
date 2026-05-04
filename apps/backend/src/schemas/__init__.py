@@ -40,7 +40,7 @@ from .llm_chat import (
     ChatResponse,
     MessageCreate,
     MessageResponse,
-    SendMessageResponse
+    SendMessageResponse,
 )
 
 __all__ = (
@@ -85,5 +85,5 @@ __all__ = (
     "ChatResponse",
     "MessageCreate",
     "MessageResponse",
-    "SendMessageResponse"
+    "SendMessageResponse",
 )

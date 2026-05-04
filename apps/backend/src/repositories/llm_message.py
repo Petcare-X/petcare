@@ -9,6 +9,7 @@ class LlmMessageRepository:
         res = await db.execute(
             select(LlmMessage)
             .where(LlmMessage.chat_id == chat_id)
+            .order_by(LlmMessage.message_created_at)
         )
         return list(res.scalars().all())
     
