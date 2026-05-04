@@ -25,3 +25,8 @@ class LlmChatRepository:
                     LlmChat.user_id == user_id)
             ))
         return res.scalar_one_or_none()
+    
+    async def get_by_user_pet(self, db: AsyncSession, pet_id: int, user_id: int) -> List[LlmChat]:
+        res = await db.execute(
+            select(LlmChat).where(LlmChat.pet_id == pet_id))
+        return list(res.scalars().all())

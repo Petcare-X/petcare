@@ -21,11 +21,11 @@ cd petcare
 ```bash
 make build
 ```
-Сервис будет доступен
-frontend: http://172.18.0.5:5173/
+### Сервисы будут доступны по следующим адресам:     
+frontend: http://172.18.0.5:5173/  
 backend: http://0.0.0.0:8000 
 
-# При завершении работы остановите все сервисы
+При завершении работы остановите все сервисы
 ```bash
 make down
 ```
@@ -108,7 +108,7 @@ Backend построен как отдельный асинхронный API-с
 - `SQLAlchemy asyncio`
 - `PostgreSQL`
 - `Alembic`
-- `MinIO` / S3-compatible storage
+- `MinIO`
 - `OpenRouter`
 - `aiogram`
 
@@ -121,7 +121,6 @@ Backend построен как отдельный асинхронный API-с
 - `sharing / invites`
 - `map points`
 - `llm chat`
-- `upload-data`
 
 ### Frontend
 Целевая frontend-архитектура предполагает:
@@ -144,6 +143,7 @@ Frontend должен быть реализован как отдельный к
 .
 ├── apps/
 │   └── backend/
+│   └── frontend/
 ├── docs/
 ├── requirements.txt
 ├── uv.lock
@@ -160,6 +160,7 @@ apps/backend/src/
   schemas/
   core/
   bot/
+  third_party/
 ```
 
 ## Документация
@@ -186,7 +187,6 @@ apps/backend/src/
 
 1. Довести permission logic до целевой модели `shared user`.
 2. Спроектировать и реализовать `pet-centric` ИИ-чат.
-3. Защитить `upload-data` через `admin-only` доступ.
-4. Зафиксировать лимиты размеров файлов.
-5. Разложить сценарии новичка, поездки и непредвиденной ситуации на конкретные frontend flows.
-6. Начать реализацию frontend/PWA на основе уже согласованной архитектуры.
+3. Зафиксировать лимиты размеров файлов.
+4. Разложить сценарии новичка, поездки и непредвиденной ситуации на конкретные frontend flows.
+5. Начать реализацию frontend/PWA на основе уже согласованной архитектуры.
