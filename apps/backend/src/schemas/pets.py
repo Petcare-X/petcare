@@ -13,6 +13,8 @@ class PetCreate(BaseModel):
     pet_date_of_birth: date = Field(
         validation_alias=AliasChoices("pet_date_of_birth", "date_of_birth"),
     )
+    pet_sex: str = Field(
+        validation_alias=AliasChoices("pet_sex", "sex"))
     animal_type_id: int = Field(
         validation_alias=AliasChoices("animal_type_id", "type"),
     )
@@ -41,6 +43,9 @@ class PetCreate(BaseModel):
         default=None,
         validation_alias=AliasChoices("pet_is_sterylyzed", "is_sterylized"),
     )
+    pet_special_notes: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("pet_special_notes", "special_notes"))
     pet_photo_object_key: str | None = Field(
         default=None,
         validation_alias=AliasChoices(
@@ -90,6 +95,7 @@ class PetResponse(BaseModel):
     user_id: int | None
     pet_name: str
     pet_date_of_birth: date
+    pet_sex: str
     animal_type_id: int
     animal_breed_id: int
     pedigree: bool
@@ -97,6 +103,7 @@ class PetResponse(BaseModel):
     pet_breast_girth: float
     pet_length: float
     pet_weight: float
+    pet_special_notes: str | None
     pet_is_sterylyzed: bool | None
     pet_photo_object_key: str | None
     pet_photo_content_type: str | None
@@ -114,6 +121,9 @@ class UpdatePet(BaseModel):
         default=None,
         validation_alias=AliasChoices("pet_date_of_birth", "date_of_birth"),
     )
+    pet_sex: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("pet_sex", "sex"))
     animal_type_id: int | None = Field(
         default=None,
         validation_alias=AliasChoices("animal_type_id", "type"),
@@ -143,6 +153,9 @@ class UpdatePet(BaseModel):
         default=None,
         validation_alias=AliasChoices("pet_is_sterylyzed", "is_sterylized"),
     )
+    pet_special_notes: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("pet_special_notes", "special_notes"))
     pet_photo_object_key: str | None = Field(
         default=None,
         validation_alias=AliasChoices(
