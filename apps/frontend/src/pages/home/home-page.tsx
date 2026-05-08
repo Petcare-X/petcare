@@ -70,10 +70,6 @@ export function HomePage() {
                     <div className="pets-loading">Загружаем питомцев...</div>
                 ) : null}
 
-                {petsQuery.isError ? (
-                    <div className="pets-error">Не удалось загрузить питомцев</div>
-                ) : null}
-
                 {!petsQuery.isLoading && !petsQuery.isError && pets.length === 0 ? (
                     <EmptyState
                         title="У вас пока нет питомцев"
