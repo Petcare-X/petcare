@@ -8,5 +8,14 @@ export type Document = {
     content_type: string | null
     size_bytes: number | null
     etag: string | null
-    uploaded_at: Date | null
+    uploaded_at: string | null
+}
+
+export type DocumentDownloadUrl = {
+    document_id: number
+    document_type_name: string | null
+    custom_name: string
+    object_key: string
+    download_url: string
+    expires_in: number
 }
