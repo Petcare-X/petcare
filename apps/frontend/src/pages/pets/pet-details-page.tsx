@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { appRoutes } from "@/shared/constants/routes";
 
+import { DocumentsList } from "@/widgets/document-list/documents-list";
 import { mapPetToCardView } from "@/widgets/pet-card/model/pet-info-formating";
-
+import { useCreateInvite } from "@/features/manage-share/model/use-create-invite";
 import {
     useDogBreedsQuery,
     usePetsQuery,
@@ -11,12 +12,25 @@ import {
 } from "@/entities/pet/model/pet.queries";
 
 import './pet-details-page.css';
+import { usePetDocumentsQuery } from "@/entities/document/model/document.queries";
+import { UploadDocumentForm } from "@/features/upload-document/ui/upload-document-form";
+import { createPortal } from "react-dom";
 
 export function PetDetailsPage() {
     const { petId } = useParams({ strict: false }) as { petId?: string };
+    const petIdNumber = Number(petId);
 
     const petsQuery = usePetsQuery();
     const breedsQuery = useDogBreedsQuery();
+    const documentsQuery = usePetDocumentsQuery(petIdNumber, Number.isFinite(petIdNumber) && petIdNumber > 0);
+
+    const createInvite = useCreateInvite();
+    const [inviteCode, setInviteCode] = useState<string | null>(null);
+
+    const [sharingIsOpen, setSharingIsOpen] = useState(false);
+    const [paramsAreOpen, setParamsAreOpen] = useState(false);
+    const [uploadIsOpen, setUploadIsOpen] = useState(false);
+    const [backgroundOffset, setBackgroundOffset] = useState(0);
 
 
     const pet = useMemo(() => {
@@ -31,21 +45,63 @@ export function PetDetailsPage() {
 
     const photoQuery = usePetPhotoQuery(pet?.id ?? 0, Boolean(pet?.photoObjectKey));
 
+    useEffect(() => {
+        const handleScroll = () => {
+            setBackgroundOffset(window.scrollY * 1);
+        };
+
+        handleScroll();
+        window.addEventListener("scroll", handleScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+        };
+    }, []);
+
+    useEffect(() => {
+        setInviteCode(null);
+    }, [petIdNumber]);
+
+
+    useEffect(() => {
+        if (!sharingIsOpen || !petIdNumber || inviteCode || createInvite.isPending) {
+            return;
+        }
+
+        createInvite.mutate(
+            {
+                pet_id: petIdNumber,
+                max_uses: 1,
+                expires_at: null,
+            },
+            {
+                onSuccess: (invite) => {
+                    setInviteCode(invite.invite_code);
+                },
+            },
+        );
+    }, [sharingIsOpen, petIdNumber, inviteCode, createInvite]);
+
+
     const isLoading = petsQuery.isLoading || breedsQuery.isLoading;
     const petInitial = pet?.name?.slice(0, 1).toUpperCase() ?? "?";
 
     return (
         <main className="pet-details-page">
-            {photoQuery.data ? (
-                <img className="pet-profile-bg" src={photoQuery.data} alt="" />
-            ) : (
-                <div className="pet-profile-bg pet-profile-bg--empty" />
-            )}
-            
+            <div className="pet-page-background-layer">
+                <div
+                    className="pet-page-background-image"
+                    style={{
+                        backgroundImage: `url(${photoQuery.data})`,
+                        transform: `translateY(${backgroundOffset}px)`,
+                    }}
+                />
+            </div>
+
             <section className="pet-profile-header">
                 <Link className="back-home" to={appRoutes.home}>
-                    <svg width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8.91892 18L0 9L8.91892 0L11 2.1L4.16216 9L11 15.9L8.91892 18Z" fill="#FAFAFA"/>
+                    <svg className="back-home-icon" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8.91892 18L0 9L8.91892 0L11 2.1L4.16216 9L11 15.9L8.91892 18Z" fill="currentColor"/>
                     </svg>
                 </Link>
 
@@ -54,62 +110,142 @@ export function PetDetailsPage() {
                 </Link>
             </section>
             
-            {petsQuery.isLoading || breedsQuery.isLoading ? (
-                <p>Загружаем питомца...</p>
-            ) : (
-                <section className="pet-base-info">
-                    <p className="pet-profile-name">{pet?.name ?? "Питомец не найден"}</p>
-                    <p className="pet-profile-breed">{pet?.breed ?? "Порода не указана"}</p>
+            <section className="pet-profile-info">
+                {petsQuery.isLoading || breedsQuery.isLoading ? (
+                    <p>Загружаем питомца...</p>
+                ) : (
+                    <section className="pet-base-info">
+                        <p className="pet-profile-name">{pet?.name ?? "Питомец не найден"}</p>
+                        <p className="pet-profile-breed">{pet?.breed ?? "Порода не указана"}</p>
+                    </section>
+                )}
+                
+                <section className="for-share">
+                    <div className="shared-quantity">
+                        <svg width="20" height="27" viewBox="0 0 20 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0 26.25C0 20.7271 4.47715 16.25 10 16.25C15.5229 16.25 20 20.7271 20 26.25H0ZM10 15C5.85625 15 2.5 11.6438 2.5 7.5C2.5 3.35625 5.85625 0 10 0C14.1437 0 17.5 3.35625 17.5 7.5C17.5 11.6438 14.1437 15 10 15Z" fill="white"/>
+                        </svg>
+                        <span className="shared-quantity-value">2</span>
+                    </div> 
+            
+                    <button type="button" className="share-pet-button" onClick={() => setSharingIsOpen(true)}>
+                        <svg width="23" height="24" viewBox="0 0 23 24" fill="none" xmlns="http://www.w3.org/2000/svg"> 
+                            <path d="M11.25 0L19.0089 7.75887L17.2411 9.5266L12.5 4.78552V16.7677H10V4.78552L5.25889 9.5266L3.49111 7.75887L11.25 0ZM0 19.2677V14.2677H2.5V19.2677C2.5 19.9581 3.05965 20.5177 3.75 20.5177H18.75C19.4404 20.5177 20 19.9581 20 19.2677V14.2677H22.5V19.2677C22.5 21.3389 20.8211 23.0177 18.75 23.0177H3.75C1.67894 23.0177 0 21.3389 0 19.2677Z" fill="#FAFAFA"/> 
+                        </svg>
+                    </button>
                 </section>
-            )}
-            
-            <section className="for-share">
-                <Link className="shared-quantity" to={appRoutes.home}>
-                    <svg width="20" height="27" viewBox="0 0 20 27" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0 26.25C0 20.7271 4.47715 16.25 10 16.25C15.5229 16.25 20 20.7271 20 26.25H0ZM10 15C5.85625 15 2.5 11.6438 2.5 7.5C2.5 3.35625 5.85625 0 10 0C14.1437 0 17.5 3.35625 17.5 7.5C17.5 11.6438 14.1437 15 10 15Z" fill="white"/>
-                    </svg>
-                    <span className="shared-quantity-value">2</span>
-                </Link> 
-
-                <Link className="share-pet" to={appRoutes.home}>
-                    <svg width="23" height="24" viewBox="0 0 23 24" fill="none" xmlns="http://www.w3.org/2000/svg"> 
-                        <path d="M11.25 0L19.0089 7.75887L17.2411 9.5266L12.5 4.78552V16.7677H10V4.78552L5.25889 9.5266L3.49111 7.75887L11.25 0ZM0 19.2677V14.2677H2.5V19.2677C2.5 19.9581 3.05965 20.5177 3.75 20.5177H18.75C19.4404 20.5177 20 19.9581 20 19.2677V14.2677H22.5V19.2677C22.5 21.3389 20.8211 23.0177 18.75 23.0177H3.75C1.67894 23.0177 0 21.3389 0 19.2677Z" fill="#FAFAFA"/> 
-                    </svg>
-                </Link>
-            </section>
-            
-            <section className="pet-detailed-info">
                 
-                <div className="pet-params-avatar">
-                        {/* сюда аватар питомца */}
-                </div>
-                
-                <p className="pet-detailed-title">Параметры {pet?.name}</p>
+                <section className={`pet-params-conteiner ${paramsAreOpen ? "is-open" : ""}`} onClick={() => setParamsAreOpen(!paramsAreOpen)}>
+                    
+                    {/* <div className="pet-params-avatar">
+                    </div> */}
+                    
+                    <div className="pet-params-top">
+                        <p className="pet-detailed-title">Параметры {pet?.name}</p>
+                        
+                        <div className="pet-details-toggle">
+                            <svg width="15" height="9" viewBox="0 0 15 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M7.50005 3.27269L1.66667 9L0 7.36363L7.50005 0L15 7.36363L13.3333 9L7.50005 3.27269Z" fill="#FAFAFA"/>
+                            </svg>
 
-                <button type="button" className="pet-details-toggle">
-                    <svg className="arrow-up" width="15" height="9" viewBox="0 0 15 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7.50005 3.27269L1.66667 9L0 7.36363L7.50005 0L15 7.36363L13.3333 9L7.50005 3.27269Z" fill="#FAFAFA"/>
-                    </svg>
+                            <svg width="15" height="9" viewBox="0 0 15 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M7.49995 5.72731L13.3333 0L15 1.63637L7.49995 9L0 1.63637L1.66666 0L7.49995 5.72731Z" fill="#FAFAFA"/>
+                            </svg>
+                        </div>
+                    </div>
 
-                    <svg className="arrow-down" width="15" height="9" viewBox="0 0 15 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7.49995 5.72731L13.3333 0L15 1.63637L7.49995 9L0 1.63637L1.66666 0L7.49995 5.72731Z" fill="#FAFAFA"/>
-                    </svg>
-                </button>
+                    <ul className="pet-params-list">
+                        <li className="pet-param-item">
+                            <p className="pet-param-title">Возраст</p>
+                            <p className="pet-param-value">{pet?.age ?? "Не указан"}</p>
+                        </li>
+                        <li className="pet-param-item">
+                            <p className="pet-param-title">Вес</p>
+                            <p className="pet-param-value">{pet?.weight ?? "Не указан"}</p>
+                        </li>
+                    </ul>
+                </section>
+
+                <section className="pet-documents">
+                    <div className="pet-documents-header">
+                        <p className="pet-documents-title">Документы</p>
+
+                        <button
+                            type="button"
+                            className="pet-documents-add"
+                            onClick={() => setUploadIsOpen(true)}
+                        >
+                            + Добавить
+                        </button>
+
+                        {uploadIsOpen ? createPortal(
+                            <div 
+                                className="pet-add-documents-overlay"
+                                onClick={() => setUploadIsOpen(false)}
+                            >
+                                <div 
+                                    className="pet-add-documents-modal"
+                                    onClick={(event) => event.stopPropagation()}
+                                >
+                                    <UploadDocumentForm
+                                        petId={petIdNumber}
+                                        onUploaded={() => setUploadIsOpen(false)}
+                                        onCancel={() => setUploadIsOpen(false)}
+                                    />
+                                </div>
+                            </div>,
+                            document.body,
+                        ) : null}
+                    </div>
+
+                    <div className="pet-documents-body">
+                        {documentsQuery.isLoading ? (
+                            <p>Загружаем документы...</p>
+                        ) : documentsQuery.isError ? (
+                            <p>ОШИБКА</p>
+                        ) : (
+                            <DocumentsList 
+                                petId={petIdNumber} 
+                                documents={documentsQuery.data ?? []} 
+                            />
+                        )}
+                    </div>
+                </section>
             </section>
 
-            <section className="pet-documents">
-                <div className="pet-documents-header">
-                    <p className="pet-documents-title">Документы</p>
+            <button
+                className={`pet-sharing-overlay ${sharingIsOpen ? "is-open" : ""}`}
+                onClick={() => setSharingIsOpen(false)}
+            />
 
-                    <Link className="pet-documents-add" to={appRoutes.home}>
-                        + Добавить
-                    </Link>
-                </div>
+            <aside className={`sharing-element ${sharingIsOpen ? "is-open" : ""}`}>
+                <img className="pet-sharing-image" src={photoQuery.data}/>
+                <div className="sharing-pet-info-conteiner">
+                    <div className="sharing-pet-info">
+                        <p className="sharing-pet-name">{pet?.name}</p>
+                        <p className="sharing-pet-code">
+                            {createInvite.isPending
+                                ? "Генерируем код..."
+                                : inviteCode ?? "Код пока недоступен"}
+                        </p>
+                    </div>
 
-                <div className="pet-documents-body">
-                    {/* сюда доки документы */}
+                    <button
+                        type="button"
+                        className="pet-sharing-copy-button"
+                        onClick={async () => {
+                            if (!inviteCode) {
+                                return;
+                            }
+                        
+                            await navigator.clipboard.writeText(inviteCode);
+                        }}
+                        disabled={!inviteCode}
+                    >
+                        Копировать код
+                    </button>
                 </div>
-            </section>
+            </aside>
         </main>
     );
 }

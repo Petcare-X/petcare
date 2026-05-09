@@ -1,14 +1,82 @@
 .profile-page {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.user-photo-placeholder-conteiner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #cfcfcf;
+    width: 85px;
+    height: 88px;
+    margin: 0 auto;
+    border-radius: 25px;
+    overflow: hidden;
+}
+
+.user-photo-placeholder {
+    width: 60%;
+    color: #000000;
+}
+
+.user-name {
+    font-size: 1.5rem;
+    font-weight: 1000;
+}
+
+.profile-links-list {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    background-color: #fafafa;
+    border-radius: 30px;
+    overflow: hidden;
+}
+
+.profile-link-item {
+    display: flex;
+    gap: 20px;
+    padding: 15px 20px;
+    text-decoration: none;
+    color: #000000;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.profile-link-item + .profile-link-item {
+    border-top: 2px solid #ececec;
+}
+
+.profile-link-item:hover {
+    background-color: #e4e4e4;
+}
+
+.profile-arrow-icon {
+    margin-left: auto;
 }
 
 .logout-button {
-    width: 100%;
-    background-color: red;
-    color: white;
+    margin-top: 60px;
+    width: 80%;
+    background-color: #fafafa;
+    color: #FF4D4D;
     font-size: 1.1rem;
     font-weight: 700;
     padding: 10px;
+    border: 2px solid #FF4D4D;
     border-radius: 50px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.12);
+    transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+    background-color: #FF4D4D;
+    color: #fafafa;
+}
+
+.logout-button:focus {
+    transform: scale(0.98);
 }

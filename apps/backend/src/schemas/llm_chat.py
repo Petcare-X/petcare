@@ -30,7 +30,11 @@ class ChatResponse(BaseModel):
 
 
 class MessageCreate(BaseModel):
-    chat_id: int | None
+    chat_id: int
+    content: str = Field(..., min_length=1, max_length=5000)
+
+
+class SendMessageRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=5000)
 
 
