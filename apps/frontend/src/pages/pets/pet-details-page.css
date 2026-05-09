@@ -1,32 +1,16 @@
 .pet-details-page {
   position: relative;
   max-width: 500px;
-  min-height: 100vh;
+  height: 100vh;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 45vh;
+  overflow: hidden;
   isolation: isolate;
 }
 
-.pet-page-background-layer {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.pet-page-background-image {
+.pet-details-backdrop {
   position: absolute;
-  top: 0;
-  width: 100%;
-  height: 100vh;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  will-change: transform;
+  inset: 0;
+  pointer-events: none;
 }
 
 .pet-profile-header {
@@ -80,13 +64,76 @@
 }
 
 .pet-profile-info {
+  position: absolute;
+  top: var(--pet-sheet-top-inset);
+  right: 0;
+  left: 0;
+  z-index: 3;
+  height: var(--pet-sheet-max-height);
   min-height: 100px;
-  backdrop-filter: blur(4.5px);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
   padding: 25px;
+  border-radius: 28px 28px 0 0;
+  backdrop-filter: blur(4.5px);
+  transform: translateY(var(--pet-sheet-offset));
+  transition: transform 0.28s ease;
+  will-change: transform;
+}
+
+.pet-profile-info--dragging {
+  transition: none;
+}
+
+.pet-sheet-drag-zone {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+.pet-sheet-drag-zone:active {
+  cursor: grabbing;
+}
+
+.pet-sheet-handle {
+  width: 54px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(250, 250, 250, 0.72);
+}
+
+.pet-profile-info-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.pet-profile-info-scroll {
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pet-profile-info-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 .pet-base-info {
@@ -155,46 +202,37 @@
   transform: scale(0.92);
 }
 
-.pet-params-conteiner {
+.pet-detailed-info {
+  position: relative;
   z-index: 2;
   width: 100%;
-  max-height: 3.5rem;
   padding: 16px 14px 8px 16px;
   border-radius: 18px;
   background: rgba(105, 92, 82, 0.62);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
-  color: #fafafa;
-  overflow: hidden;
-  cursor: pointer;
-  transition: 0.3s ease-in-out;
 }
 
-.pet-params-conteiner.is-open {
-  max-height: 16rem;
+.pet-detailed-info--open {
+  padding-bottom: 10px;
 }
 
-.pet-params-top {
+.pet-detailed-summary {
+  position: relative;
+  width: 100%;
+  min-height: 50px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
 }
 
-.pet-detailed-title {
-  font-size: 1.28rem;
-  line-height: 1.1;
-  font-weight: 800;
-  letter-spacing: 2px;
-  white-space: nowrap;
-}
-
-.pet-params-list {
-  list-style: none;
-  margin-top: 20px;
-}
-
-.pet-param-item {
-  display: flex;
-  justify-content: space-between;
+.pet-detailed-summary:disabled {
+  cursor: default;
+  opacity: 0.65;
 }
 
 .pet-params-avatar {
@@ -202,7 +240,33 @@
   height: 48px;
   border-radius: 14px;
   background: rgba(250, 250, 250, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   flex-shrink: 0;
+}
+
+.pet-params-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pet-detailed-title {
+  position: absolute;
+  left: 50%;
+  max-width: calc(100% - 110px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translateX(-50%);
+  margin: 0;
+  color: #fafafa;
+  font-size: 1.28rem;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: 2px;
+  white-space: nowrap;
 }
 
 .pet-details-toggle {
@@ -214,6 +278,45 @@
   flex-direction: column;
   align-items: center;
   gap: 7px;
+  flex-shrink: 0;
+}
+
+.pet-params-list {
+  list-style: none;
+  margin-top: 20px;
+}
+
+.pet-param-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pet-param-row + .pet-param-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 2px solid rgba(250, 250, 250, 0.25);
+}
+
+.pet-param-label,
+.pet-param-value {
+  color: #fafafa;
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.pet-param-label {
+  font-weight: 800;
+}
+
+.pet-param-value {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pet-documents {
@@ -440,25 +543,6 @@
   box-shadow: 0 12px 24px rgba(249, 115, 22, 0.22);
 }
 
-@media (max-width: 520px) {
-  .pet-add-documents-overlay {
-    padding: 12px;
-  }
-
-  .upload-document-form {
-    padding: 20px 16px 16px;
-    border-radius: 22px;
-  }
-
-  .upload-document-actions {
-    flex-direction: column-reverse;
-  }
-
-  .upload-document-button {
-    width: 100%;
-  }
-}
-
 .pet-sharing-overlay {
   position: fixed;
   inset: 0;
@@ -517,7 +601,7 @@
 }
 
 .sharing-pet-code {
-  color: #F97316;
+  color: #f97316;
   font-size: clamp(0.98rem, 3vw, 1.12rem);
   font-weight: 700;
 }
@@ -528,7 +612,7 @@
 }
 
 .pet-sharing-copy-button {
-  background-color: #F97316;
+  background-color: #f97316;
   color: #fafafa;
   font-size: clamp(0.8rem, 3vw, 1.1rem);
   padding: 10px 15px;
@@ -538,4 +622,29 @@
 
 .pet-sharing-copy-button:hover {
   transform: scale(0.97);
+}
+
+@media (max-width: 520px) {
+  .pet-add-documents-overlay {
+    padding: 12px;
+  }
+
+  .upload-document-form {
+    padding: 20px 16px 16px;
+    border-radius: 22px;
+  }
+
+  .upload-document-actions {
+    flex-direction: column-reverse;
+  }
+
+  .upload-document-button,
+  .pet-sharing-copy-button {
+    width: 100%;
+  }
+
+  .sharing-pet-info-conteiner {
+    flex-direction: column;
+    gap: 12px;
+  }
 }

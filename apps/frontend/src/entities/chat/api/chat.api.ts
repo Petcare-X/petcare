@@ -36,9 +36,10 @@ export async function getChatMessages(petId: number, chatId: number): Promise<Ch
     return response.data;
 }
 
-export async function deleteChat() {
-    return
+export async function deleteChat(petId: number, chatId: number): Promise<void> {
+    await apiClient.delete(`/llm-chat/${petId}/${chatId}`);
 }
+
 
 export async function sendMessage(
     petId: number,

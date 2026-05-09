@@ -79,7 +79,7 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
 
             <div className="create-pet-grid">
                 <label className="create-pet-field">
-                    <span>Возраст</span>
+                    <span>Возраст, лет</span>
                     <input
                         value={age}
                         onChange={(event) => setAge(event.target.value)}

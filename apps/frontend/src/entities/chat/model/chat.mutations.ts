@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { createChat, sendMessage } from "@/entities/chat/api/chat.api";
+import { createChat, sendMessage, deleteChat } from "@/entities/chat/api/chat.api";
 import { chatQueryKeys } from "@/entities/chat/model/chat.queries";
 import type {
     CreateChatPayload,
@@ -17,6 +17,12 @@ type SendMessageVariables = {
     chatId: number;
     payload: SendMessagePayload;
 };
+
+type DeleteChatVariables = {
+    petId: number;
+    chatId: number;
+};
+
 
 export function useCreateChatMutation() {
     const queryClient = useQueryClient();
@@ -39,6 +45,23 @@ export function useSendMessageMutation() {
             sendMessage(petId, chatId, payload),
         onSuccess: (_response, variables) => {
             void queryClient.invalidateQueries({
+                queryKey: chatQueryKeys.messages(variables.petId, variables.chatId),
+            });
+        },
+    });
+}
+
+export function useDeleteChatMutation() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ petId, chatId }: DeleteChatVariables) => deleteChat(petId, chatId),
+        onSuccess: (_data, variables) => {
+            void queryClient.invalidateQueries({
+                queryKey: chatQueryKeys.chats(variables.petId),
+            });
+
+            queryClient.removeQueries({
                 queryKey: chatQueryKeys.messages(variables.petId, variables.chatId),
             });
         },

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { appRoutes } from "@/shared/constants/routes";
 
@@ -16,6 +17,8 @@ import { usePetDocumentsQuery } from "@/entities/document/model/document.queries
 import { UploadDocumentForm } from "@/features/upload-document/ui/upload-document-form";
 import { createPortal } from "react-dom";
 
+type SheetMode = "collapsed" | "mid" | "expanded";
+
 export function PetDetailsPage() {
     const { petId } = useParams({ strict: false }) as { petId?: string };
     const petIdNumber = Number(petId);
@@ -28,9 +31,23 @@ export function PetDetailsPage() {
     const [inviteCode, setInviteCode] = useState<string | null>(null);
 
     const [sharingIsOpen, setSharingIsOpen] = useState(false);
-    const [paramsAreOpen, setParamsAreOpen] = useState(false);
+    const [isParamsOpen, setIsParamsOpen] = useState(false);
     const [uploadIsOpen, setUploadIsOpen] = useState(false);
-    const [backgroundOffset, setBackgroundOffset] = useState(0);
+    const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
+    const [sheetMode, setSheetMode] = useState<SheetMode>("collapsed");
+    const [sheetOffset, setSheetOffset] = useState(0);
+    const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+
+    const contentRef = useRef<HTMLDivElement | null>(null);
+    const dragStateRef = useRef<{
+        pointerId: number | null;
+        startY: number;
+        startOffset: number;
+    }>({
+        pointerId: null,
+        startY: 0,
+        startOffset: 0,
+    });
 
 
     const pet = useMemo(() => {
@@ -45,23 +62,45 @@ export function PetDetailsPage() {
 
     const photoQuery = usePetPhotoQuery(pet?.id ?? 0, Boolean(pet?.photoObjectKey));
 
-    useEffect(() => {
-        const handleScroll = () => {
-            setBackgroundOffset(window.scrollY * 1);
-        };
+    const sheetMetrics = useMemo(() => {
+        const topInset = 96;
+        const maxHeight = Math.max(viewportHeight - topInset, 320);
+        const collapsedPeek = 220;
+        const midPeek = Math.min(460, Math.round(maxHeight * 0.66));
+        const expanded = 0;
+        const mid = Math.max(0, maxHeight - midPeek);
+        const collapsed = Math.max(0, maxHeight - collapsedPeek);
 
-        handleScroll();
-        window.addEventListener("scroll", handleScroll, { passive: true });
-
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
+        return {
+            topInset,
+            maxHeight,
+            offsets: {
+                expanded,
+                mid,
+                collapsed,
+            },
         };
-    }, []);
+    }, [viewportHeight]);
 
     useEffect(() => {
         setInviteCode(null);
     }, [petIdNumber]);
 
+    useEffect(() => {
+        const handleResize = () => {
+            setViewportHeight(window.innerHeight);
+        };
+
+        window.addEventListener("resize", handleResize, { passive: true });
+
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
+    }, []);
+
+    useEffect(() => {
+        setSheetOffset(sheetMetrics.offsets[sheetMode]);
+    }, [sheetMetrics, sheetMode]);
 
     useEffect(() => {
         if (!sharingIsOpen || !petIdNumber || inviteCode || createInvite.isPending) {
@@ -82,21 +121,90 @@ export function PetDetailsPage() {
         );
     }, [sharingIsOpen, petIdNumber, inviteCode, createInvite]);
 
+    useEffect(() => {
+        if (sheetMode !== "expanded" && contentRef.current) {
+            contentRef.current.scrollTop = 0;
+        }
+    }, [sheetMode]);
 
-    const isLoading = petsQuery.isLoading || breedsQuery.isLoading;
-    const petInitial = pet?.name?.slice(0, 1).toUpperCase() ?? "?";
+    const petParams = pet
+        ? [
+            { label: "Имя", value: pet.name },
+            { label: "Порода", value: pet.breed },
+            { label: "Возраст", value: pet.age },
+            { label: "Вес", value: pet.weight },
+        ]
+        : [];
+
+    const setNearestSheetMode = (offset: number) => {
+        const nextMode = (Object.entries(sheetMetrics.offsets) as Array<[SheetMode, number]>)
+            .reduce(
+                (closest, entry) =>
+                    Math.abs(entry[1] - offset) < Math.abs(closest[1] - offset) ? entry : closest,
+                ["collapsed", sheetMetrics.offsets.collapsed] as [SheetMode, number],
+            )[0];
+
+        setSheetMode(nextMode);
+    };
+
+    const handleSheetPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+        dragStateRef.current = {
+            pointerId: event.pointerId,
+            startY: event.clientY,
+            startOffset: sheetOffset,
+        };
+
+        setIsDraggingSheet(true);
+        event.currentTarget.setPointerCapture(event.pointerId);
+    };
+
+    const handleSheetPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+        if (!isDraggingSheet || dragStateRef.current.pointerId !== event.pointerId) {
+            return;
+        }
+
+        const deltaY = event.clientY - dragStateRef.current.startY;
+        const nextOffset = Math.min(
+            sheetMetrics.offsets.collapsed,
+            Math.max(sheetMetrics.offsets.expanded, dragStateRef.current.startOffset + deltaY),
+        );
+
+        setSheetOffset(nextOffset);
+    };
+
+    const finishSheetDrag = (pointerId: number) => {
+        if (dragStateRef.current.pointerId !== pointerId) {
+            return;
+        }
+
+        setIsDraggingSheet(false);
+        dragStateRef.current.pointerId = null;
+        setNearestSheetMode(sheetOffset);
+    };
+
+    const handleSheetPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
+        finishSheetDrag(event.pointerId);
+    };
+
+    const handleSheetPointerCancel = (event: ReactPointerEvent<HTMLElement>) => {
+        finishSheetDrag(event.pointerId);
+    };
+
 
     return (
-        <main className="pet-details-page">
-            <div className="pet-page-background-layer">
-                <div
-                    className="pet-page-background-image"
-                    style={{
-                        backgroundImage: `url(${photoQuery.data})`,
-                        transform: `translateY(${backgroundOffset}px)`,
-                    }}
-                />
-            </div>
+        <main
+            className="pet-details-page"
+            style={{
+                backgroundImage: `url(${photoQuery.data})`,
+                backgroundPosition: "center",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+                ["--pet-sheet-offset" as string]: `${sheetOffset}px`,
+                ["--pet-sheet-max-height" as string]: `${sheetMetrics.maxHeight}px`,
+                ["--pet-sheet-top-inset" as string]: `${sheetMetrics.topInset}px`,
+            }}
+        >
+            <div className="pet-details-backdrop" />
 
             <section className="pet-profile-header">
                 <Link className="back-home" to={appRoutes.home}>
@@ -109,108 +217,135 @@ export function PetDetailsPage() {
                     Изменить
                 </Link>
             </section>
-            
-            <section className="pet-profile-info">
-                {petsQuery.isLoading || breedsQuery.isLoading ? (
-                    <p>Загружаем питомца...</p>
-                ) : (
-                    <section className="pet-base-info">
-                        <p className="pet-profile-name">{pet?.name ?? "Питомец не найден"}</p>
-                        <p className="pet-profile-breed">{pet?.breed ?? "Порода не указана"}</p>
-                    </section>
-                )}
-                
-                <section className="for-share">
-                    <div className="shared-quantity">
-                        <svg width="20" height="27" viewBox="0 0 20 27" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M0 26.25C0 20.7271 4.47715 16.25 10 16.25C15.5229 16.25 20 20.7271 20 26.25H0ZM10 15C5.85625 15 2.5 11.6438 2.5 7.5C2.5 3.35625 5.85625 0 10 0C14.1437 0 17.5 3.35625 17.5 7.5C17.5 11.6438 14.1437 15 10 15Z" fill="white"/>
-                        </svg>
-                        <span className="shared-quantity-value">2</span>
-                    </div> 
-            
-                    <button type="button" className="share-pet-button" onClick={() => setSharingIsOpen(true)}>
-                        <svg width="23" height="24" viewBox="0 0 23 24" fill="none" xmlns="http://www.w3.org/2000/svg"> 
-                            <path d="M11.25 0L19.0089 7.75887L17.2411 9.5266L12.5 4.78552V16.7677H10V4.78552L5.25889 9.5266L3.49111 7.75887L11.25 0ZM0 19.2677V14.2677H2.5V19.2677C2.5 19.9581 3.05965 20.5177 3.75 20.5177H18.75C19.4404 20.5177 20 19.9581 20 19.2677V14.2677H22.5V19.2677C22.5 21.3389 20.8211 23.0177 18.75 23.0177H3.75C1.67894 23.0177 0 21.3389 0 19.2677Z" fill="#FAFAFA"/> 
-                        </svg>
-                    </button>
-                </section>
-                
-                <section className={`pet-params-conteiner ${paramsAreOpen ? "is-open" : ""}`} onClick={() => setParamsAreOpen(!paramsAreOpen)}>
-                    
-                    {/* <div className="pet-params-avatar">
-                    </div> */}
-                    
-                    <div className="pet-params-top">
-                        <p className="pet-detailed-title">Параметры {pet?.name}</p>
-                        
-                        <div className="pet-details-toggle">
-                            <svg width="15" height="9" viewBox="0 0 15 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M7.50005 3.27269L1.66667 9L0 7.36363L7.50005 0L15 7.36363L13.3333 9L7.50005 3.27269Z" fill="#FAFAFA"/>
-                            </svg>
 
-                            <svg width="15" height="9" viewBox="0 0 15 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M7.49995 5.72731L13.3333 0L15 1.63637L7.49995 9L0 1.63637L1.66666 0L7.49995 5.72731Z" fill="#FAFAFA"/>
+            <section
+                className={`pet-profile-info pet-profile-info--${sheetMode} ${isDraggingSheet ? "pet-profile-info--dragging" : ""}`}
+            >
+                <button
+                    type="button"
+                    className="pet-sheet-drag-zone"
+                    aria-label="Перетащить панель"
+                    onPointerDown={handleSheetPointerDown}
+                    onPointerMove={handleSheetPointerMove}
+                    onPointerUp={handleSheetPointerUp}
+                    onPointerCancel={handleSheetPointerCancel}
+                >
+                    <span className="pet-sheet-handle" />
+                </button>
+
+                <div className="pet-profile-info-top">
+                    {petsQuery.isLoading || breedsQuery.isLoading ? (
+                        <p>Загружаем питомца...</p>
+                    ) : (
+                        <section className="pet-base-info">
+                            <p className="pet-profile-name">{pet?.name ?? "Питомец не найден"}</p>
+                            <p className="pet-profile-breed">{pet?.breed ?? "Порода не указана"}</p>
+                        </section>
+                    )}
+
+                    <section className="for-share">
+                        <div className="shared-quantity">
+                            <svg width="20" height="27" viewBox="0 0 20 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M0 26.25C0 20.7271 4.47715 16.25 10 16.25C15.5229 16.25 20 20.7271 20 26.25H0ZM10 15C5.85625 15 2.5 11.6438 2.5 7.5C2.5 3.35625 5.85625 0 10 0C14.1437 0 17.5 3.35625 17.5 7.5C17.5 11.6438 14.1437 15 10 15Z" fill="white"/>
                             </svg>
+                            <span className="shared-quantity-value">2</span>
                         </div>
-                    </div>
 
-                    <ul className="pet-params-list">
-                        <li className="pet-param-item">
-                            <p className="pet-param-title">Возраст</p>
-                            <p className="pet-param-value">{pet?.age ?? "Не указан"}</p>
-                        </li>
-                        <li className="pet-param-item">
-                            <p className="pet-param-title">Вес</p>
-                            <p className="pet-param-value">{pet?.weight ?? "Не указан"}</p>
-                        </li>
-                    </ul>
-                </section>
+                        <button type="button" className="share-pet-button" onClick={() => setSharingIsOpen(true)}>
+                            <svg width="23" height="24" viewBox="0 0 23 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11.25 0L19.0089 7.75887L17.2411 9.5266L12.5 4.78552V16.7677H10V4.78552L5.25889 9.5266L3.49111 7.75887L11.25 0ZM0 19.2677V14.2677H2.5V19.2677C2.5 19.9581 3.05965 20.5177 3.75 20.5177H18.75C19.4404 20.5177 20 19.9581 20 19.2677V14.2677H22.5V19.2677C22.5 21.3389 20.8211 23.0177 18.75 23.0177H3.75C1.67894 23.0177 0 21.3389 0 19.2677Z" fill="#FAFAFA"/>
+                            </svg>
+                        </button>
+                    </section>
+                </div>
 
-                <section className="pet-documents">
-                    <div className="pet-documents-header">
-                        <p className="pet-documents-title">Документы</p>
-
+                <div ref={contentRef} className="pet-profile-info-scroll">
+                    <section className={`pet-detailed-info ${isParamsOpen ? "pet-detailed-info--open" : ""}`}>
                         <button
                             type="button"
-                            className="pet-documents-add"
-                            onClick={() => setUploadIsOpen(true)}
+                            className="pet-detailed-summary"
+                            aria-expanded={isParamsOpen}
+                            aria-label={isParamsOpen ? "Скрыть параметры питомца" : "Показать параметры питомца"}
+                            disabled={!pet}
+                            onClick={() => setIsParamsOpen((value) => !value)}
                         >
-                            + Добавить
+                            <span className="pet-params-avatar">
+                                {photoQuery.data ? (
+                                    <img className="pet-params-avatar-image" src={photoQuery.data} alt={pet?.name ?? ""} />
+                                ) : (null)}
+                            </span>
+
+                            <span className="pet-detailed-title">Параметры {pet?.name ?? "питомца"}</span>
+
+                            <span className="pet-details-toggle" aria-hidden="true">
+                                <svg className="arrow-up" width="15" height="9" viewBox="0 0 15 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7.50005 3.27269L1.66667 9L0 7.36363L7.50005 0L15 7.36363L13.3333 9L7.50005 3.27269Z" fill="#FAFAFA"/>
+                                </svg>
+
+                                <svg className="arrow-down" width="15" height="9" viewBox="0 0 15 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7.49995 5.72731L13.3333 0L15 1.63637L7.49995 9L0 1.63637L1.66666 0L7.49995 5.72731Z" fill="#FAFAFA"/>
+                                </svg>
+                            </span>
                         </button>
 
-                        {uploadIsOpen ? createPortal(
-                            <div 
-                                className="pet-add-documents-overlay"
-                                onClick={() => setUploadIsOpen(false)}
-                            >
-                                <div 
-                                    className="pet-add-documents-modal"
-                                    onClick={(event) => event.stopPropagation()}
-                                >
-                                    <UploadDocumentForm
-                                        petId={petIdNumber}
-                                        onUploaded={() => setUploadIsOpen(false)}
-                                        onCancel={() => setUploadIsOpen(false)}
-                                    />
-                                </div>
-                            </div>,
-                            document.body,
-                        ) : null}
-                    </div>
-
-                    <div className="pet-documents-body">
-                        {documentsQuery.isLoading ? (
-                            <p>Загружаем документы...</p>
-                        ) : documentsQuery.isError ? (
-                            <p>ОШИБКА</p>
-                        ) : (
-                            <DocumentsList 
-                                petId={petIdNumber} 
-                                documents={documentsQuery.data ?? []} 
-                            />
+                        {isParamsOpen && (
+                            <div className="pet-params-list">
+                                {petParams.map((param) => (
+                                    <div className="pet-param-row" key={param.label}>
+                                        <span className="pet-param-label">{param.label}</span>
+                                        <span className="pet-param-value">{param.value}</span>
+                                    </div>
+                                ))}
+                            </div>
                         )}
-                    </div>
-                </section>
+                    </section>
+
+                    <section className="pet-documents">
+                        <div className="pet-documents-header">
+                            <p className="pet-documents-title">Документы</p>
+
+                            <button
+                                type="button"
+                                className="pet-documents-add"
+                                onClick={() => setUploadIsOpen(true)}
+                            >
+                                + Добавить
+                            </button>
+
+                            {uploadIsOpen ? createPortal(
+                                <div
+                                    className="pet-add-documents-overlay"
+                                    onClick={() => setUploadIsOpen(false)}
+                                >
+                                    <div
+                                        className="pet-add-documents-modal"
+                                        onClick={(event) => event.stopPropagation()}
+                                    >
+                                        <UploadDocumentForm
+                                            petId={petIdNumber}
+                                            onUploaded={() => setUploadIsOpen(false)}
+                                            onCancel={() => setUploadIsOpen(false)}
+                                        />
+                                    </div>
+                                </div>,
+                                document.body,
+                            ) : null}
+                        </div>
+
+                        <div className="pet-documents-body">
+                            {documentsQuery.isLoading ? (
+                                <p>Загружаем документы...</p>
+                            ) : documentsQuery.isError ? (
+                                <p>ОШИБКА</p>
+                            ) : (
+                                <DocumentsList
+                                    petId={petIdNumber}
+                                    documents={documentsQuery.data ?? []}
+                                />
+                            )}
+                        </div>
+                    </section>
+                </div>
             </section>
 
             <button

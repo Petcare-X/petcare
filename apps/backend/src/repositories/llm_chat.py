@@ -36,3 +36,7 @@ class LlmChatRepository:
             )
         )
         return list(res.scalars().all())
+    
+    async def delete(self, db: AsyncSession, chat: LlmChat) -> None:
+        await db.delete(chat)
+        await db.commit()

@@ -7,7 +7,6 @@ from src.core.security import get_current_user
 from src.schemas import (
     ChatCreate,
     ChatResponse,
-    MessageCreate,
     MessageResponse,
     SendMessageRequest,
     SendMessageResponse,
@@ -81,3 +80,13 @@ async def get_chat_messages(
         pet_id=pet_id,
         chat_id=chat_id,
     )
+
+@chat_router.delete("/{pet_id}/{chat_id}", status_code=204)
+async def delete_chat(
+    pet_id: int,
+    chat_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserInfo = Depends(get_current_user),
+    service: LLMChatService = Depends(),
+):
+    await service.delete_chat(db=db, user_id=current_user.id, pet_id=pet_id, chat_id=chat_id)

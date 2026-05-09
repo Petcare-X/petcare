@@ -1,7 +1,7 @@
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { useSendMessageMutation } from "@/entities/chat/model/chat.mutations";
+import { useSendMessageMutation, useDeleteChatMutation } from "@/entities/chat/model/chat.mutations";
 import { useChatMessagesQuery } from "@/entities/chat/model/chat.queries";
 import type { ChatMessage } from "@/entities/chat/model/chat.types";
 import { appRoutes } from "@/shared/constants/routes";
@@ -16,14 +16,21 @@ export function ChatPage() {
         petId?: string;
         chatId?: string;
     };
+
+    const navigate = useNavigate();
+
     const petIdNumber = Number(petId);
     const chatIdNumber = Number(chatId);
     const hasValidParams = Number.isInteger(petIdNumber) && Number.isInteger(chatIdNumber);
 
     const [message, setMessage] = useState("");
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const deleteConfirmRef = useRef<HTMLDivElement | null>(null);
 
     const messagesQuery = useChatMessagesQuery(petIdNumber, chatIdNumber, hasValidParams);
+    const deleteChatMutation = useDeleteChatMutation();
+
 
     useEffect(() => {
         if (!hasValidParams) {
@@ -67,6 +74,24 @@ export function ChatPage() {
         });
     }, [messagesQuery.data?.length]);
 
+    useEffect(() => {
+        if (!isDeleteConfirmOpen) {
+            return;
+        }
+
+        const handlePointerDown = (event: PointerEvent) => {
+            if (!deleteConfirmRef.current?.contains(event.target as Node)) {
+                setIsDeleteConfirmOpen(false);
+            }
+        };
+
+        window.addEventListener("pointerdown", handlePointerDown);
+
+        return () => {
+            window.removeEventListener("pointerdown", handlePointerDown);
+        };
+    }, [isDeleteConfirmOpen]);
+
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -92,6 +117,26 @@ export function ChatPage() {
         }
     };
 
+    async function handleDeleteChat(chatId: number) {
+        if (!hasValidParams) return;
+
+        try {
+            await deleteChatMutation.mutateAsync({
+                petId: petIdNumber,
+                chatId,
+            });
+
+            await navigate({
+                to: appRoutes.chatHistory,
+                params: {
+                    petId: String(petIdNumber),
+                }
+            });
+        } catch (error) {
+            console.error("failed to delete chat", error);
+        }
+    }
+
     return (
         <div className="chat-page">
             <header className="chat-header">
@@ -114,11 +159,30 @@ export function ChatPage() {
                         <h1 className="chat-pet-name">{pet?.pet_name}</h1>
                     </div>
                 </div>
-                <button className="delete-chat">
-                    <svg width="29" height="32" viewBox="0 0 29 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 6.83333H3.91667M3.91667 6.83333H27.25M3.91667 6.83333L3.91667 27.25C3.91667 28.0235 4.22396 28.7654 4.77094 29.3124C5.31792 29.8594 6.05979 30.1667 6.83333 30.1667H21.4167C22.1902 30.1667 22.9321 29.8594 23.4791 29.3124C24.026 28.7654 24.3333 28.0235 24.3333 27.25V6.83333M8.29167 6.83333V3.91667C8.29167 3.14312 8.59896 2.40125 9.14594 1.85427C9.69292 1.30729 10.4348 1 11.2083 1H17.0417C17.8152 1 18.5571 1.30729 19.1041 1.85427C19.651 2.40125 19.9583 3.14312 19.9583 3.91667V6.83333M11.2083 14.125V22.875M17.0417 14.125V22.875" stroke="#A1A1A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
+                <div ref={deleteConfirmRef} className="chat-delete-menu">
+                    <button
+                        type="button"
+                        className="delete-chat"
+                        aria-expanded={isDeleteConfirmOpen}
+                        aria-haspopup="true"
+                        onClick={() => setIsDeleteConfirmOpen((value) => !value)}
+                    >
+                        <svg className="delete-icon" viewBox="0 0 29 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 6.83333H3.91667M3.91667 6.83333H27.25M3.91667 6.83333L3.91667 27.25C3.91667 28.0235 4.22396 28.7654 4.77094 29.3124C5.31792 29.8594 6.05979 30.1667 6.83333 30.1667H21.4167C22.1902 30.1667 22.9321 29.8594 23.4791 29.3124C24.026 28.7654 24.3333 28.0235 24.3333 27.25V6.83333M8.29167 6.83333V3.91667C8.29167 3.14312 8.59896 2.40125 9.14594 1.85427C9.69292 1.30729 10.4348 1 11.2083 1H17.0417C17.8152 1 18.5571 1.30729 19.1041 1.85427C19.651 2.40125 19.9583 3.14312 19.9583 3.91667V6.83333M11.2083 14.125V22.875M17.0417 14.125V22.875" stroke="#A1A1A1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                    </button>
+
+                    {isDeleteConfirmOpen ? (
+                        <button
+                            type="button"
+                            className="chat-delete-confirm-button"
+                            disabled={deleteChatMutation.isPending}
+                            onClick={() => void handleDeleteChat(chatIdNumber)}
+                        >
+                            {deleteChatMutation.isPending ? "Удаляем..." : "Удалить чат"}
+                        </button>
+                    ) : null}
+                </div>
             </header>
 
                 
