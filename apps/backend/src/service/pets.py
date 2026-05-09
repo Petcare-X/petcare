@@ -27,6 +27,7 @@ class PetsService:
     SIMPLE_UPDATE_FIELDS = {
         "pet_name": "pet_name",
         "pet_date_of_birth": "pet_date_of_birth",
+        "pet_sex": "pet_sex",
         "animal_type_id": "animal_type_id",
         "animal_breed_id": "animal_breed_id",
         "pedigree": "pedigree",
@@ -34,6 +35,7 @@ class PetsService:
         "pet_neck_girth": "pet_neck_girth",
         "pet_breast_girth": "pet_breast_girth",
         "pet_weight": "pet_weight",
+        "pet_special_notes": "pet_special_notes",
         "pet_is_sterylyzed": "pet_is_sterylyzed",
     }
     PHOTO_METADATA_FIELDS = (
@@ -61,6 +63,7 @@ class PetsService:
             user_id=pet.user_id,
             pet_name=pet.pet_name,
             pet_date_of_birth=pet.pet_date_of_birth,
+            pet_sex=pet.pet_sex,
             animal_type_id=pet.animal_type_id,
             animal_breed_id=pet.animal_breed_id,
             pedigree=bool(pet.pedigree),
@@ -68,6 +71,7 @@ class PetsService:
             pet_neck_girth=float(pet.pet_neck_girth),
             pet_breast_girth=float(pet.pet_breast_girth),
             pet_weight=float(pet.pet_weight),
+            pet_special_notes=pet.pet_special_notes,
             pet_is_sterylyzed=pet.pet_is_sterylyzed,
             pet_photo_object_key=pet.pet_photo_object_key,
             pet_photo_content_type=pet.pet_photo_content_type,
@@ -82,6 +86,7 @@ class PetsService:
             pet_name=payload.pet_name.strip(),
             animal_type_id=payload.animal_type_id,
             pet_date_of_birth=payload.pet_date_of_birth,
+            pet_sex=payload.pet_sex,
             user_id=user_id,
             animal_breed_id=animal_breed_id,
             pedigree=payload.pedigree,
@@ -89,6 +94,7 @@ class PetsService:
             pet_breast_girth=payload.pet_breast_girth,
             pet_length=payload.pet_length,
             pet_weight=payload.pet_weight,
+            pet_special_notes=payload.pet_special_notes,
             pet_is_sterylyzed=payload.pet_is_sterylyzed,
             pet_photo_object_key=payload.pet_photo_object_key,
             pet_photo_content_type=payload.pet_photo_content_type,
