@@ -1,8 +1,8 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import DogFriendlyPlace, VetClinic
-from src.schemas import DogPlaceMapPoint, VetMapPoint
+from src.models import DogFriendlyPlace, VetClinic, GroomingSalon
+from src.schemas import DogPlaceMapPoint, VetMapPoint, SalonsMapPoint
 
 
 class MapService:
@@ -48,7 +48,23 @@ class MapService:
                 dogfriendly_place_street=place.dogfriendly_place_street,
                 dogfriendly_place_building_number=place.dogfriendly_place_building_number,
                 dogfriendly_place_working_hours=place.dogfriendly_place_working_hours,
-                dogfriendly_place_is_24_7=self._is_24_7_label(place.dogfriendly_place_is_24_7),
             )
             for place in result
+        ]
+    
+    async def get_salons_map_points(self, db: AsyncSession) -> list[SalonsMapPoint]:
+        result = await self._get_active_entities(db, GroomingSalon, "salon_status")
+        return [
+            SalonsMapPoint(
+                id=salon.id,
+                salon_name=salon.salon_name,
+                salon_lat=salon.salon_lat,
+                salon_lon=salon.salon_lon,
+                salon_working_hours=salon.salon_working_hours,
+                salon_street=salon.salon_street,
+                salon_building_number=salon.salon_building_number,
+                salon_phone=salon.salon_phone,
+                salon_website=salon.salon_website,
+            )
+            for salon in result
         ]
