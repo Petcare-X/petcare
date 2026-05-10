@@ -30,6 +30,5 @@ class DogFriendlyPlace(Base):
     dogfriendly_place_lon: Mapped[int] = mapped_column(Numeric)
     dogfriendly_place_geocoder_precision: Mapped[str] = mapped_column(String(50))
     dogfriendly_place_working_hours: Mapped[str] = mapped_column(String(255))
-    dogfriendly_place_is_24_7: Mapped[bool] = mapped_column(Boolean)
     dogfriendly_place_status: Mapped[str] = mapped_column(String(20))
     dogfriendly_place_last_verified: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

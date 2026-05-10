@@ -4,6 +4,8 @@ from .PetInfo import PetInfo
 from .AnimalBreed import AnimalBreed
 from .AnimalType import AnimalType
 
+from .GroomingSalon import GroomingSalon
+
 from .VetClinic import VetClinic
 from .SuitableVetClinic import SuitableVetClinic
 

@@ -25,3 +25,11 @@ async def import_dogplaces_csv(
 ):
     service = ImportService()
     return await service.import_dogfriendly_places(file=file, db=db)
+
+@upload_router.post("/import-salons-csv", response_model=ImportCsvResponse, include_in_schema=False)
+async def import_salons_csv(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    service = ImportService()
+    return await service.import_grooming_salons(file=file, db=db)
