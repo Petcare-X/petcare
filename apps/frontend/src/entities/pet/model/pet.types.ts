@@ -1,3 +1,5 @@
+export type PetSex = "male" | "female";
+
 export type Pet = {
     id: number;
     user_id: number | null;
@@ -18,19 +20,24 @@ export type Pet = {
     pet_photo_etag: string | null;
     pet_photo_uploaded_at: string | null;
     is_shared: boolean;
+    pet_sex?: PetSex | null;
+    pet_features?: string | null;
 };
 
 export type CreatePetPayload = {
     pet_name: string;
     pet_date_of_birth: string;
     animal_type_id: number;
-    animal_breed_id: number;
+    animal_breed_id?: number | null;
+    animal_breed_name?: string | null;
     pedigree: boolean;
     pet_neck_girth: number;
     pet_breast_girth: number;
     pet_length: number;
     pet_weight: number;
     pet_is_sterylyzed: boolean | null;
+    pet_sex?: PetSex | null;
+    pet_features?: string | null;
 };
 
 export type AnimalBreed = {

@@ -93,7 +93,11 @@ export function PetDetailsPage() {
                     </svg>
                 </Link>
 
-                <Link className="change-info" to={appRoutes.home}>
+                <Link
+                    className="change-info"
+                    to={appRoutes.editPetProfile}
+                    params={{ petId: String(pet?.id ?? petId ?? "") }}
+                >
                     Изменить
                 </Link>
             </section>
@@ -128,7 +132,7 @@ export function PetDetailsPage() {
                     className="pet-detailed-summary"
                     aria-expanded={isParamsOpen}
                     aria-label={isParamsOpen ? "Скрыть параметры питомца" : "Показать параметры питомца"}
-                    disabled={!pet}
+                    // disabled={!pet}
                     onClick={() => setIsParamsOpen((value) => !value)}
                 >
                     <span className="pet-params-avatar">
