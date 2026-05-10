@@ -33,7 +33,7 @@ export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPe
     const [weight, setWeight] = useState(String(pet.pet_weight ?? ""));
     const [sex, setSex] = useState<PetSex | null>(pet.pet_sex ?? null);
     const [isSterylized, setIsSterylized] = useState<boolean | null>(pet.pet_is_sterylyzed ?? null);
-    const [features, setFeatures] = useState(pet.pet_features ?? "");
+    const [features, setFeatures] = useState(pet.pet_special_notes ?? "");
     const [photo, setPhoto] = useState<File | null>(null);
     const [dateError, setDateError] = useState(false);
 
@@ -88,7 +88,7 @@ export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPe
                 pet_weight: Number(weight),
                 pet_sex: sex,
                 pet_is_sterylyzed: isSterylized,
-                pet_features: features.trim() || null,
+                pet_special_notes: features.trim() || null,
             },
         });
 

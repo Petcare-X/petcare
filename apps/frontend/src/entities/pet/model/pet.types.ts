@@ -21,7 +21,7 @@ export type Pet = {
     pet_photo_uploaded_at: string | null;
     is_shared: boolean;
     pet_sex?: PetSex | null;
-    pet_features?: string | null;
+    pet_special_notes?: string | null;
 };
 
 export type CreatePetPayload = {
@@ -37,7 +37,7 @@ export type CreatePetPayload = {
     pet_weight: number;
     pet_is_sterylyzed: boolean | null;
     pet_sex?: PetSex | null;
-    pet_features?: string | null;
+    pet_special_notes?: string | null;
 };
 
 export type AnimalBreed = {
