@@ -1,4 +1,4 @@
-from sqlalchemy import String, Numeric, Boolean, DateTime, func, UniqueConstraint
+from sqlalchemy import String, Numeric, Text, DateTime, func, UniqueConstraint, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.db import Base
@@ -23,6 +23,7 @@ class DogFriendlyPlace(Base):
     
     id: Mapped[int_primary_key]
     dogfriendly_place_name: Mapped[str] = mapped_column(String(50))
+    dogfriendly_place_type_id: Mapped[int] = mapped_column(Integer, ForeignKey("dog_friendly_place_types.id"), nullable=True)
     dogfriendly_place_city: Mapped[str] = mapped_column(String(50))
     dogfriendly_place_street: Mapped[str] = mapped_column(String(127))
     dogfriendly_place_building_number: Mapped[str] = mapped_column(String(20))
@@ -30,5 +31,6 @@ class DogFriendlyPlace(Base):
     dogfriendly_place_lon: Mapped[int] = mapped_column(Numeric)
     dogfriendly_place_geocoder_precision: Mapped[str] = mapped_column(String(50))
     dogfriendly_place_working_hours: Mapped[str] = mapped_column(String(255))
+    dogfriendly_place_conditions: Mapped[str] = mapped_column(Text, nullable=True)
     dogfriendly_place_status: Mapped[str] = mapped_column(String(20))
     dogfriendly_place_last_verified: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

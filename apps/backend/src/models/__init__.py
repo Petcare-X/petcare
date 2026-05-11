@@ -10,6 +10,7 @@ from .VetClinic import VetClinic
 from .SuitableVetClinic import SuitableVetClinic
 
 from .DogfriendlyPlace import DogFriendlyPlace
+from .PlaceType import DogFriendlyPlaceType
 from .SuitableDogfriendlyPlace import SuitableDogFriendlyPlace
 
 from .PetDocument import PetDocument
@@ -31,9 +32,11 @@ __all__ = (
     'PetInfo',
     'AnimalBreed',
     'AnimalType',
+    'GroomingSalon',
     'VetClinic',
     'SuitableVetClinic',
     'DogFriendlyPlace',
+    'DogFriendlyPlaceType',
     'SuitableDogFriendlyPlace',
     'PetDocument',
     'DocumentType',
