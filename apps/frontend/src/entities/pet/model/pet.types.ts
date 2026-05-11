@@ -1,3 +1,5 @@
+export type PetSex = "male" | "female";
+
 export type Pet = {
     id: number;
     user_id: number | null;
@@ -19,6 +21,8 @@ export type Pet = {
     pet_photo_etag: string | null;
     pet_photo_uploaded_at: string | null;
     is_shared: boolean;
+    pet_sex?: PetSex | null;
+    pet_special_notes?: string | null;
 };
 
 export type CreatePetPayload = {

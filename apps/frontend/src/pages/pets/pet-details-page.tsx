@@ -213,7 +213,11 @@ export function PetDetailsPage() {
                     </svg>
                 </Link>
 
-                <Link className="change-info" to={appRoutes.home}>
+                <Link
+                    className="change-info"
+                    to={appRoutes.editPetProfile}
+                    params={{ petId: String(pet?.id ?? petId ?? "") }}
+                >
                     Изменить
                 </Link>
             </section>

@@ -29,6 +29,14 @@ import { NavbarOnlyShell } from "@/widgets/app-shell/navbar-only-shell";
 
 import { NotFoundPage } from "@/pages/not-found/not-found-page";
 
+import { EditPetPage } from "@/pages/pets/edit-pet-page";
+
+const editPetRoute = createRoute ({
+    getParentRoute: () => mainOnlyLayoutRoute,
+    path: appRoutes.editPetProfile,
+    component: EditPetPage,
+});
+
 const rootRoute = createRootRoute ({
     component: () => <Outlet />,
     notFoundComponent: NotFoundPage,
@@ -151,6 +159,7 @@ const routeTree = rootRoute.addChildren([
             petDetailsRoute,
             // mapRoute,
             chatRoute,
+            editPetRoute,
         ]),
 
         navbarOnlyLayoutRoute.addChildren([
