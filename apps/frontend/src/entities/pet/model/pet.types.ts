@@ -5,7 +5,6 @@ export type Pet = {
     user_id: number | null;
     pet_name: string;
     pet_date_of_birth: string;
-    pet_sex: string;
     animal_type_id: number;
     animal_breed_id?: number;
     animal_breed_name?: string;
@@ -21,8 +20,8 @@ export type Pet = {
     pet_photo_etag: string | null;
     pet_photo_uploaded_at: string | null;
     is_shared: boolean;
-    pet_sex?: PetSex | null;
-    pet_special_notes?: string | null;
+    pet_sex: PetSex | null;
+    pet_special_notes: string | null;
 };
 
 export type CreatePetPayload = {
@@ -38,7 +37,7 @@ export type CreatePetPayload = {
     pet_length: number;
     pet_weight: number;
     pet_is_sterylyzed: boolean | null;
-    pet_special_notes?: string | null;
+    pet_special_notes: string | null;
 };
 
 export type AnimalBreed = {

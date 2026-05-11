@@ -10,9 +10,3 @@ createRoot(document.getElementById("root")!).render(
         <Providers />
     </StrictMode>
 );
-
-console.log('Vite env:', import.meta.env);
-console.log(
-  'Yandex key:',
-  import.meta.env.VITE_YANDEX_MAPS_API_KEY
-);

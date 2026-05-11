@@ -14,7 +14,7 @@ if settings.ENV == "dev":
         "http://192.168.0.105:5173"
     ]
 else:
-    origins = ["https://prod_domain.com"]
+    origins = ["https://пэткер.рф"]
 
 app.add_middleware(
     CORSMiddleware,

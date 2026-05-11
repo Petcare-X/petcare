@@ -31,11 +31,6 @@ import { NotFoundPage } from "@/pages/not-found/not-found-page";
 
 import { EditPetPage } from "@/pages/pets/edit-pet-page";
 
-const editPetRoute = createRoute ({
-    getParentRoute: () => mainOnlyLayoutRoute,
-    path: appRoutes.editPetProfile,
-    component: EditPetPage,
-});
 
 const rootRoute = createRootRoute ({
     component: () => <Outlet />,
@@ -98,6 +93,12 @@ const petDetailsRoute = createRoute ({
     getParentRoute: () => mainOnlyLayoutRoute,
     path: appRoutes.petProfile,
     component: PetDetailsPage,
+});
+
+const editPetRoute = createRoute ({
+    getParentRoute: () => mainOnlyLayoutRoute,
+    path: appRoutes.editPetProfile,
+    component: EditPetPage,
 });
 
 const profileRoute = createRoute ({
