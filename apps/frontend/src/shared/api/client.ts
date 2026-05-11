@@ -7,7 +7,7 @@ import {
     setAuthSession,
 } from "@/shared/api/auth-session";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://192.168.0.105:8000";
 
 type AccessTokenResponse = {
     access_token: string;

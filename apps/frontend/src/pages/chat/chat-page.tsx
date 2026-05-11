@@ -206,11 +206,6 @@ export function ChatPage() {
                                 key={item.id}
                                 className={`chat-message-row ${getMessageRowClassName(item)}`}
                             >
-                                {item.role === "assistant" ? (
-                                    <div className="chat-message-avatar" aria-hidden="true">
-                                        AI
-                                    </div>
-                                ) : null}
                                 <article className={`chat-message-bubble ${getBubbleClassName(item)}`}>
                                     <div className="chat-message-content">
                                         {item.role === "assistant" ? (
