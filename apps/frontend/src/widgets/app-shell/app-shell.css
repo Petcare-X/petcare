@@ -33,24 +33,27 @@
   gap: 12px;
 }
 
-.profile-button {
+.header-user-photo-placeholder-conteiner {
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: #cfcfcf;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   overflow: hidden;
 }
 
-.profile-button img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.header-user-photo-placeholder {
+  width: 52%;
+  color: #000000;
 }
 
 .main-content-with-shell {
+  min-height: 100dvh;
   max-width: 430px;
   margin: auto;
-  padding: 30px 0 120px;
+  padding: 45px 24px 120px;
 }
 
 .main-content-without-shell {
@@ -114,6 +117,7 @@
   margin-bottom: 52px;
   border: 3px solid #ffffff;
   border-radius: 50%;
+  transition: transform 0.15s ease;
 
   background: #ff7a1a;
   box-shadow: 0 0 0 3.2px rgba(255, 122, 26, 1),
@@ -123,4 +127,8 @@
 .chat-button-icon {
   height: 30px;
   width: 30px;
+}
+
+.navbar-chat-button:hover {
+  transform: scale(0.92);
 }

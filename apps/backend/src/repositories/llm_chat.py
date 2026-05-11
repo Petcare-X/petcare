@@ -28,5 +28,15 @@ class LlmChatRepository:
     
     async def get_by_user_pet(self, db: AsyncSession, pet_id: int, user_id: int) -> List[LlmChat]:
         res = await db.execute(
-            select(LlmChat).where(LlmChat.pet_id == pet_id))
+            select(LlmChat).where(
+                and_(
+                    LlmChat.pet_id == pet_id,
+                    LlmChat.user_id == user_id,
+                )
+            )
+        )
         return list(res.scalars().all())
+    
+    async def delete(self, db: AsyncSession, chat: LlmChat) -> None:
+        await db.delete(chat)
+        await db.commit()

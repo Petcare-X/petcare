@@ -17,8 +17,8 @@ import { CalendarPage } from "@/pages/calendar/calendar-page";
 import { PetDetailsPage } from "@/pages/pets/pet-details-page";
 
 import { ChatPetSelectPage } from "@/pages/chat/chat-pet-select-page";
+import { ChatHistoryPage } from "@/pages/chat/chat-history-page";
 import { ChatPage } from "@/pages/chat/chat-page";
-
 
 import { ensureAuth, redirectIfAuthenticated } from "./guards";
 
@@ -93,6 +93,12 @@ const homeRoute = createRoute ({
     component: HomePage,
 });
 
+const petDetailsRoute = createRoute ({
+    getParentRoute: () => mainOnlyLayoutRoute,
+    path: appRoutes.petProfile,
+    component: PetDetailsPage,
+});
+
 const profileRoute = createRoute ({
     getParentRoute: () => fullAppLayoutRoute,
     path: appRoutes.userProfile,
@@ -105,12 +111,6 @@ const calendarRoute = createRoute ({
     component: CalendarPage,
 });
 
-const petDetailsRoute = createRoute ({
-    getParentRoute: () => fullAppLayoutRoute,
-    path: appRoutes.petProfile,
-    component: PetDetailsPage,
-});
-
 const mapRoute = createRoute ({
     getParentRoute: () => mainOnlyLayoutRoute,
     path: appRoutes.map,
@@ -121,6 +121,12 @@ const chatPetSelectRoute = createRoute ({
     getParentRoute: () => navbarOnlyLayoutRoute,
     path: appRoutes.chatSelectPet,
     component: ChatPetSelectPage,
+});
+
+const chatHistoryRoute = createRoute ({
+    getParentRoute: () => navbarOnlyLayoutRoute,
+    path: appRoutes.chatHistory,
+    component: ChatHistoryPage,
 });
 
 const chatRoute = createRoute ({
@@ -139,10 +145,10 @@ const routeTree = rootRoute.addChildren([
             homeRoute,
             profileRoute,
             calendarRoute,
-            petDetailsRoute,
         ]),
 
         mainOnlyLayoutRoute.addChildren([
+            petDetailsRoute,
             mapRoute,
             chatRoute,
             editPetRoute,
@@ -150,6 +156,7 @@ const routeTree = rootRoute.addChildren([
 
         navbarOnlyLayoutRoute.addChildren([
             chatPetSelectRoute,
+            chatHistoryRoute,
         ]),
     ]),
 ]);

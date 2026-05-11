@@ -28,6 +28,12 @@ class PetsRepository:
                     and_(*active_shared_access_clause(user_id)),
                 )))
         return list(user_pet.scalars().all())
+
+    async def get_owned_by_user_id(self, db: AsyncSession, user_id: int) -> List[PetInfo]:
+        user_pet = await db.execute(
+            select(PetInfo).where(PetInfo.user_id == user_id)
+        )
+        return list(user_pet.scalars().all())
     
     async def get_docs_keys(self, db: AsyncSession, pet_id: int) -> List[str]:
         res = await db.execute(
