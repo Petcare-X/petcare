@@ -3,6 +3,7 @@ export type Pet = {
     user_id: number | null;
     pet_name: string;
     pet_date_of_birth: string;
+    pet_sex: string;
     animal_type_id: number;
     animal_breed_id?: number;
     animal_breed_name?: string;
@@ -23,14 +24,17 @@ export type Pet = {
 export type CreatePetPayload = {
     pet_name: string;
     pet_date_of_birth: string;
+    pet_sex: string;
     animal_type_id: number;
-    animal_breed_id: number;
+    animal_breed_id?: number;
+    animal_breed_name?: string;
     pedigree: boolean;
     pet_neck_girth: number;
     pet_breast_girth: number;
     pet_length: number;
     pet_weight: number;
     pet_is_sterylyzed: boolean | null;
+    pet_special_notes?: string | null;
 };
 
 export type AnimalBreed = {
