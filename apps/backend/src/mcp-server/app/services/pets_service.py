@@ -22,6 +22,7 @@ class PetsService:
             await self._raise_missing_or_forbidden(pet_id)
         return {
             "pet_name": pet["pet_name"],
+            "pet_sex": pet["pet_sex"],
             "animal_breed": pet["animal_breed"],
             "age": calculate_age(pet["pet_date_of_birth"]),
             "pedigree": pet["pedigree"],
@@ -30,6 +31,7 @@ class PetsService:
             "pet_length": pet["pet_length"],
             "pet_is_sterylyzed": pet["pet_is_sterylyzed"],
             "pet_weight": pet["pet_weight"],
+            "pet_special_notes": pet["pet_special_notes"],
         }
 
     async def get_pet_short_info(self, pet_id: int, user_id: str) -> Dict[str, Any]:
@@ -44,7 +46,9 @@ class PetsService:
         }
 
     async def _raise_missing_or_forbidden(self, pet_id: int) -> None:
-        owner_id = await self.pets_repo.get_pet_owner_id(pet_id)
-        if owner_id is None:
+        owner = await self.pets_repo.get_pet_own(pet_id)
+        if owner is None:
             raise NotFoundError("Pet not found")
+        if owner["user_id"] is None:
+            raise ForbiddenError("This pet is not assigned to any owner") 
         raise ForbiddenError("You do not own this pet")
