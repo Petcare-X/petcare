@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 
 import { useDogBreedsQuery } from "@/entities/pet/model/pet.queries";
-import { useCreatePet } from "@/features/add-pet/model/use-create-pet";
+import { useCreatePet } from "@/features/add-pet/model/use-add-pet";
 
 type CreatePetFormProps = {
     onCreated: () => void;

@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 
 import { useDogBreedsQuery, usePetsQuery } from "@/entities/pet/model/pet.queries";
 
-import { CreatePetForm } from "@/features/add-pet/ui/create-pet-form";
+import { CreatePetForm } from "@/features/add-pet/ui/add-pet-form";
 import { AcceptInviteForm } from "@/features/add-pet/ui/accept-pet-invite-form";
 import { PetCard } from "@/widgets/pet-card/pet-card";
 import { mapPetToCardView } from "@/widgets/pet-card/model/pet-info-formating";
