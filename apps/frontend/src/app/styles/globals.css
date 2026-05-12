@@ -1,0 +1,44 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Nunito', Arial, sans-serif;
+}
+
+::selection {
+    background-color: orangered;
+    color: #f4f4f4;
+}
+
+body {
+    background-color: #f1f1f1;
+    letter-spacing: 0.02rem;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+}
+
+.page-transition > * {
+    animation: pageFadeIn 0.5s ease-out both;
+}
+
+@keyframes pageFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-transition {
+        animation: none;
+    }
+}

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from pathlib import Path
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -86,21 +87,36 @@ class PetDocumentsService:
     ) -> tuple[str, str]:
         await self.pets_service.ensure_pet_owner(db, pet_id, user_id)
         document_type = await self.get_document_type(db, document_type_id)
-        display_name = (custom_name or document_type.document_name).strip()
-        if not display_name:
-            display_name = document_type.document_name
-        duplicate_count_result = await db.execute(
-            select(func.count(PetDocument.id)).where(
-                PetDocument.pet_id == pet_id,
-                PetDocument.document_id == document_type_id,
-                PetDocument.custom_name == display_name,
+        if custom_name is not None:
+            base_name = self.storage_service.build_pet_document_custom_name(custom_name, sequence_number=0)
+            duplicate_names_result = await db.execute(
+                select(PetDocument.custom_name).where(
+                    PetDocument.pet_id == pet_id,
+                    PetDocument.document_id == document_type_id,
+                )
             )
-        )
-        duplicate_count = int(duplicate_count_result.scalar_one())
-        object_key_name = self.storage_service.build_pet_document_custom_name(
-            display_name,
-            sequence_number=duplicate_count,
-        )
+            existing_names = [
+                name
+                for name in duplicate_names_result.scalars().all()
+                if isinstance(name, str) and (name == base_name or name.startswith(f"{base_name}_"))
+            ]
+            sequence_number = len(existing_names)
+            object_key_name = self.storage_service.build_pet_document_custom_name(
+                base_name,
+                sequence_number=sequence_number,
+            )
+        else:
+            total_count_result = await db.execute(
+                select(func.count(PetDocument.id)).where(
+                    PetDocument.pet_id == pet_id,
+                    PetDocument.document_id == document_type_id,
+                )
+            )
+            sequence_number = int(total_count_result.scalar_one())
+            object_key_name = self.storage_service.build_pet_document_custom_name(
+                document_type.document_name,
+                sequence_number=sequence_number,
+            )
         object_key = self.storage_service.build_pet_document_object_key(
             user_id=user_id,
             pet_id=pet_id,
@@ -108,7 +124,7 @@ class PetDocumentsService:
             custom_name=object_key_name,
             content_type=content_type,
         )
-        return object_key, display_name
+        return object_key, object_key_name
 
     async def create_after_upload(
         self,
@@ -132,11 +148,16 @@ class PetDocumentsService:
             raise AppError("Object key does not belong to this pet document", status_code=400)
 
         metadata = await self.storage_service.get_object_meta(object_key)
+        stored_custom_name = Path(object_key).stem
+        if custom_name is not None:
+            normalized = self.storage_service.build_pet_document_custom_name(custom_name, sequence_number=0)
+            if not stored_custom_name.startswith(normalized):
+                raise AppError("Custom name does not match uploaded object", status_code=400)
 
         doc = PetDocument(
             pet_id=pet_id,
             document_id=document_type_id,
-            custom_name=(custom_name or document_type.document_name).strip() or document_type.document_name,
+            custom_name=stored_custom_name,
             object_key=object_key,
             content_type=metadata.content_type,
             size_bytes=metadata.size_bytes,

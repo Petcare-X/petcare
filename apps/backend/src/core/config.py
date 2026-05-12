@@ -24,5 +24,6 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str | None = None
     OPENROUTER_MODEL: str | None = None
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1/chat/completions"
+    ENV: str
 
 settings = Settings()

@@ -16,4 +16,7 @@ class LlmMessage(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users_info.id", ondelete="CASCADE"))
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    parent_message_id: Mapped[int | None] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     message_created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

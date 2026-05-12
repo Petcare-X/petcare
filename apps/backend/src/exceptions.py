@@ -106,7 +106,7 @@ class ConflictError(AppError):
 
 
 class UserConflictError(ConflictError):
-    message = "Email or phone already exists"
+    message = "Credential already exists"
 
 
 class AuthProviderMismatchError(AppError):
@@ -133,6 +133,45 @@ class DatabaseIntegrityAppError(AppError):
     status_code = 400
     message = "Database integrity error"
 
+class AssistantMessageNotFound(AppError):
+    status_code = 404
+    message = "Assistant message not found"
+
+class AssistantMessageError(AppError):
+    status_code = 400
+    message = "Assistant message is not valid"
+
+class MessageGenerationError(AppError):
+    status_code = 400
+    message = "Error generating message"
+
+class UserMessageNotFound(AppError):
+    status_code = 404
+    message = "User message not found"
+
+class UserMessageError(AppError):
+    status_code = 400
+    message = "User message is not valid"
+
+class UserPermissionError(AppError):
+    status_code = 403
+    message = "User does not have permission to access this content"
+
+class ChatNotFound(AppError):   
+    status_code = 404
+    message = "Chat not found"
+
+class ChatHistoryNotFound(AppError):
+    status_code = 404
+    message = "Chat history not found"
+
+class OpenRouterApiError(AppError):
+    status_code = 500
+    message = "OpenRouter API error"
+
+class OpenRouterResponseError(AppError):
+    status_code = 500
+    message = "OpenRouter response error"
 
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content=exc.to_response(request))

@@ -1,8 +1,8 @@
 import httpx
-from fastapi import HTTPException
 
 from src.core.config import settings
-
+from src.exceptions import (OpenRouterApiError,
+                            OpenRouterResponseError)
 
 class OpenRouterService:
     BASE_URL = settings.OPENROUTER_BASE_URL
@@ -22,14 +22,11 @@ class OpenRouterService:
             response = await client.post(self.BASE_URL, headers=headers, json=payload)
 
         if response.status_code >= 400:
-            raise HTTPException(
-                status_code=502,
-                detail=f"OpenRouter API error: {response.text}"
-            )
+            raise OpenRouterApiError(f"OpenRouter API error: {response.text}")
 
         data = response.json()
 
         try:
             return data["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError):
-            raise HTTPException(status_code=502, detail="Invalid response from OpenRouter")
+            raise OpenRouterResponseError("Invalid response from OpenRouter")
