@@ -13,9 +13,10 @@ class PetsRepository:
             text(
                 """
                 SELECT
-                    p.pet_id,
+                    p.id AS pet_id,
                     p.user_id,
                     p.pet_name,
+                    p.pet_sex,
                     b.animal_breed,
                     p.pet_date_of_birth,
                     p.pedigree,
@@ -24,6 +25,7 @@ class PetsRepository:
                     p.pet_length,
                     p.pet_is_sterylyzed,
                     p.pet_weight
+                    p.pet_special_notes
                 FROM pets_info p
                 LEFT JOIN animals_breeds b ON b.id = p.animal_breed_id
                 WHERE p.pet_id = :pet_id AND p.user_id = :user_id
@@ -39,16 +41,16 @@ class PetsRepository:
             text(
                 """
                 SELECT
-                    p.pet_id,
+                    p.id AS pet_id
                     p.user_id,
                     p.pet_name,
                     t.animal_name AS animal_type,
                     b.animal_breed,
                     p.pet_date_of_birth
-                FROM pets_info p
+                FROM pet_info p
                 LEFT JOIN animals_types t ON t.id = p.animal_type_id
-                LEFT JOIN animals_breeds b ON b.id = p.animal_breed_id
-                WHERE p.pet_id = :pet_id AND p.user_id = :user_id
+                LEFT JOIN animals_types t ON t.id = p.animal_type_id
+                WHERE p.id = :pet_id AND p.user_id = :user_id
                 """
             ),
             {"pet_id": pet_id, "user_id": user_id},
