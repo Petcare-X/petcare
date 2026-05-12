@@ -114,6 +114,40 @@ services:
         max-size: "10m"
         max-file: "3"
 
+    mcp:
+    build:
+      context: ./apps/backend/mcp-server
+    restart: unless-stopped
+    command: sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8001"
+    environment:
+      POSTGRES_URL: ${DATABASE_URL}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE}
+      GEMMA_API_KEY: ${GEMMA_API_KEY:-}
+      GEMMA_ENDPOINT: ${GEMMA_ENDPOINT:-}
+      ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    expose:
+      - "8001"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
   bot:
     profiles: ["bot"]
     build:
