@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS pets_info (
     pet_id BIGSERIAL PRIMARY KEY,
     user_id TEXT NOT NULL,
     pet_name TEXT NOT NULL,
+    pet_sex TEXT,
     animal_type_id BIGINT REFERENCES animals_types(id),
     animal_breed_id BIGINT REFERENCES animals_breeds(id),
     pet_date_of_birth DATE,
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS pets_info (
     pet_length NUMERIC,
     pet_is_sterylyzed BOOLEAN NOT NULL DEFAULT FALSE,
     pet_weight NUMERIC
+    pet_special_notes TEXT
 );
 
 CREATE TABLE IF NOT EXISTS documents_types (
