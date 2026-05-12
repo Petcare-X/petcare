@@ -21,9 +21,11 @@ class DocumentsService:
     async def _ensure_pet_owner(self, pet_id: int, user_id: str) -> None:
         if await self.pets_repo.pet_exists_for_user(pet_id, user_id):
             return
-        owner_id = await self.pets_repo.get_pet_owner_id(pet_id)
-        if owner_id is None:
+        owner = await self.pets_repo.get_pet_owner_id(pet_id)
+        if owner is None:
             raise NotFoundError("Pet not found")
+        if owner["user_id"] is None:
+            raise ForbiddenError("This pet is not assigned to any owner")
         raise ForbiddenError("You do not own this pet")
 
     async def get_pet_documents(self, pet_id: int, user_id: str) -> List[Dict[str, Any]]:
