@@ -21,9 +21,12 @@ def _parse_time(value: str) -> time:
 def is_open_at(working_hours: str | None, current: datetime) -> bool:
     if not working_hours:
         return False
+    normalized = working_hours.strip().replace("–", "-")
+    if normalized.lower() in {"круглосуточно", "24/7", "24x7"}:
+        return True
 
     current_time = current.time()
-    intervals = [part.strip() for part in working_hours.replace(",", ";").split(";") if part.strip()]
+    intervals = [part.strip() for part in normalized.replace(",", ";").split(";") if part.strip()]
     for interval in intervals:
         if "-" not in interval:
             continue
@@ -94,4 +97,3 @@ class ClinicsService:
         if clinic is None:
             raise NotFoundError("Clinic not found")
         return clinic
-
