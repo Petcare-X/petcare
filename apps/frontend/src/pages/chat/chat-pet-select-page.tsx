@@ -7,7 +7,7 @@ export function ChatPetSelectPage() {
     const { pets, isLoading, isError } = useChatPetOptions();
 
     return (
-        <div className="pet-selection-page">
+        <>
             <h1>Консультация ИИ</h1>
             <p>Выберите питомца о котором хотите поговорить</p>
 
@@ -18,6 +18,6 @@ export function ChatPetSelectPage() {
                     </li>
                 ))}
             </ul>
-        </div>
+        </>
     )
 }

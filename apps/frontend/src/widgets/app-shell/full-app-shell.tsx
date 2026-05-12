@@ -6,7 +6,7 @@ import "./app-shell.css";
 
 export function FullAppShell() {
     return (
-        <div>
+        <>
             <Header />
 
             <main className="main-content-with-shell page-transition">
@@ -14,6 +14,6 @@ export function FullAppShell() {
             </main>
             
             <Navbar />
-        </div>
+        </>
     )
 }

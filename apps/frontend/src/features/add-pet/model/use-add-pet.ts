@@ -10,6 +10,9 @@ export type CreatePetFormValues = {
     breed: string;
     age: number;
     weight: number;
+    sex: "male" | "female";
+    isSterylized: boolean;
+    healthNotes: string;
     photo: File | null;
 };
 
@@ -27,6 +30,7 @@ export function useCreatePet() {
             const pet = await createPet({
                 pet_name: values.name,
                 pet_date_of_birth: buildDateOfBirth(values.age),
+                pet_sex: values.sex,
                 animal_type_id: DEFAULT_ANIMAL_TYPE_ID,
                 animal_breed_id: selectedBreed?.id,
                 animal_breed_name: values.breed.trim(),
@@ -35,7 +39,8 @@ export function useCreatePet() {
                 pet_breast_girth: 30,
                 pet_length: 40,
                 pet_weight: values.weight,
-                pet_is_sterylyzed: null,
+                pet_is_sterylyzed: values.isSterylized,
+                pet_special_notes: values.healthNotes.trim() || null,
             });
 
             if (!values.photo) {

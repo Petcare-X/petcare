@@ -27,11 +27,13 @@ from .upload_places import (
     VetCreate,
     DogPlaceCreate,
     DogPlaceImportRow,
+    SalonCreate,
+    SalonImportRow,
     ImportRowError, 
     ImportCsvResponse,
 )
 
-from .map import VetMapPoint, DogPlaceMapPoint
+from .map import VetMapPoint, DogPlaceMapPoint, SalonsMapPoint
 
 from .llm_chat import (
     MessageRole,
@@ -40,6 +42,7 @@ from .llm_chat import (
     ChatResponse,
     MessageCreate,
     MessageResponse,
+    SendMessageRequest,
     SendMessageResponse,
 )
 
@@ -75,15 +78,19 @@ __all__ = (
     "VetCreate",
     "DogPlaceCreate",
     "DogPlaceImportRow",
+    "SalonCreate",
+    "SalonImportRow",
     "ImportRowError",
     "ImportCsvResponse",
     "VetMapPoint",
     "DogPlaceMapPoint",
+    "SalonsMapPoint",
     "MessageRole",
     "MessageStatus",
     "ChatCreate",
     "ChatResponse",
     "MessageCreate",
     "MessageResponse",
+    "SendMessageRequest",
     "SendMessageResponse",
 )

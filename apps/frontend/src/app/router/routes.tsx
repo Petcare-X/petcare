@@ -12,13 +12,14 @@ import { SignupPage } from "@/pages/auth/signup-page";
 
 import { HomePage } from "@/pages/home/home-page";
 import { UserProfile } from "@/pages/profile/profile-page";
-import { MapPage } from "@/pages/map/map-page";
+import { EditProfilePage } from "@/pages/profile/edit-profile";
+// import { MapPage } from "@/pages/map/map-page";
 import { CalendarPage } from "@/pages/calendar/calendar-page";
 import { PetDetailsPage } from "@/pages/pets/pet-details-page";
 
 import { ChatPetSelectPage } from "@/pages/chat/chat-pet-select-page";
+import { ChatHistoryPage } from "@/pages/chat/chat-history-page";
 import { ChatPage } from "@/pages/chat/chat-page";
-
 
 import { ensureAuth, redirectIfAuthenticated } from "./guards";
 
@@ -27,6 +28,9 @@ import { MainOnlyShell } from "@/widgets/app-shell/main-only-shell";
 import { NavbarOnlyShell } from "@/widgets/app-shell/navbar-only-shell";
 
 import { NotFoundPage } from "@/pages/not-found/not-found-page";
+
+import { EditPetPage } from "@/pages/pets/edit-pet-page";
+
 
 const rootRoute = createRootRoute ({
     component: () => <Outlet />,
@@ -85,11 +89,29 @@ const homeRoute = createRoute ({
     component: HomePage,
 });
 
+const petDetailsRoute = createRoute ({
+    getParentRoute: () => mainOnlyLayoutRoute,
+    path: appRoutes.petProfile,
+    component: PetDetailsPage,
+});
+
+const editPetRoute = createRoute ({
+    getParentRoute: () => mainOnlyLayoutRoute,
+    path: appRoutes.editPetProfile,
+    component: EditPetPage,
+});
+
 const profileRoute = createRoute ({
     getParentRoute: () => fullAppLayoutRoute,
     path: appRoutes.userProfile,
     component: UserProfile,
 });
+
+const editProfileRoute = createRoute({
+    getParentRoute: () => fullAppLayoutRoute,
+    path: appRoutes.editProfile,
+    component: EditProfilePage,
+})
 
 const calendarRoute = createRoute ({
     getParentRoute: () => fullAppLayoutRoute,
@@ -97,22 +119,22 @@ const calendarRoute = createRoute ({
     component: CalendarPage,
 });
 
-const petDetailsRoute = createRoute ({
-    getParentRoute: () => fullAppLayoutRoute,
-    path: appRoutes.petProfile,
-    component: PetDetailsPage,
-});
-
-const mapRoute = createRoute ({
-    getParentRoute: () => mainOnlyLayoutRoute,
-    path: appRoutes.map,
-    component: MapPage,
-});
+// const mapRoute = createRoute ({
+//     getParentRoute: () => mainOnlyLayoutRoute,
+//     path: appRoutes.map,
+//     component: MapPage,
+// });
 
 const chatPetSelectRoute = createRoute ({
     getParentRoute: () => navbarOnlyLayoutRoute,
     path: appRoutes.chatSelectPet,
     component: ChatPetSelectPage,
+});
+
+const chatHistoryRoute = createRoute ({
+    getParentRoute: () => navbarOnlyLayoutRoute,
+    path: appRoutes.chatHistory,
+    component: ChatHistoryPage,
 });
 
 const chatRoute = createRoute ({
@@ -131,16 +153,19 @@ const routeTree = rootRoute.addChildren([
             homeRoute,
             profileRoute,
             calendarRoute,
-            petDetailsRoute,
+            editProfileRoute,
         ]),
 
         mainOnlyLayoutRoute.addChildren([
-            mapRoute,
+            petDetailsRoute,
+            // mapRoute,
             chatRoute,
+            editPetRoute,
         ]),
 
         navbarOnlyLayoutRoute.addChildren([
             chatPetSelectRoute,
+            chatHistoryRoute,
         ]),
     ]),
 ]);

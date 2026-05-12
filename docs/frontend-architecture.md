@@ -19,15 +19,15 @@
 - Упростить поддержку кодовой базы за счет предсказуемой структуры и разделения server state и UI state.
 - Минимизировать дублирование логики между экранами и пользовательскими потоками.
 - Поддержать стратегическую публикацию приложения через `Google Play` и `RuStore`.
-- На первой версии сфокусироваться на `Android + web`, без обязательного равноправного `iOS`-сценария.
-- Сделать интерфейс понятным для новичков и полезным в непредвиденных ситуациях, поездках и при смене места жительства.
+- На первой версии сфокусироваться на `web`, без обязательного равноправного `android + iOS`-сценария.
+- Сделать интерфейс понятным для новичков и полезным в непредвиденных ситуациях.
 
 ## 3. Рекомендуемый стек
 
 Примечание по текущему состоянию:
 - базовый frontend-проект уже поднят в `apps/frontend`;
 - фактически установлены `React 19`, `TypeScript 6`, `Vite 7`, `TanStack Router`, `TanStack Query`, `Zustand`, `React Hook Form`, `Zod`, `Tailwind CSS`, `vite-plugin-pwa` и `axios`;
-- интеграция карт пока не установлена как библиотека и будет выбрана отдельно на следующем этапе.
+- для отображения карт используется yandex maps javascript api.
 
 ### 3.1 Базовый стек
 - Фреймворк: `React`
@@ -43,7 +43,8 @@
 - Валидация: `Zod`
 
 ### 3.3 UI и стили
-- Стилизация: `Tailwind CSS`
+- Текущий подход: стандартный `CSS`
+- В перспективе переход на `Tailwind CSS` и `Sass`
 
 ### 3.4 Интеграции
 - HTTP-клиент: `axios`
@@ -52,9 +53,9 @@
 
 ## 4. Почему такая архитектура подходит проекту
 - Backend уже существует как отдельный `FastAPI` API, поэтому frontend должен быть самостоятельным клиентом, а не fullstack-framework-слоем.
-- Основные пользовательские сценарии происходят после логина, а не завязаны на SEO-страницы.
-- Продукт ориентирован на app-like experience: карточки питомцев, документы, карта, чат, профиль.
-- PWA-подход позволяет закрыть цель "web + Android" без поддержки двух отдельных frontend-кодовых баз.
+- Пользовательские сценарии происходят после логина, а не завязаны на SEO-страницы.
+- Продукт ориентирован на app-like experience: профили питомцев, документы, карта, чат, профиль пользователя.
+- PWA-подход позволяет закрыть цель "web + mobile" без поддержки двух отдельных frontend-кодовых баз.
 
 ## 5. Основные frontend-модули
 
@@ -62,7 +63,7 @@
 Отвечает за:
 - логин;
 - регистрацию;
-- альтернативный вход через Telegram;
+- альтернативный вход через Telegram [в будущем];
 - хранение и обновление сессии;
 - защиту приватных роутов;
 - обработку logout и logout-all.
@@ -71,10 +72,10 @@
 Отвечает за:
 - список питомцев;
 - создание питомца;
-- просмотр карточки;
+- просмотр профиля питомца;
 - редактирование;
 - удаление;
-- переключение между owned/shared карточками.
+- переключение между owned/shared профилями питомцев.
 
 ### 5.3 Documents
 Отвечает за:
@@ -152,29 +153,27 @@ frontend/
     pages/
       auth/
         login-page.tsx
-        register-page.tsx
+        signup-page.tsx
       onboarding/
         onboarding-page.tsx
       pets/
-        pets-list-page.tsx
         pet-details-page.tsx
         edit-pet-page.tsx
       documents/
         pet-documents-page.tsx
-      sharing/
-        pet-sharing-page.tsx
-        invite-page.tsx
       map/
         map-page.tsx
       profile/
         profile-page.tsx
     widgets/
       app-shell/
-        app-shell.tsx
+        full-app-shell.tsx
+        main-only-shell.tsx
+        navbar-only-shell.tsx
         page-header.tsx
+        page-navbar.tsx
       pet-card/
         pet-card.tsx
-        pet-summary.tsx
       document-list/
         document-list.tsx
         document-list-item.tsx
@@ -187,18 +186,22 @@ frontend/
       auth/
         ui/
           login-form.tsx
-          register-form.tsx
+          signup-form.tsx
           telegram-login-button.tsx
         model/
+          login.schema.ts
+          signup.schema.ts
           use-login.ts
-          use-register.ts
+          use-signup.ts
           use-logout.ts
-      create-pet/
+      add-pet/
         ui/
-          create-pet-form.tsx
+          accept-pet-invite-form.tsx
+          add-pet-form.tsx
+          breeds-dropdown.tsx
         model/
-          use-create-pet.ts
-          create-pet.schema.ts
+          use-add-pet.ts
+          add-pet.schema.ts
       edit-pet/
         ui/
           edit-pet-form.tsx
@@ -308,32 +311,33 @@ frontend/
 ## 7. Роутинг
 
 ### 7.1 Основные маршруты
-- `/auth/login`
-- `/auth/register`
-- `/onboarding`
-- `/pets`
+- `/login`
+- `/signup`
+- `/home`
 - `/pets/:petId`
-- `/pets/:petId/documents`
-- `/pets/:petId/sharing`
-- `/pets/:petId/chat`
-- `/pets/:petId/chat/:chatId`
+- `/pets/:petId/:edit`
+- `/pets/:petId//documents`
+- `/user`
+- `/user/edit`
+- `/chat`
+- `/chat/:petId`
+- `/chat/:petId/:chatId`
 - `/map`
-- `/profile`
-- `/invite/:inviteCode`
+- `/calendar`
 
 ### 7.2 Правила роутинга
 - приватные роуты защищаются auth guard;
-- после логина пользователь перенаправляется на список питомцев;
-- если у пользователя нет питомцев, возможен redirect в onboarding;
-- invite links должны открываться в приложении и приводить к сценарию принятия приглашения;
-- onboarding должен быть особенно дружелюбным для пользователей с минимальным опытом ухода за питомцем.
+- после логина пользователь перенаправляется на домашнюю страницу приложения;
+- навигация по основным страницам приложения осуществляется как с главного экрана, так и при помощи навигационной панели внизу;
 
 ## 8. Управление состоянием
 
 ### 8.1 Что хранится в server state
-- профиль текущего пользователя;
+- данные текущего пользователя;
 - список питомцев;
-- карточка питомца;
+- данные питомца;
+- список доступных для регистрации пород и типов животных;
+- данные по клиникам, салонам и френдли-местам;
 - документы питомца;
 - shared users;
 - приглашения;
@@ -481,7 +485,6 @@ Frontend должен единообразно обрабатывать:
 - набор иконок для установки;
 - service worker;
 - offline fallback page;
-- кэширование app shell;
 - поддержка install prompt там, где это возможно;
 - splash-friendly launch experience на Android.
 
@@ -525,62 +528,7 @@ Frontend должен единообразно обрабатывать:
 - Поддерживать только форматы документов `PDF`, `JPG`, `PNG` на первой версии.
 - Точные лимиты размера файлов для фото и документов пока не зафиксированы и должны быть согласованы отдельно.
 
-## 16. Дизайн-система
-
-### 16.1 Цветовая палитра
-- Primary: `#F5F5F5`
-- Brand color: `#F97316`
-- Accent: `#EA580C`
-- Success: `#2D8F5A`
-- Warning: `#D98E04`
-- Error: `#C44536`
-- Text: `#313131`
-- Subtext: `#969696`
-
-### 16.2 Типографика
-- Основной шрифт: `Nunito`
-- Базовая шкала размеров:
-  - `12px`
-  - `14px`
-  - `16px`
-  - `18px`
-  - `20px`
-  - `24px`
-  - `32px`
-
-### 16.3 Базовый компонентный кит
-- `Button`
-- `IconButton`
-- `Input`
-- `PasswordInput`
-- `Textarea`
-- `Select`
-- `DatePicker`
-- `Checkbox`
-- `Switch`
-- `FormField`
-- `ErrorMessage`
-- `Card`
-- `Avatar`
-- `Badge`
-- `Tabs`
-- `Dialog`
-- `Drawer / BottomSheet`
-- `Toast`
-- `Tooltip`
-- `DropdownMenu`
-- `Skeleton`
-- `EmptyState`
-- `FileUploader`
-- `ProgressBar`
-- `ChatBubble`
-- `MessageComposer`
-- `MapMarker`
-- `FilterChip`
-- `SearchBar`
-- `ConfirmDialog`
-
-## 17. Правила развития frontend
+## 16. Правила развития frontend
 - Все новые пользовательские сценарии сначала должны быть согласованы с `PRD`.
 - Все изменения, влияющие на API-взаимодействие, должны сверяться с `backend-architecture.md` и фактическим контрактом backend.
 - Крупные новые фичи должны добавляться как отдельные `features/` или `entities/`, а не в случайные shared-компоненты.

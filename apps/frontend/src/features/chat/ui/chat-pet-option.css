@@ -2,12 +2,16 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    text-decoration: none;
+    width: 100%;
+    border: none;
+    text-align: left;
+    cursor: pointer;
     background-color: white;
     border-radius: 16px;
     padding: 15px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
     margin-bottom: 20px;
+    text-decoration: none;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -20,6 +24,11 @@
 
 .chat-pet-option-card:hover .chat-icon {
     color: #ff7a1a;
+}
+
+.chat-pet-option-card:disabled {
+    cursor: wait;
+    opacity: 0.8;
 }
 
 .chat-pet-option-card-main {
@@ -54,4 +63,10 @@
     width: 36px;
     color: #666;
     transition: color 0.15s ease;
+}
+
+.chat-option-status {
+    color: #ff7a1a;
+    font-size: 0.95rem;
+    font-weight: 700;
 }

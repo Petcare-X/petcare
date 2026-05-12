@@ -1,9 +1,3 @@
-.pet-selection-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
 .pet-options-list {
     list-style: none;
     width: 100%;
