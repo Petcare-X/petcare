@@ -60,15 +60,15 @@ class PetsRepository:
 
     async def pet_exists_for_user(self, pet_id: int, user_id: str) -> bool:
         result = await self.db.execute(
-            text("SELECT 1 FROM pets_info WHERE pet_id = :pet_id AND user_id = :user_id"),
+            text("SELECT 1 FROM pets_info WHERE id = :pet_id AND user_id = :user_id"),
             {"pet_id": pet_id, "user_id": user_id},
         )
         return result.first() is not None
 
-    async def get_pet_owner_id(self, pet_id: int) -> Optional[str]:
+    async def get_pet_owner_id(self, pet_id: int) -> Optional[Dict[str, Any]]:
         result = await self.db.execute(
             text("SELECT user_id FROM pets_info WHERE pet_id = :pet_id"),
             {"pet_id": pet_id},
         )
         row = result.mappings().first()
-        return str(row["user_id"]) if row else None
+        return dict(row) if row else None
