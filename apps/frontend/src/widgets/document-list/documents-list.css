@@ -1,0 +1,49 @@
+.documents-list-placeholder {
+    padding: 15px;
+    border: 2px solid #fafafa;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.documents-list-placeholder-icon-conteiner {
+    width: 52px;
+    height: 52px;
+    background-color: #A1A1A1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 9px;
+}
+
+.document-icon {
+    color: #fafafa;
+    width: 28px;
+    height: 31px;
+}
+
+.documents-list-text-conteiner {
+    color: #fafafa;
+}
+
+.documents-list-placeholder-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+
+.documents-list-placeholder-text {
+    font-size: 1rem;
+}
+
+.documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}

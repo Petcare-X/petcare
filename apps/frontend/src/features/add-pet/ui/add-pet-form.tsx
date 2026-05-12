@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 
 import { useDogBreedsQuery } from "@/entities/pet/model/pet.queries";
-import { useCreatePet } from "@/features/create-pet/model/use-create-pet";
+import { useCreatePet } from "@/features/add-pet/model/use-add-pet";
 
 type CreatePetFormProps = {
     onCreated: () => void;
@@ -14,6 +14,9 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
     const [breed, setBreed] = useState("");
     const [age, setAge] = useState("");
     const [weight, setWeight] = useState("");
+    const [sex, setSex] = useState<"male" | "female">("male");
+    const [isSterylized, setIsSterylized] = useState(false);
+    const [healthNotes, setHealthNotes] = useState("");
     const [photo, setPhoto] = useState<File | null>(null);
 
     const photoPreviewUrl = useMemo(() => {
@@ -33,6 +36,9 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
                 breed: breed.trim(),
                 age: Number(age),
                 weight: Number(weight),
+                sex,
+                isSterylized,
+                healthNotes,
                 photo,
             },
             {
@@ -41,6 +47,9 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
                     setBreed("");
                     setAge("");
                     setWeight("");
+                    setSex("male");
+                    setIsSterylized(false);
+                    setHealthNotes("");
                     setPhoto(null);
                     onCreated();
                 },
@@ -79,7 +88,7 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
 
             <div className="create-pet-grid">
                 <label className="create-pet-field">
-                    <span>Возраст</span>
+                    <span>Возраст, лет</span>
                     <input
                         value={age}
                         onChange={(event) => setAge(event.target.value)}
@@ -103,6 +112,61 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
                     />
                 </label>
             </div>
+
+            <div className="create-pet-field">
+                <span>Пол</span>
+                <div className="create-pet-sex-toggle" role="group" aria-label="Выбор пола питомца">
+                    <button
+                        type="button"
+                        className={`create-pet-sex-option ${sex === "male" ? "is-active" : ""}`}
+                        aria-pressed={sex === "male"}
+                        onClick={() => setSex("male")}
+                    >
+                        самец
+                    </button>
+                    <button
+                        type="button"
+                        className={`create-pet-sex-option ${sex === "female" ? "is-active" : ""}`}
+                        aria-pressed={sex === "female"}
+                        onClick={() => setSex("female")}
+                    >
+                        самка
+                    </button>
+                </div>
+            </div>
+
+            <div className="create-pet-field">
+                <span>Стерилизован(а)</span>
+                <div className="create-pet-sex-toggle" role="group" aria-label="Выбор статуса стерилизации питомца">
+                    <button
+                        type="button"
+                        className={`create-pet-sex-option ${isSterylized ? "is-active" : ""}`}
+                        aria-pressed={isSterylized}
+                        onClick={() => setIsSterylized(true)}
+                    >
+                        да
+                    </button>
+                    <button
+                        type="button"
+                        className={`create-pet-sex-option ${!isSterylized ? "is-active" : ""}`}
+                        aria-pressed={!isSterylized}
+                        onClick={() => setIsSterylized(false)}
+                    >
+                        нет
+                    </button>
+                </div>
+            </div>
+
+            <label className="create-pet-field">
+                <span>Особенности здоровья питомца</span>
+                <textarea
+                    className="create-pet-textarea"
+                    value={healthNotes}
+                    onChange={(event) => setHealthNotes(event.target.value)}
+                    maxLength={500}
+                    placeholder="Например: аллергия, хронические заболевания, особенности питания, лекарства"
+                />
+            </label>
 
             <label className="create-pet-photo">
                 {photoPreviewUrl ? (

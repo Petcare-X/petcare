@@ -15,9 +15,9 @@ export function ChatPetOptionCard({ pet }: ChatPetOptionCardProps) {
 
     return (
         <Link
-            className="chat-pet-option-card"
-            to={appRoutes.chat}
+            to={appRoutes.chatHistory}
             params={{ petId: String(pet.id) }}
+            className="chat-pet-option-card"
         >
             <div className="chat-pet-option-card-main">
                 <img

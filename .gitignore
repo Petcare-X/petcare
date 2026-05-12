@@ -45,6 +45,7 @@ Thumbs.db
 
 # ─── Env files ────────────────────────────────────────────────────────────────
 .env
+.env.prod
 .env.docker
 .env.local
 .env.*.local

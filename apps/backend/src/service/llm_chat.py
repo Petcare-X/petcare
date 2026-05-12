@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.db import AsyncSessionLocal
 from src.models import LlmChat, LlmMessage
-from src.schemas import MessageRole, ChatCreate, MessageCreate, MessageStatus, SendMessageResponse
+from src.schemas import MessageRole, ChatCreate, MessageCreate, MessageStatus, SendMessageRequest, SendMessageResponse
 from src.service.openrouter import OpenRouterService
 from src.repositories import LlmChatRepository, LlmMessageRepository, PetsRepository
 from src.exceptions import (ChatNotFound, 
@@ -99,17 +99,28 @@ class LLMChatService:
             raise ChatNotFound("Chats not found")
         return result
 
-    async def get_chat_messages(self, db: AsyncSession, user_id: int, chat_id: int) -> list[LlmMessage]:
+    async def get_chat_messages(self, db: AsyncSession, user_id: int, pet_id: int, chat_id: int) -> list[LlmMessage]:
         chat = await self.chat_repo.get_user_chat(db, user_id, chat_id)
         if not chat:
+            raise UserPermissionError("User does not have permission to access this chat")
+        if chat.pet_id != pet_id:
             raise UserPermissionError("User does not have permission to access this chat")
         messages = await self.message_repo.get_by_chat_id(db, chat_id)
         return messages
 
-    async def accept_message(self, db: AsyncSession, user_id: int, chat_id: int, payload: MessageCreate) -> tuple[LlmMessage, LlmMessage]:
+    async def accept_message(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        pet_id: int,
+        chat_id: int,
+        payload: SendMessageRequest,
+    ) -> tuple[LlmMessage, LlmMessage]:
         chat = await self.get_user_chat(db, user_id, chat_id)
         if not chat:
             raise ChatNotFound("Chat not found")
+        if chat.pet_id != pet_id:
+            raise UserPermissionError("User does not have permission to access this chat")
         
         if not payload.content:
             raise UserMessageError("Message content is required")
@@ -247,3 +258,9 @@ class LLMChatService:
         await db.refresh(assistant_message)
 
         return user_message, assistant_message
+    
+    async def delete_chat(self, db: AsyncSession, user_id: int, pet_id: int, chat_id: int) -> None:
+        chat = await self.get_user_chat(db, user_id, chat_id)
+        if chat.pet_id != pet_id:
+            raise UserPermissionError("User does not have permission to access this chat")
+        await self.chat_repo.delete(db, chat)

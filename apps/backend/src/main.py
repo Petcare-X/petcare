@@ -8,9 +8,13 @@ app = FastAPI()
 register_exception_handlers(app)
 
 if settings.ENV == "dev":
-    origins = ["http://localhost:5173"]
+    origins = [
+        "http://localhost:5173",
+        "http://172.17.0.1:5173",
+        "http://192.168.0.105:5173"
+    ]
 else:
-    origins = ["https://prod_domain.com"]
+    origins = ["https://пэткер.рф"]
 
 app.add_middleware(
     CORSMiddleware,

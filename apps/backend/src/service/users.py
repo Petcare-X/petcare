@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.phone import to_e164
 from src.core.security import hash_password
 from src.exceptions import (
+    AppError,
     UserConflictError,
     UserNotFoundError,
 )
@@ -11,10 +12,13 @@ from src.models import PetInfo, UserInfo, AuthIdentities
 from src.schemas import CreateUser, UpdateUser, UserPrivate
 from src.repositories import UsersRepository, PetsRepository
 
+from src.service.storage import StorageService
+
 class UsersService:
     def __init__(self):
         self.repo = UsersRepository()
         self.repo_pets = PetsRepository()
+        self.storage = StorageService()
 
     async def to_private_response(self, db: AsyncSession, user: UserInfo):
         auth_identities = await self.repo.get_auth_identities_by_user_id(db, user.id)
@@ -104,14 +108,44 @@ class UsersService:
             await db.rollback()
             raise UserConflictError()
 
-    async def delete_user(self, db: AsyncSession, user_id: int) -> bool:
+    async def delete_user_with_assets(self, db: AsyncSession, user_id: int) -> bool:
         user = await self.repo.get_by_id(db, user_id)
         if not user:
             raise UserNotFoundError()
 
+        pets = await self.repo_pets.get_owned_by_user_id(db, user_id)
+
+        for pet in pets:
+            if pet.pet_photo_object_key:
+                await self._delete_storage_object(
+                    pet.pet_photo_object_key,
+                    "Failed to delete pet photo from storage",
+                )
+
+            documents = await self.repo.get_pet_documents(db, pet.id)
+            for document in documents:
+                if document.object_key:
+                    await self._delete_storage_object(
+                        document.object_key,
+                        f"Failed to delete pet document from storage: {document.id}",
+                    )
+                await db.delete(document)
+            await db.delete(pet)
+
+        await db.flush()
+
         await db.delete(user)
         await db.commit()
         return True
+
+    async def _delete_storage_object(self, object_key: str | None, error_message: str) -> None:
+        if not object_key:
+            return
+
+        try:
+            await self.storage.delete_object(object_key)
+        except Exception as exc:
+            raise AppError(error_message, status_code=500) from exc
     
     async def list_user_pets(self, db: AsyncSession, user_id: int) -> list[PetInfo]:
         return await self.repo_pets.get_by_user_id(db, user_id)

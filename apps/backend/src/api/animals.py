@@ -6,7 +6,7 @@ from src.schemas.animals import AnimalBreedResponse, AnimalTypeResponse
 from src.service.animals import AnimalsService
 
 
-animal_types_router = APIRouter(prefix="/animal-types", tags=["animal-types"])
+animal_types_router = APIRouter(prefix="/admin/animal-types", tags=["animal-types"])
 
 animals_service = AnimalsService()
 

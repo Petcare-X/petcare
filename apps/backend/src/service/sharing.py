@@ -110,7 +110,7 @@ class SharingService:
             raise PetNotFoundError()
         if user_id == pet.user_id:
             raise InviteOwnerAcceptError()
-        existing_shared_user = self.repo_sharing.existing_shared_user_result(pet_id=invite.pet_id, user_id=user_id)
+        existing_shared_user = await self.repo_sharing.existing_shared_user_result(db=db, pet_id=invite.pet_id, user_id=user_id)
         if existing_shared_user:
             if (
                 existing_shared_user.sharing_end is None

@@ -2,7 +2,7 @@ from typing import List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import UserInfo, AuthIdentities
+from src.models import UserInfo, AuthIdentities, PetDocument
 
 class UsersRepository:
     async def get_all(self, db: AsyncSession, offset: int = 0, limit: int = 50) -> List[UserInfo]:
@@ -48,3 +48,9 @@ class UsersRepository:
             select(AuthIdentities).where(AuthIdentities.user_id == user_id)
         )
         return list(res.scalars().all())
+    
+    async def get_pet_documents(self, db: AsyncSession, pet_id: int) -> list[PetDocument]:
+        result = await db.execute(
+            select(PetDocument).where(PetDocument.pet_id == pet_id)
+        )
+        return list(result.scalars().all())
