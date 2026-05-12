@@ -6,7 +6,7 @@ from src.core.db import get_db
 from src.service import ImportService
 from src.schemas import ImportCsvResponse
 
-upload_router = APIRouter(prefix="/upload-data", tags=["upload-data"])
+upload_router = APIRouter(prefix="/admin/upload-data", tags=["upload-data"])
 
 
 @upload_router.post("/import-vet-csv", response_model=ImportCsvResponse, include_in_schema=False)
