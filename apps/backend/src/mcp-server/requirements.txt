@@ -6,3 +6,4 @@ pyjwt
 boto3
 celery
 redis
+fastmcp
