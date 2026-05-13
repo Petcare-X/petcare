@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import settings
 from src.core.db import get_db
 from src.service import UsersService
 
@@ -12,6 +13,15 @@ from src.schemas.users import CreateUser, UpdateUser, UserPrivate, LinkEmail, Li
 users_router = APIRouter(prefix="/users", tags=["users"])
 
 users_service = UsersService()
+
+def delete_refresh_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key="refresh_token",
+        path="/auth",
+        httponly=True,
+        secure=settings.ENV != "dev",
+        samesite="lax",
+    )
 
 @users_router.post("", response_model=UserPrivate, status_code=201)
 async def create(payload: CreateUser, db: AsyncSession = Depends(get_db)):
@@ -42,10 +52,12 @@ async def patch_contacts(
 
 @users_router.delete("/me")
 async def remove(
+    response: Response,
     current_user: UserInfo = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    ok = await users_service.delete_user(db, current_user.id)
+    await users_service.delete_user_with_assets(db, current_user.id)
+    delete_refresh_cookie(response)
     return {"deleted": True}
 
 @users_router.get("/{user_id}", include_in_schema=False, response_model=UserPrivate)

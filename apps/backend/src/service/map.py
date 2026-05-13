@@ -51,9 +51,13 @@ class MapService:
             )
             for place in result
         ]
-    
+
     async def get_salons_map_points(self, db: AsyncSession) -> list[SalonsMapPoint]:
-        result = await self._get_active_entities(db, GroomingSalon, "salon_status")
+        result = await self._get_active_entities(
+            db,
+            GroomingSalon,
+            "salon_status",
+        )
         return [
             SalonsMapPoint(
                 id=salon.id,

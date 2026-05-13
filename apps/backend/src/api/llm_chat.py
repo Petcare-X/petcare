@@ -4,7 +4,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.db import get_db
 from src.core.security import get_current_user
 
-from src.schemas import ChatCreate, ChatResponse, MessageCreate, MessageResponse, SendMessageResponse
+from src.schemas import (
+    ChatCreate,
+    ChatResponse,
+    MessageResponse,
+    SendMessageRequest,
+    SendMessageResponse,
+)
 from src.service import LLMChatService
 from src.models import UserInfo
 
@@ -41,13 +47,20 @@ async def get_pet_chats(
 
 @chat_router.post("/{pet_id}/{chat_id}/send-message", response_model=SendMessageResponse, status_code=202)
 async def accept_message(
+    pet_id: int,
     chat_id: int,
-    payload: MessageCreate,
+    payload: SendMessageRequest,
     db: AsyncSession = Depends(get_db),
     current_user: UserInfo = Depends(get_current_user),
     service: LLMChatService = Depends(),
 ):
-    user_message, assistant_message = await service.accept_message(db, current_user.id, chat_id, payload)
+    user_message, assistant_message = await service.accept_message(
+        db,
+        current_user.id,
+        pet_id,
+        chat_id,
+        payload,
+    )
     generating_message = await service.start_generation(db, assistant_message.id, current_user.id)
     if generating_message:
         await service.generate_answer(generating_message.id)
@@ -55,6 +68,22 @@ async def accept_message(
 
 @chat_router.get("/{pet_id}/{chat_id}/messages", response_model=list[MessageResponse])
 async def get_chat_messages(
+    pet_id: int,
+    chat_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserInfo = Depends(get_current_user),
+    service: LLMChatService = Depends(),
+):
+    return await service.get_chat_messages(
+        db=db,
+        user_id=current_user.id,
+        pet_id=pet_id,
+        chat_id=chat_id,
+    )
+
+@chat_router.delete("/{pet_id}/{chat_id}", status_code=204)
+async def delete_chat(
+    pet_id: int,
     chat_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: UserInfo = Depends(get_current_user),

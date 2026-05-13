@@ -19,7 +19,7 @@ export function Navbar() {
                 <span className="search-button">поиск</span>
             </Link>
 
-            <Link to={appRoutes.chat} className="navbar-chat-button">
+            <Link to={appRoutes.chatSelectPet} className="navbar-chat-button">
                 <svg className="chat-button-icon" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M5.38258 19.3333L0 23.5625V1.20833C0 0.540995 0.540995 0 1.20833 0H22.9583C23.6257 0 24.1667 0.540995 24.1667 1.20833V18.125C24.1667 18.7924 23.6257 19.3333 22.9583 19.3333H5.38258Z" fill="#FAFAFA"/>
                 </svg>

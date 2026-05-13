@@ -1,0 +1,52 @@
+.edit-pet-page {
+  min-height: 100dvh;
+  max-width: 430px;
+  margin: 0 auto;
+  background: #f7f7f7;
+  color: #111111;
+}
+
+.edit-pet-topbar {
+  height: 64px;
+  padding: 0 15px 0 21px;
+  border-bottom: 1px solid #dedede;
+  background: #f7f7f7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.edit-pet-back {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9a9a9a;
+  text-decoration: none;
+}
+
+.edit-pet-save {
+  color: #e9581b;
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.edit-pet-save:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.edit-pet-state {
+  margin: 56px 14px 0;
+  padding: 16px;
+  border-radius: 20px;
+  background: #efefef;
+  color: #555555;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}

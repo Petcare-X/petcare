@@ -92,6 +92,8 @@ class VetCreate(BaseModel):
     @field_validator("vet_lat", "vet_lon", mode="before")
     @classmethod
     def parse_float(cls, value):
+        if value is None:
+            return None
         if isinstance(value, str):
             value = value.strip().replace(",", ".")
             if value == "":
@@ -125,6 +127,8 @@ class DogPlaceCreate(BaseModel):
                      mode="before")
     @classmethod
     def parse_float(cls, value):
+        if value is None:
+            return None
         if isinstance(value, str):
             value = value.strip().replace(",", ".")
             if value == "":
@@ -185,6 +189,8 @@ class SalonCreate(BaseModel):
                      mode="before")
     @classmethod
     def parse_float(cls, value):
+        if value is None:
+            return None
         if isinstance(value, str):
             value = value.strip().replace(",", ".")
             if value == "":

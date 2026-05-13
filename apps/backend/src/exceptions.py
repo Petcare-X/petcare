@@ -1,10 +1,31 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+
+from src.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+def _sanitize_for_json(value: Any) -> Any:
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+
+    if isinstance(value, dict):
+        return {str(key): _sanitize_for_json(item) for key, item in value.items()}
+
+    if isinstance(value, (list, tuple, set)):
+        return [_sanitize_for_json(item) for item in value]
+
+    if isinstance(value, BaseException):
+        return str(value)
+
+    return str(value)
 
 
 class AppError(Exception):
@@ -24,12 +45,13 @@ class AppError(Exception):
         super().__init__(self.message)
 
     def to_response(self, request: Request) -> dict[str, Any]:
+        is_production_5xx = settings.ENV != "dev" and self.status_code >= 500
         return {
             "error": {
-                "type": self.__class__.__name__,
+                "type": "InternalServerError" if is_production_5xx else self.__class__.__name__,
                 "message": self.message,
                 "status_code": self.status_code,
-                "details": self.details,
+                "details": None if is_production_5xx else _sanitize_for_json(self.details),
             }
         }
 
@@ -174,6 +196,14 @@ class OpenRouterResponseError(AppError):
     message = "OpenRouter response error"
 
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    if exc.status_code >= 500:
+        logger.exception(
+            "Application error on %s %s: %s",
+            request.method,
+            request.url.path,
+            exc.message,
+            exc_info=exc,
+        )
     return JSONResponse(status_code=exc.status_code, content=exc.to_response(request))
 
 
@@ -192,12 +222,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     error = AppError(
         "Request validation failed",
         status_code=422,
-        details=exc.errors(),
+        details=_sanitize_for_json(exc.errors()),
     )
     return JSONResponse(status_code=error.status_code, content=error.to_response(request))
 
 
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception(
+        "Unhandled exception on %s %s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
     error = AppError(
         "Internal server error",
         status_code=500,

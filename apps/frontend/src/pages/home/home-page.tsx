@@ -1,17 +1,22 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "@tanstack/react-router";
 
-import { mapPetToCardView, useDogBreedsQuery, usePetsQuery } from "@/entities/pet/model/pet.queries";
-import { CreatePetForm } from "@/features/create-pet/ui/create-pet-form";
+import { useDogBreedsQuery, usePetsQuery } from "@/entities/pet/model/pet.queries";
+
+import { CreatePetForm } from "@/features/add-pet/ui/add-pet-form";
+import { AcceptInviteForm } from "@/features/add-pet/ui/accept-pet-invite-form";
+import { PetCard } from "@/widgets/pet-card/pet-card";
+import { mapPetToCardView } from "@/widgets/pet-card/model/pet-info-formating";
+
 import { appRoutes } from '@/shared/constants/routes';
 import { EmptyState } from "@/shared/ui/empty-state";
-import { PetCard } from "@/widgets/pet-card/pet-card";
+
 
 import './home-page.css';
 
-
 export function HomePage() {
-    const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
+    const [addPetMode, setAddPetMode] = useState<"menu" | "create" | "invite" | null>(null);
     const petsQuery = usePetsQuery();
     const breedsQuery = useDogBreedsQuery();
 
@@ -22,62 +27,107 @@ export function HomePage() {
     const firstPetName = pets[0]?.name ?? "питомец";
 
     return (
-        <div className="home-page">
-            <section className="events-section">
-                <h2 className="section-title">Ближайшие события:</h2>
-                
-                <button type="button" className="event-card">
-                    <div className="event-date">
-                        <span className="event-month">апр</span>
-                        <span className="event-day">08</span>
-                    </div>
-                    
-                    <div className="event-info">
-                        <p className="event-title">Ежегодная вакцинация</p>
-                        <p className="event-subtitle">{firstPetName} • Ежегодная вакцинация</p>
-                    </div>
-                </button>
-            </section>
-
+        <>
             <section className="pets-section">
                 <div className="section-row">
                     <h2 className="section-title">Мои питомцы</h2>
-                    <button
-                        type="button"
-                        className="add-pet-button"
-                        onClick={() => setIsCreateFormOpen((value) => !value)}
-                    >
-                        + Добавить
-                    </button>
+                    {pets.length > 0 ? (
+                        <button
+                            type="button"
+                            className="add-pet-button"
+                            onClick={() => setAddPetMode("menu")}
+                        >
+                            + Добавить
+                        </button>
+                    ) : null}
                 </div>
 
-                {isCreateFormOpen ? (
-                    <CreatePetForm onCreated={() => setIsCreateFormOpen(false)} />
+                {addPetMode ? createPortal(
+                    <div className="create-pet-overlay">
+                        <div className="create-pet-modal">
+                            {addPetMode === "menu" ? (
+                                <div className="add-pet-menu">
+                                    <div className="add-pet-menu-heading">
+                                        <p className="add-pet-menu-title">Добавить питомца</p>
+                                        <p className="add-pet-menu-subtitle">
+                                            Выберите, хотите ли вы создать новый профиль питомца
+                                            или добавить его по коду доступа.
+                                        </p>
+                                    </div>
+
+                                    <div className="add-pet-menu-options">
+                                        <button
+                                            type="button"
+                                            className="add-pet-menu-option add-pet-menu-option-primary"
+                                            onClick={() => setAddPetMode("create")}
+                                        >
+                                            <span className="add-pet-menu-option-title">
+                                                Создать нового питомца
+                                            </span>
+                                            <span className="add-pet-menu-option-text">
+                                                Заполните имя, породу, возраст, вес и добавьте фото.
+                                            </span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="add-pet-menu-option"
+                                            onClick={() => setAddPetMode("invite")}
+                                        >
+                                            <span className="add-pet-menu-option-title">
+                                                Добавить по коду
+                                            </span>
+                                            <span className="add-pet-menu-option-text">
+                                                Введите код шеринга, чтобы получить доступ к питомцу.
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    <div className="create-pet-actions">
+                                        <button type="button" onClick={() => setAddPetMode(null)}>
+                                            Отмена
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : null}
+
+                            {addPetMode === "create" ? (
+                                <CreatePetForm onCreated={() => setAddPetMode(null)} />
+                            ) : null}
+
+                            {addPetMode === "invite" ? (
+                                <AcceptInviteForm
+                                    onAccepted={() => setAddPetMode(null)}
+                                    onCancel={() => setAddPetMode(null)}
+                                />
+                            ) : null}
+                        </div>
+                    </div>,
+                    document.body,
                 ) : null}
+
 
                 {petsQuery.isLoading || breedsQuery.isLoading ? (
                     <div className="pets-loading">Загружаем питомцев...</div>
                 ) : null}
 
-                {petsQuery.isError ? (
-                    <div className="pets-error">Не удалось загрузить питомцев</div>
-                ) : null}
-
                 {!petsQuery.isLoading && !petsQuery.isError && pets.length === 0 ? (
                     <EmptyState
-                        title="У вас пока нет питомцев"
-                        description="Добавьте первого питомца, чтобы видеть его профиль, вес и документы."
-                        actionText="Добавить питомца"
-                        onAction={() => setIsCreateFormOpen(true)}
+                        title="Давайте знакомиться!"
+                        description="Добавьте своего питомца, и мы создадим его профиль."
+                        actionText="+ добавить"
+                        onAction={() => setAddPetMode("menu")}
                     />
                 ) : null}
 
                 {pets.length > 0 ? (
-                    <div className="pets-list">
+                    <ul className="pets-list">
                         {pets.map((pet) => (
-                            <PetCard key={pet.id} pet={pet} />
+                            <li key={pet.id}>
+                                <PetCard pet={pet} />
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 ) : null}
             </section>
 
@@ -127,6 +177,6 @@ export function HomePage() {
                     </Link>
                 </div>
             </section>
-        </div>
+        </>
     );
 };
