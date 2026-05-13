@@ -19,6 +19,18 @@ import { createPortal } from "react-dom";
 
 type SheetMode = "collapsed" | "mid" | "expanded";
 
+function shouldIgnoreSheetDrag(target: EventTarget | null) {
+    if (!(target instanceof Element)) {
+        return false;
+    }
+
+    return Boolean(
+        target.closest(
+            "button, a, input, textarea, select, label, [role='button'], [data-sheet-no-drag]",
+        ),
+    );
+}
+
 export function PetDetailsPage() {
     const { petId } = useParams({ strict: false }) as { petId?: string };
     const petIdNumber = Number(petId);
@@ -148,6 +160,10 @@ export function PetDetailsPage() {
     };
 
     const handleSheetPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+        if (shouldIgnoreSheetDrag(event.target)) {
+            return;
+        }
+
         dragStateRef.current = {
             pointerId: event.pointerId,
             startY: event.clientY,
@@ -224,18 +240,14 @@ export function PetDetailsPage() {
 
             <section
                 className={`pet-profile-info pet-profile-info--${sheetMode} ${isDraggingSheet ? "pet-profile-info--dragging" : ""}`}
+                onPointerDown={handleSheetPointerDown}
+                onPointerMove={handleSheetPointerMove}
+                onPointerUp={handleSheetPointerUp}
+                onPointerCancel={handleSheetPointerCancel}
             >
-                <button
-                    type="button"
-                    className="pet-sheet-drag-zone"
-                    aria-label="Перетащить панель"
-                    onPointerDown={handleSheetPointerDown}
-                    onPointerMove={handleSheetPointerMove}
-                    onPointerUp={handleSheetPointerUp}
-                    onPointerCancel={handleSheetPointerCancel}
-                >
+                <div className="pet-sheet-drag-zone" aria-hidden="true">
                     <span className="pet-sheet-handle" />
-                </button>
+                </div>
 
                 <div className="pet-profile-info-top">
                     {petsQuery.isLoading || breedsQuery.isLoading ? (
@@ -263,7 +275,7 @@ export function PetDetailsPage() {
                     </section>
                 </div>
 
-                <div ref={contentRef} className="pet-profile-info-scroll">
+                <div ref={contentRef} className="pet-profile-info-scroll" data-sheet-no-drag>
                     <section className={`pet-detailed-info ${isParamsOpen ? "pet-detailed-info--open" : ""}`}>
                         <button
                             type="button"

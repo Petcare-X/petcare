@@ -1,0 +1,49 @@
+.breed-autocomplete {
+  position: relative;
+}
+
+.breed-autocomplete-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  border: 1px solid #ebebeb;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+}
+
+.breed-autocomplete-list {
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: 224px;
+  overflow-y: auto;
+}
+
+.breed-autocomplete-option {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  color: #1f1f1f;
+  font: inherit;
+  font-weight: 700;
+}
+
+.breed-autocomplete-option:hover {
+  background: #f4f4f4;
+}
+
+.breed-autocomplete-empty {
+  margin: 0;
+  padding: 14px 16px 16px;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 600;
+}
