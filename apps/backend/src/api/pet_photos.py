@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
@@ -37,6 +37,33 @@ async def get_photo_upload_url(
         pet_id=pet_id,
         user_id=current_user_id,
         content_type=payload.content_type,
+    )
+
+
+@pet_photos_router.post(
+    "/photo",
+    response_model=PetResponse,
+)
+async def upload_photo(
+    pet_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id),
+):
+    content_type = file.content_type or "application/octet-stream"
+    if not content_type.startswith("image/"):
+        raise AppError("Only image files are allowed", status_code=400)
+
+    payload = await file.read()
+    if not payload:
+        raise AppError("Uploaded file is empty", status_code=400)
+
+    return await pet_photo_service.replace_photo_with_bytes(
+        db,
+        pet_id=pet_id,
+        user_id=current_user_id,
+        payload=payload,
+        content_type=content_type,
     )
 
 

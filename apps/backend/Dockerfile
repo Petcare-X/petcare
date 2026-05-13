@@ -1,0 +1,49 @@
+# Stage 1: Build
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+
+WORKDIR /app
+
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+# Copy only files needed for installation to cache layers
+COPY pyproject.toml uv.lock ./
+# Install dependencies into /app/.venv
+RUN uv sync --frozen --no-install-project --no-dev
+
+# Stage 2: Runtime
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+
+WORKDIR /app
+
+# Create a non-root user
+RUN groupadd -r app && useradd -r -m -d /home/app -g app app
+
+# Copy the virtual environment from the builder
+COPY --from=builder /app/.venv /app/.venv
+
+# Set environment variables
+ENV PATH="/app/.venv/bin:$PATH" \
+    HOME="/home/app" \
+    XDG_CACHE_HOME="/home/app/.cache" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_PROJECT_ENVIRONMENT="/app/.venv" \
+    UV_CACHE_DIR="/home/app/.cache/uv"
+
+# Copy application code
+COPY alembic.ini package.json pyproject.toml uv.lock ./
+COPY alembic ./alembic
+COPY src ./src
+
+# Change ownership to non-root user
+RUN install -d -o app -g app -m 700 /home/app && \
+    install -d -o app -g app -m 700 /home/app/.cache && \
+    install -d -o app -g app -m 700 /home/app/.cache/uv && \
+    chown -R app:app /app
+
+# Switch to non-root user
+USER app
+
+EXPOSE 8000
+
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

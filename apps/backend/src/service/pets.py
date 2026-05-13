@@ -1,13 +1,15 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.exceptions import PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError
-from src.models import PetDocument, PetInfo, SharedUser
+from src.exceptions import AppError, PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError
+from src.models import AnimalBreed, PetInfo, SharedUser
 from src.schemas import PetCreate, PetResponse, UpdatePet
 from src.service.storage import StorageService
+from src.repositories import PetsRepository
+from src.sharing_active import active_shared_access_clause
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,27 +20,14 @@ class PetPhotoSnapshot:
     etag: str | None
     uploaded_at: datetime | None
 
-
-def active_shared_access_clause(
-    shared_user_id: int | None = None,
-    pet_id: int | None = None,
-):
-    conditions = [
-        or_(
-            SharedUser.sharing_end.is_(None),
-            SharedUser.sharing_end > datetime.now(timezone.utc),
-        ),
-    ]
-    if shared_user_id is not None:
-        conditions.append(SharedUser.shared_user_id == shared_user_id)
-    if pet_id is not None:
-        conditions.append(SharedUser.shared_pet_id == pet_id)
-    return conditions
-
 class PetsService:
+    def __init__(self):
+        self.repo = PetsRepository()
+
     SIMPLE_UPDATE_FIELDS = {
         "pet_name": "pet_name",
         "pet_date_of_birth": "pet_date_of_birth",
+        "pet_sex": "pet_sex",
         "animal_type_id": "animal_type_id",
         "animal_breed_id": "animal_breed_id",
         "pedigree": "pedigree",
@@ -46,6 +35,7 @@ class PetsService:
         "pet_neck_girth": "pet_neck_girth",
         "pet_breast_girth": "pet_breast_girth",
         "pet_weight": "pet_weight",
+        "pet_special_notes": "pet_special_notes",
         "pet_is_sterylyzed": "pet_is_sterylyzed",
     }
     PHOTO_METADATA_FIELDS = (
@@ -73,6 +63,7 @@ class PetsService:
             user_id=pet.user_id,
             pet_name=pet.pet_name,
             pet_date_of_birth=pet.pet_date_of_birth,
+            pet_sex=pet.pet_sex,
             animal_type_id=pet.animal_type_id,
             animal_breed_id=pet.animal_breed_id,
             pedigree=bool(pet.pedigree),
@@ -80,6 +71,7 @@ class PetsService:
             pet_neck_girth=float(pet.pet_neck_girth),
             pet_breast_girth=float(pet.pet_breast_girth),
             pet_weight=float(pet.pet_weight),
+            pet_special_notes=pet.pet_special_notes,
             pet_is_sterylyzed=pet.pet_is_sterylyzed,
             pet_photo_object_key=pet.pet_photo_object_key,
             pet_photo_content_type=pet.pet_photo_content_type,
@@ -89,18 +81,20 @@ class PetsService:
             is_shared=pet.user_id != current_user_id,
         )
 
-    def _build_pet(self, payload: PetCreate, user_id: int) -> PetInfo:
+    def _build_pet(self, payload: PetCreate, user_id: int, animal_breed_id: int) -> PetInfo:
         return PetInfo(
             pet_name=payload.pet_name.strip(),
             animal_type_id=payload.animal_type_id,
             pet_date_of_birth=payload.pet_date_of_birth,
+            pet_sex=payload.pet_sex,
             user_id=user_id,
-            animal_breed_id=payload.animal_breed_id,
+            animal_breed_id=animal_breed_id,
             pedigree=payload.pedigree,
             pet_neck_girth=payload.pet_neck_girth,
             pet_breast_girth=payload.pet_breast_girth,
             pet_length=payload.pet_length,
             pet_weight=payload.pet_weight,
+            pet_special_notes=payload.pet_special_notes,
             pet_is_sterylyzed=payload.pet_is_sterylyzed,
             pet_photo_object_key=payload.pet_photo_object_key,
             pet_photo_content_type=payload.pet_photo_content_type,
@@ -110,7 +104,8 @@ class PetsService:
         )
 
     async def create_pet(self, db: AsyncSession, payload: PetCreate, user_id: int) -> PetInfo | None:
-        pet = self._build_pet(payload, user_id)
+        animal_breed_id = await self._resolve_animal_breed_id(db, payload)
+        pet = self._build_pet(payload, user_id, animal_breed_id)
         db.add(pet)
 
         await db.commit()
@@ -128,7 +123,8 @@ class PetsService:
         storage_service: StorageService | None = None,
     ) -> PetResponse:
         storage = storage_service or StorageService()
-        pet = self._build_pet(payload, user_id)
+        animal_breed_id = await self._resolve_animal_breed_id(db, payload)
+        pet = self._build_pet(payload, user_id, animal_breed_id)
         uploaded_object_key: str | None = None
 
         db.add(pet)
@@ -162,6 +158,73 @@ class PetsService:
 
         return self.to_response(pet, user_id)
 
+    async def _resolve_animal_breed_id(self, db: AsyncSession, payload: PetCreate) -> int:
+        if payload.animal_breed_id is not None:
+            return await self._ensure_breed_exists_for_type(
+                db,
+                animal_type_id=payload.animal_type_id,
+                animal_breed_id=payload.animal_breed_id,
+            )
+
+        if payload.animal_breed_name:
+            return await self._find_breed_id_by_name(
+                db,
+                animal_type_id=payload.animal_type_id,
+                breed_name=payload.animal_breed_name,
+            )
+
+        raise AppError("Animal breed is required.", status_code=400)
+
+    async def _ensure_breed_exists_for_type(
+        self,
+        db: AsyncSession,
+        *,
+        animal_type_id: int,
+        animal_breed_id: int,
+    ) -> int:
+        result = await db.execute(
+            select(AnimalBreed.id).where(
+                AnimalBreed.id == animal_breed_id,
+                AnimalBreed.animal_type_id == animal_type_id,
+            )
+        )
+        breed_id = result.scalar_one_or_none()
+
+        if breed_id is None:
+            raise AppError(
+                "Selected breed was not found for this animal type.",
+                status_code=400,
+            )
+
+        return breed_id
+
+    async def _find_breed_id_by_name(
+        self,
+        db: AsyncSession,
+        *,
+        animal_type_id: int,
+        breed_name: str,
+    ) -> int:
+        normalized_breed_name = breed_name.strip()
+        if not normalized_breed_name:
+            raise AppError("Animal breed is required.", status_code=400)
+
+        result = await db.execute(
+            select(AnimalBreed.id).where(
+                AnimalBreed.animal_type_id == animal_type_id,
+                func.lower(AnimalBreed.animal_breed) == normalized_breed_name.lower(),
+            )
+        )
+        breed_id = result.scalar_one_or_none()
+
+        if breed_id is None:
+            raise AppError(
+                "Select a breed from the catalog.",
+                status_code=400,
+            )
+
+        return breed_id
+
     async def list_all_pets(
         self,
         db: AsyncSession,
@@ -194,7 +257,7 @@ class PetsService:
         return [self.to_response(pet, user_id) for pet in pets]
 
     async def get_pet_by_id(self, db: AsyncSession, pet_id: int) -> PetInfo | None:
-        return await db.get(PetInfo, pet_id)
+        return await self.repo.get_by_id(db, pet_id)
 
     async def get_pet_for_user(
         self,
@@ -220,7 +283,7 @@ class PetsService:
         raise PetAccessDeniedError()
 
     async def ensure_pet_owner(self, db: AsyncSession, pet_id: int, user_id: int) -> PetInfo:
-        pet = await self.get_pet_by_id(db, pet_id)
+        pet = await self.repo.get_by_id(db, pet_id)
         if not pet:
             raise PetNotFoundError()
         if pet.user_id != user_id:
@@ -229,14 +292,36 @@ class PetsService:
 
     async def update_pet(self, db: AsyncSession, pet_id: int, payload: UpdatePet, user_id: int):
         pet = await self.ensure_pet_owner(db, pet_id, user_id)
-        
+
         data = payload.model_dump(exclude_unset=True)
+        await self._validate_breed_update(db, pet, data)
         self._apply_simple_updates(pet, data)
         self._apply_photo_updates(pet, data)
 
         await db.commit()
         await db.refresh(pet)
         return self.to_response(pet, user_id)
+
+    async def _validate_breed_update(
+        self,
+        db: AsyncSession,
+        pet: PetInfo,
+        data: dict[str, object],
+    ) -> None:
+        if "animal_type_id" not in data and "animal_breed_id" not in data:
+            return
+
+        next_animal_type_id = int(data.get("animal_type_id", pet.animal_type_id))
+        next_animal_breed_id = data.get("animal_breed_id", pet.animal_breed_id)
+
+        if next_animal_breed_id is None:
+            raise AppError("Animal breed is required.", status_code=400)
+
+        await self._ensure_breed_exists_for_type(
+            db,
+            animal_type_id=next_animal_type_id,
+            animal_breed_id=int(next_animal_breed_id),
+        )
 
     def _apply_simple_updates(self, pet: PetInfo, data: dict[str, object]) -> None:
         for payload_field, model_field in self.SIMPLE_UPDATE_FIELDS.items():
@@ -272,10 +357,7 @@ class PetsService:
         user_id: int,
     ) -> list[str]:
         pet = await self.ensure_pet_owner(db, pet_id, user_id)
-        result = await db.execute(
-            select(PetDocument.object_key).where(PetDocument.pet_id == pet_id)
-        )
-        object_keys = [object_key for object_key in result.scalars().all() if object_key]
+        object_keys = await self.repo.get_docs_keys(db, pet_id)
         if pet.pet_photo_object_key:
             object_keys.append(pet.pet_photo_object_key)
         return object_keys

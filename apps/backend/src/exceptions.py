@@ -1,10 +1,31 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+
+from src.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+
+def _sanitize_for_json(value: Any) -> Any:
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+
+    if isinstance(value, dict):
+        return {str(key): _sanitize_for_json(item) for key, item in value.items()}
+
+    if isinstance(value, (list, tuple, set)):
+        return [_sanitize_for_json(item) for item in value]
+
+    if isinstance(value, BaseException):
+        return str(value)
+
+    return str(value)
 
 
 class AppError(Exception):
@@ -24,12 +45,13 @@ class AppError(Exception):
         super().__init__(self.message)
 
     def to_response(self, request: Request) -> dict[str, Any]:
+        is_production_5xx = settings.ENV != "dev" and self.status_code >= 500
         return {
             "error": {
-                "type": self.__class__.__name__,
+                "type": "InternalServerError" if is_production_5xx else self.__class__.__name__,
                 "message": self.message,
                 "status_code": self.status_code,
-                "details": self.details,
+                "details": None if is_production_5xx else _sanitize_for_json(self.details),
             }
         }
 
@@ -106,7 +128,7 @@ class ConflictError(AppError):
 
 
 class UserConflictError(ConflictError):
-    message = "Email or phone already exists"
+    message = "Credential already exists"
 
 
 class AuthProviderMismatchError(AppError):
@@ -133,8 +155,55 @@ class DatabaseIntegrityAppError(AppError):
     status_code = 400
     message = "Database integrity error"
 
+class AssistantMessageNotFound(AppError):
+    status_code = 404
+    message = "Assistant message not found"
+
+class AssistantMessageError(AppError):
+    status_code = 400
+    message = "Assistant message is not valid"
+
+class MessageGenerationError(AppError):
+    status_code = 400
+    message = "Error generating message"
+
+class UserMessageNotFound(AppError):
+    status_code = 404
+    message = "User message not found"
+
+class UserMessageError(AppError):
+    status_code = 400
+    message = "User message is not valid"
+
+class UserPermissionError(AppError):
+    status_code = 403
+    message = "User does not have permission to access this content"
+
+class ChatNotFound(AppError):   
+    status_code = 404
+    message = "Chat not found"
+
+class ChatHistoryNotFound(AppError):
+    status_code = 404
+    message = "Chat history not found"
+
+class OpenRouterApiError(AppError):
+    status_code = 500
+    message = "OpenRouter API error"
+
+class OpenRouterResponseError(AppError):
+    status_code = 500
+    message = "OpenRouter response error"
 
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    if exc.status_code >= 500:
+        logger.exception(
+            "Application error on %s %s: %s",
+            request.method,
+            request.url.path,
+            exc.message,
+            exc_info=exc,
+        )
     return JSONResponse(status_code=exc.status_code, content=exc.to_response(request))
 
 
@@ -153,12 +222,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     error = AppError(
         "Request validation failed",
         status_code=422,
-        details=exc.errors(),
+        details=_sanitize_for_json(exc.errors()),
     )
     return JSONResponse(status_code=error.status_code, content=error.to_response(request))
 
 
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception(
+        "Unhandled exception on %s %s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
     error = AppError(
         "Internal server error",
         status_code=500,

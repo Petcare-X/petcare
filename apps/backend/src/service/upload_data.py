@@ -1,5 +1,4 @@
 import csv
-import os
 from io import StringIO
 
 from dotenv import load_dotenv
@@ -7,7 +6,8 @@ from fastapi import UploadFile, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import VetClinic, DogFriendlyPlace
+from src.core.config import settings
+from src.models import VetClinic, DogFriendlyPlace, GroomingSalon
 from src.schemas import (
     DogPlaceCreate,
     DogPlaceImportRow,
@@ -15,8 +15,14 @@ from src.schemas import (
     ImportRowError,
     VetCreate,
     VetImportRow,
+    SalonCreate,
+    SalonImportRow,
 )
-from src.third_party.geocoder.geocoder import geocode_address
+from src.third_party.geocoder.geocoder import (
+    AddressNotFoundError,
+    GeocodingError,
+    geocode_address,
+)
 
 load_dotenv()
 
@@ -37,6 +43,9 @@ class ImportService:
         street: str,
         building_number: str,
     ) -> tuple[float | None, float | None, str | None]:
+        if not api_key:
+            raise ValueError("YANDEX_GEOCODER_API_KEY is not configured")
+
         try:
             coordinates = await geocode_address(
                 api_key=api_key,
@@ -45,8 +54,12 @@ class ImportService:
                 street=street,
                 house=building_number,
             )
-        except Exception:
-            return None, None, None
+        except AddressNotFoundError as exc:
+            raise ValueError(
+                f"Address was not found by geocoder: {city}, {street}, {building_number}"
+            ) from exc
+        except GeocodingError as exc:
+            raise ValueError(f"Geocoder request failed: {exc}") from exc
 
         return coordinates["lat"], coordinates["lon"], coordinates["precision"]
 
@@ -75,7 +88,7 @@ class ImportService:
     ) -> ImportCsvResponse:
         text = await self._decode_csv_text(file)
         reader = csv.DictReader(StringIO(text))
-        api_key = os.getenv("YANDEX_GEOCODER_API_KEY")
+        api_key = settings.YANDEX_GEOCODER_API_KEY
 
         errors: list[ImportRowError] = []
         imported_count = 0
@@ -174,7 +187,6 @@ class ImportService:
                 dogfriendly_place_street=validated.dogfriendly_place_street,
                 dogfriendly_place_building_number=validated.dogfriendly_place_building_number,
                 dogfriendly_place_working_hours=validated.dogfriendly_place_working_hours,
-                dogfriendly_place_is_24_7=validated.dogfriendly_place_is_24_7,
                 dogfriendly_place_status=validated.dogfriendly_place_status,
                 dogfriendly_place_lat=lat,
                 dogfriendly_place_lon=lon,
@@ -197,4 +209,47 @@ class ImportService:
                 f"Dog-friendly place already exists: {existing_place.dogfriendly_place_name}"
             ),
             place_builder=lambda payload: DogFriendlyPlace(**payload.model_dump()),
+        )
+
+    async def import_grooming_salons(self, file: UploadFile, db: AsyncSession) -> ImportCsvResponse:
+        async def build_payload(
+            validated: SalonImportRow,
+            api_key: str | None,
+        ) -> SalonCreate:
+            lat, lon, precision = await self._geocode(
+                api_key=api_key,
+                city=validated.salon_city,
+                street=validated.salon_street,
+                building_number=validated.salon_building_number,
+            )
+            return SalonCreate(
+                salon_name=validated.salon_name,
+                salon_city=validated.salon_city,
+                salon_street=validated.salon_street,
+                salon_building_number=validated.salon_building_number,
+                salon_working_hours=validated.salon_working_hours,
+                salon_phone=validated.salon_phone,
+                salon_website=str(validated.salon_website) if validated.salon_website else None,
+                salon_status=validated.salon_status,
+                salon_lat=lat,
+                salon_lon=lon,
+                salon_geocoder_precision=precision,
+            )
+
+        return await self._import_rows(
+            file=file,
+            db=db,
+            row_validator=SalonImportRow,
+            payload_builder=build_payload,
+            model=GroomingSalon,
+            duplicate_filters_builder=lambda payload: {
+                "salon_name": payload.salon_name,
+                "salon_city": payload.salon_city,
+                "salon_street": payload.salon_street,
+                "salon_building_number": payload.salon_building_number,
+            },
+            duplicate_error_builder=lambda existing_place: (
+                f"Salon already exists: {existing_place.salon_name}"
+            ),
+            place_builder=lambda payload: GroomingSalon(**payload.model_dump(mode="json")),
         )

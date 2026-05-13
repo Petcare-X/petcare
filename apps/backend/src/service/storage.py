@@ -9,8 +9,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-import boto3
-from botocore.client import BaseClient
+import aioboto3
 
 from src.core.config import settings
 from src.exceptions import AppError
@@ -52,9 +51,9 @@ class StorageService:
                 status_code=500,
             )
 
-    def _client(self) -> BaseClient:
+    def _client(self) -> Any:
         self._ensure_configured()
-        session = boto3.session.Session()
+        session = aioboto3.Session()
         return session.client(
             "s3",
             endpoint_url=f"http{'s' if settings.MINIO_SECURE else ''}://{settings.MINIO_ENDPOINT}",
@@ -63,33 +62,36 @@ class StorageService:
             region_name=settings.MINIO_REGION or "us-east-1",
         )
 
-    def _call_client(self, method_name: str, /, *args: Any, **kwargs: Any) -> Any:
-        client = self._client()
-        try:
+    async def _call_client(self, method_name: str, /, *args: Any, **kwargs: Any) -> Any:
+        async with self._client() as client:
             method = getattr(client, method_name)
-            return method(*args, **kwargs)
-        finally:
-            client.close()
+            result = method(*args, **kwargs)
+            if asyncio.iscoroutine(result):
+                return await result
+            return result
 
-    def _download_bytes_sync(self, object_key: str) -> tuple[bytes, str | None]:
-        client = self._client()
-        try:
-            response = client.get_object(
+    async def _download_bytes(self, object_key: str) -> tuple[bytes, str | None]:
+        async with self._client() as client:
+            response = await client.get_object(
                 Bucket=settings.MINIO_BUCKET_PRIVATE,
                 Key=object_key,
             )
             body_stream = response["Body"]
             try:
-                body = body_stream.read()
+                body = await body_stream.read()
             finally:
-                body_stream.close()
+                close_stream = getattr(body_stream, "close", None)
+                if callable(close_stream):
+                    result = close_stream()
+                    if asyncio.iscoroutine(result):
+                        await result
                 release_conn = getattr(body_stream, "release_conn", None)
                 if callable(release_conn):
-                    release_conn()
+                    result = release_conn()
+                    if asyncio.iscoroutine(result):
+                        await result
             content_type = response.get("ContentType")
             return body, str(content_type) if content_type else None
-        finally:
-            client.close()
 
     def build_pet_photo_object_key(
         self,
@@ -129,8 +131,7 @@ class StorageService:
 
     async def create_upload_url(self, object_key: str, content_type: str) -> str:
         assert settings.MINIO_BUCKET_PRIVATE is not None
-        return await asyncio.to_thread(
-            self._call_client,
+        return await self._call_client(
             "generate_presigned_url",
             "put_object",
             Params={
@@ -143,8 +144,7 @@ class StorageService:
 
     async def create_download_url(self, object_key: str) -> str:
         assert settings.MINIO_BUCKET_PRIVATE is not None
-        return await asyncio.to_thread(
-            self._call_client,
+        return await self._call_client(
             "generate_presigned_url",
             "get_object",
             Params={
@@ -157,8 +157,7 @@ class StorageService:
     async def head_object(self, object_key: str) -> dict[str, object]:
         assert settings.MINIO_BUCKET_PRIVATE is not None
         try:
-            return await asyncio.to_thread(
-                self._call_client,
+            return await self._call_client(
                 "head_object",
                 Bucket=settings.MINIO_BUCKET_PRIVATE,
                 Key=object_key,
@@ -179,8 +178,7 @@ class StorageService:
 
     async def delete_object(self, object_key: str) -> None:
         assert settings.MINIO_BUCKET_PRIVATE is not None
-        await asyncio.to_thread(
-            self._call_client,
+        await self._call_client(
             "delete_object",
             Bucket=settings.MINIO_BUCKET_PRIVATE,
             Key=object_key,
@@ -206,8 +204,7 @@ class StorageService:
         self, object_key: str, payload: bytes, content_type: str
     ) -> dict[str, object]:
         assert settings.MINIO_BUCKET_PRIVATE is not None
-        return await asyncio.to_thread(
-            self._call_client,
+        return await self._call_client(
             "put_object",
             Bucket=settings.MINIO_BUCKET_PRIVATE,
             Key=object_key,
@@ -218,7 +215,7 @@ class StorageService:
     async def download_bytes(self, object_key: str) -> tuple[bytes, str | None]:
         assert settings.MINIO_BUCKET_PRIVATE is not None
         try:
-            return await asyncio.to_thread(self._download_bytes_sync, object_key)
+            return await self._download_bytes(object_key)
         except Exception as exc:
             raise AppError("Stored file is not available", status_code=404) from exc
 

@@ -13,11 +13,18 @@ class PetCreate(BaseModel):
     pet_date_of_birth: date = Field(
         validation_alias=AliasChoices("pet_date_of_birth", "date_of_birth"),
     )
+    pet_sex: str = Field(
+        validation_alias=AliasChoices("pet_sex", "sex"))
     animal_type_id: int = Field(
         validation_alias=AliasChoices("animal_type_id", "type"),
     )
-    animal_breed_id: int = Field(
+    animal_breed_id: int | None = Field(
+        default=None,
         validation_alias=AliasChoices("animal_breed_id", "breed"),
+    )
+    animal_breed_name: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("animal_breed_name", "breed_name"),
     )
     pedigree: bool = Field(
         validation_alias=AliasChoices("pedigree", "pet_pedigree"),
@@ -36,6 +43,9 @@ class PetCreate(BaseModel):
         default=None,
         validation_alias=AliasChoices("pet_is_sterylyzed", "is_sterylized"),
     )
+    pet_special_notes: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("pet_special_notes", "special_notes"))
     pet_photo_object_key: str | None = Field(
         default=None,
         validation_alias=AliasChoices(
@@ -53,6 +63,12 @@ class PetCreate(BaseModel):
     def validate_name(cls, value: str) -> str:
         return value.strip()
 
+    @field_validator("animal_breed_name")
+    def validate_breed_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        return value.strip()
+
     @field_validator(*PET_MEASUREMENT_RULES.keys())
     def validate_measurements(cls, value: float, info) -> float:
         validate_pet_measurement_value(info.field_name, value)
@@ -60,6 +76,9 @@ class PetCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_measurements_consistency(self):
+        if self.animal_breed_id is None and not self.animal_breed_name:
+            raise ValueError("Animal breed id or breed name is required.")
+
         validate_pet_measurements_consistency(
             {
                 "pet_neck_girth": self.pet_neck_girth,
@@ -76,6 +95,7 @@ class PetResponse(BaseModel):
     user_id: int | None
     pet_name: str
     pet_date_of_birth: date
+    pet_sex: str
     animal_type_id: int
     animal_breed_id: int
     pedigree: bool
@@ -83,6 +103,7 @@ class PetResponse(BaseModel):
     pet_breast_girth: float
     pet_length: float
     pet_weight: float
+    pet_special_notes: str | None
     pet_is_sterylyzed: bool | None
     pet_photo_object_key: str | None
     pet_photo_content_type: str | None
@@ -100,6 +121,9 @@ class UpdatePet(BaseModel):
         default=None,
         validation_alias=AliasChoices("pet_date_of_birth", "date_of_birth"),
     )
+    pet_sex: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("pet_sex", "sex"))
     animal_type_id: int | None = Field(
         default=None,
         validation_alias=AliasChoices("animal_type_id", "type"),
@@ -129,6 +153,9 @@ class UpdatePet(BaseModel):
         default=None,
         validation_alias=AliasChoices("pet_is_sterylyzed", "is_sterylized"),
     )
+    pet_special_notes: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("pet_special_notes", "special_notes"))
     pet_photo_object_key: str | None = Field(
         default=None,
         validation_alias=AliasChoices(

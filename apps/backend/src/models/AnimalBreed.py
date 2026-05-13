@@ -11,6 +11,6 @@ class AnimalBreed(Base):
     __tablename__ = "animals_breeds"
     
     id: Mapped[int_primary_key]
-    animal_breed: Mapped[str] = mapped_column(String(50), unique=True)
+    animal_breed: Mapped[str] = mapped_column(String(100), unique=True)
     animal_type_id: Mapped[int] = mapped_column(Integer, ForeignKey("animals_types.id", ondelete="CASCADE"))
     animal_type = relationship("AnimalType", back_populates="breeds")

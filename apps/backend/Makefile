@@ -1,7 +1,7 @@
 .PHONY: dev bot lint test format
 
 dev:
-	uv run uvicorn app.main:app --reload --port 8000
+	uv run uvicorn src.main:app --reload --port 8000
 
 bot:
 	uv run python -m src.bot.main
