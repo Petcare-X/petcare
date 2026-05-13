@@ -16,16 +16,18 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 
 # Create a non-root user
-RUN groupadd -r app && useradd -r -g app app
+RUN groupadd -r app && useradd -r -m -d /home/app -g app app
 
 # Copy the virtual environment from the builder
 COPY --from=builder /app/.venv /app/.venv
 
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
+    HOME="/home/app" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    UV_PROJECT_ENVIRONMENT="/app/.venv"
+    UV_PROJECT_ENVIRONMENT="/app/.venv" \
+    UV_CACHE_DIR="/home/app/.cache/uv"
 
 # Copy application code
 COPY alembic.ini package.json pyproject.toml uv.lock ./
@@ -33,7 +35,7 @@ COPY alembic ./alembic
 COPY src ./src
 
 # Change ownership to non-root user
-RUN chown -R app:app /app
+RUN mkdir -p /home/app/.cache/uv && chown -R app:app /app /home/app
 
 # Switch to non-root user
 USER app
