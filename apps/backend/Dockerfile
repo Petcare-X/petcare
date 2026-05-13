@@ -24,6 +24,7 @@ COPY --from=builder /app/.venv /app/.venv
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
     HOME="/home/app" \
+    XDG_CACHE_HOME="/home/app/.cache" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_PROJECT_ENVIRONMENT="/app/.venv" \
@@ -35,7 +36,10 @@ COPY alembic ./alembic
 COPY src ./src
 
 # Change ownership to non-root user
-RUN mkdir -p /home/app/.cache/uv && chown -R app:app /app /home/app
+RUN install -d -o app -g app -m 700 /home/app && \
+    install -d -o app -g app -m 700 /home/app/.cache && \
+    install -d -o app -g app -m 700 /home/app/.cache/uv && \
+    chown -R app:app /app
 
 # Switch to non-root user
 USER app
