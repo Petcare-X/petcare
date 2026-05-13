@@ -220,7 +220,8 @@
   font-weight: 700;
 }
 
-.create-pet-field input {
+.create-pet-field input,
+.create-pet-field select {
   width: 100%;
   min-height: 44px;
   padding: 10px 12px;
@@ -229,6 +230,14 @@
   background: #fafafa;
   font: inherit;
   font-weight: 600;
+}
+
+.create-pet-field input[aria-invalid="true"] {
+  border-color: #b42318;
+}
+
+.create-pet-field select {
+  appearance: none;
 }
 
 .create-pet-textarea {

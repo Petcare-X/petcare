@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16.3-alpine
@@ -9,7 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${POSTGRES_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -26,6 +24,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    security_opt:
+      - no-new-privileges:true
 
   minio:
     image: minio/minio:RELEASE.2024-05-10T01-41-38Z
@@ -35,8 +35,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_BIND_ADDRESS:-127.0.0.1}:${MINIO_PORT:-9000}:9000"
+      - "${MINIO_BIND_ADDRESS:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
     deploy:
@@ -48,6 +48,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    security_opt:
+      - no-new-privileges:true
 
   minio-init:
     image: minio/mc:RELEASE.2024-05-09T17-04-24Z
@@ -78,6 +80,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       INVITE_BASE_URL: ${INVITE_BASE_URL}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
+      ENABLE_ADMIN_IMPORTS: ${ENABLE_ADMIN_IMPORTS:-false}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
@@ -96,7 +100,7 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1/chat/completions}
-      ENV: production
+      ENV: ${ENV:-production}
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,6 +108,12 @@ services:
         condition: service_completed_successfully
     expose:
       - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs')\" >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     deploy:
       resources:
         limits:
@@ -113,6 +123,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    security_opt:
+      - no-new-privileges:true
 
   bot:
     profiles: ["bot"]
@@ -122,6 +134,8 @@ services:
     command: ["python", "-m", "src.bot.main"]
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-}
+      ENABLE_ADMIN_IMPORTS: ${ENABLE_ADMIN_IMPORTS:-false}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
@@ -132,7 +146,7 @@ services:
       MINIO_REGION: ${MINIO_REGION}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_BOT_INTERNAL_TOKEN: ${TELEGRAM_BOT_INTERNAL_TOKEN}
-      ENV: production
+      ENV: ${ENV:-production}
     depends_on:
       postgres:
         condition: service_healthy
@@ -147,17 +161,22 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    security_opt:
+      - no-new-privileges:true
 
   frontend:
     build:
       context: ./apps/frontend
       dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
     restart: unless-stopped
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
     ports:
-      - "80:8080"
+      - "${FRONTEND_BIND_ADDRESS:-0.0.0.0}:${FRONTEND_PORT:-80}:8080"
     deploy:
       resources:
         limits:
@@ -167,6 +186,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   postgres_data:

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { DEFAULT_ANIMAL_TYPE_ID } from "@/entities/pet/api/animal-reference.api";
 import type { AnimalBreed, Pet, PetSex } from "@/entities/pet/model/pet.types";
+import { BreedAutocomplete } from "@/entities/pet/ui/breed-autocomplete";
 import { useUpdatePet } from "@/features/edit-pet/model/use-update-pet";
 import { useUploadPetPhoto } from "@/features/upload-photo/model/use-upload-pet-photo";
 
@@ -15,27 +16,26 @@ type EditPetFormProps = {
     onSaved: () => void;
 };
 
-const DOG_BREEDS_DATALIST_ID = "edit-pet-dog-breeds";
-
 export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPetFormProps) {
     const updatePet = useUpdatePet();
     const uploadPetPhoto = useUploadPetPhoto();
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-
     const currentBreed = useMemo(
         () => breeds.find((breed) => breed.id === pet.animal_breed_id)?.animal_breed ?? "",
         [breeds, pet.animal_breed_id],
     );
 
     const [name, setName] = useState(pet.pet_name);
-    const [breed, setBreed] = useState(currentBreed);
+    const [breedQuery, setBreedQuery] = useState(currentBreed);
+    const [breedId, setBreedId] = useState(String(pet.animal_breed_id ?? ""));
     const [dateOfBirth, setDateOfBirth] = useState(formatDateForView(pet.pet_date_of_birth));
     const [weight, setWeight] = useState(String(pet.pet_weight ?? ""));
-    const [sex, setSex] = useState<PetSex | null>(pet.pet_sex ?? null);
+    const [sex, setSex] = useState<PetSex | undefined>(pet.pet_sex ?? undefined);
     const [isSterylized, setIsSterylized] = useState<boolean | null>(pet.pet_is_sterylyzed ?? null);
     const [features, setFeatures] = useState(pet.pet_special_notes ?? "");
     const [photo, setPhoto] = useState<File | null>(null);
     const [dateError, setDateError] = useState(false);
+    const [breedError, setBreedError] = useState(false);
 
     const photoPreviewUrl = useMemo(() => {
         if (!photo) {
@@ -46,8 +46,9 @@ export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPe
     }, [photo]);
 
     useEffect(() => {
-        setBreed(currentBreed);
-    }, [currentBreed]);
+        setBreedQuery(currentBreed);
+        setBreedId(String(pet.animal_breed_id ?? ""));
+    }, [currentBreed, pet.animal_breed_id]);
 
     useEffect(() => {
         return () => {
@@ -69,12 +70,13 @@ export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPe
             return;
         }
 
-        setDateError(false);
+        if (!breedId) {
+            setBreedError(true);
+            return;
+        }
 
-        const normalizedBreed = breed.trim().toLowerCase();
-        const selectedBreed = breeds.find(
-            (item) => item.animal_breed.trim().toLowerCase() === normalizedBreed,
-        );
+        setDateError(false);
+        setBreedError(false);
 
         await updatePet.mutateAsync({
             petId: pet.id,
@@ -82,8 +84,7 @@ export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPe
                 pet_name: name.trim(),
                 pet_date_of_birth: parsedDate,
                 animal_type_id: pet.animal_type_id || DEFAULT_ANIMAL_TYPE_ID,
-                animal_breed_id: selectedBreed?.id || undefined,
-                animal_breed_name: breed.trim() || undefined,
+                animal_breed_id: Number(breedId),
                 pedigree: pet.pedigree,
                 pet_weight: Number(weight),
                 pet_sex: sex,
@@ -138,19 +139,31 @@ export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPe
 
             <label className="edit-pet-field">
                 <span className="edit-pet-label">Порода</span>
-                <input
-                    value={breed}
-                    onChange={(event) => setBreed(event.target.value)}
-                    list={DOG_BREEDS_DATALIST_ID}
-                    maxLength={50}
+                <BreedAutocomplete
+                    value={breedQuery}
+                    onChange={(value) => {
+                        setBreedQuery(value);
+                        setBreedError(false);
+                        setBreedId(findMatchingBreedId(value, breeds));
+                    }}
+                    onSelect={(breed) => {
+                        setBreedQuery(breed.animal_breed);
+                        setBreedId(String(breed.id));
+                        setBreedError(false);
+                    }}
+                    breeds={breeds}
+                    invalid={breedError}
+                    disabled={breeds.length === 0}
+                    placeholder={breeds.length === 0 ? "Загружаем породы..." : "Начните вводить породу"}
                     required
                 />
-                <datalist id={DOG_BREEDS_DATALIST_ID}>
-                    {breeds.map((item) => (
-                        <option key={item.id} value={item.animal_breed} />
-                    ))}
-                </datalist>
             </label>
+
+            {breedError ? (
+                <p className="edit-pet-error edit-pet-error--date">
+                    Выберите породу из предложенного списка.
+                </p>
+            ) : null}
 
             <div className="edit-pet-grid">
                 <label className="edit-pet-field">
@@ -250,6 +263,13 @@ export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPe
             </div>
         </form>
     );
+}
+
+function findMatchingBreedId(value: string, breeds: AnimalBreed[]): string {
+    const normalizedValue = value.trim().toLowerCase();
+    const breed = breeds.find((item) => item.animal_breed.trim().toLowerCase() === normalizedValue);
+
+    return breed ? String(breed.id) : "";
 }
 
 function formatDateForView(value: string): string {

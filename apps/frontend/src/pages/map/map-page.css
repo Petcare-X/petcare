@@ -55,17 +55,43 @@
 
 .map-back-button {
   position: absolute;
-  top: 25px;
-  left: 24px;
+  top: 22px;
+  left: 20px;
   z-index: 6;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
+  border: 0;
   border-radius: 41%;
-  background: rgba(105, 92, 82, 0.52);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 10px 24px rgba(34, 34, 34, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  color: #2d3a34;
+  backdrop-filter: blur(12px);
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.map-back-button:hover {
+  transform: translateY(-1px) scale(0.97);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 12px 28px rgba(34, 34, 34, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.map-back-button:active {
+  transform: scale(0.94);
+}
+
+.map-back-button-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .map-radius {
@@ -121,18 +147,19 @@
   box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.08);
   transition: height 0.22s ease;
   will-change: height;
+  cursor: grab;
+  touch-action: none;
 }
 
 .places-sheet-dragging {
   transition: none;
+  cursor: grabbing;
 }
 
 .places-sheet-handle {
   align-self: center;
   width: 50px;
   height: 16px;
-  cursor: grab;
-  touch-action: none;
 }
 
 .places-sheet-handle::before {
@@ -145,14 +172,11 @@
   background: #9c9c9c;
 }
 
-.places-sheet-handle:active {
-  cursor: grabbing;
-}
-
 .places-search {
   position: relative;
   display: block;
   flex: 0 0 auto;
+  cursor: auto;
 }
 
 .places-search input {
@@ -167,6 +191,7 @@
   font: inherit;
   font-size: 0.85rem;
   font-weight: 800;
+  touch-action: manipulation;
 }
 
 .places-search input::placeholder {

@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.exceptions import PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError
+from src.exceptions import AppError, PetAccessDeniedError, PetNotFoundError, PetOwnerOnlyError
 from src.models import AnimalBreed, PetInfo, SharedUser
 from src.schemas import PetCreate, PetResponse, UpdatePet
 from src.service.storage import StorageService
@@ -159,28 +159,71 @@ class PetsService:
         return self.to_response(pet, user_id)
 
     async def _resolve_animal_breed_id(self, db: AsyncSession, payload: PetCreate) -> int:
-        if payload.animal_breed_name:
-            breed_name = payload.animal_breed_name.strip()
-            result = await db.execute(
-                select(AnimalBreed).where(AnimalBreed.animal_breed == breed_name)
-            )
-            existing_breed = result.scalar_one_or_none()
-
-            if existing_breed:
-                return existing_breed.id
-
-            breed = AnimalBreed(
-                animal_breed=breed_name,
+        if payload.animal_breed_id is not None:
+            return await self._ensure_breed_exists_for_type(
+                db,
                 animal_type_id=payload.animal_type_id,
+                animal_breed_id=payload.animal_breed_id,
             )
-            db.add(breed)
-            await db.flush()
-            return breed.id
 
-        if payload.animal_breed_id is None:
-            raise ValueError("Animal breed id or breed name is required.")
+        if payload.animal_breed_name:
+            return await self._find_breed_id_by_name(
+                db,
+                animal_type_id=payload.animal_type_id,
+                breed_name=payload.animal_breed_name,
+            )
 
-        return payload.animal_breed_id
+        raise AppError("Animal breed is required.", status_code=400)
+
+    async def _ensure_breed_exists_for_type(
+        self,
+        db: AsyncSession,
+        *,
+        animal_type_id: int,
+        animal_breed_id: int,
+    ) -> int:
+        result = await db.execute(
+            select(AnimalBreed.id).where(
+                AnimalBreed.id == animal_breed_id,
+                AnimalBreed.animal_type_id == animal_type_id,
+            )
+        )
+        breed_id = result.scalar_one_or_none()
+
+        if breed_id is None:
+            raise AppError(
+                "Selected breed was not found for this animal type.",
+                status_code=400,
+            )
+
+        return breed_id
+
+    async def _find_breed_id_by_name(
+        self,
+        db: AsyncSession,
+        *,
+        animal_type_id: int,
+        breed_name: str,
+    ) -> int:
+        normalized_breed_name = breed_name.strip()
+        if not normalized_breed_name:
+            raise AppError("Animal breed is required.", status_code=400)
+
+        result = await db.execute(
+            select(AnimalBreed.id).where(
+                AnimalBreed.animal_type_id == animal_type_id,
+                func.lower(AnimalBreed.animal_breed) == normalized_breed_name.lower(),
+            )
+        )
+        breed_id = result.scalar_one_or_none()
+
+        if breed_id is None:
+            raise AppError(
+                "Select a breed from the catalog.",
+                status_code=400,
+            )
+
+        return breed_id
 
     async def list_all_pets(
         self,
@@ -249,14 +292,36 @@ class PetsService:
 
     async def update_pet(self, db: AsyncSession, pet_id: int, payload: UpdatePet, user_id: int):
         pet = await self.ensure_pet_owner(db, pet_id, user_id)
-        
+
         data = payload.model_dump(exclude_unset=True)
+        await self._validate_breed_update(db, pet, data)
         self._apply_simple_updates(pet, data)
         self._apply_photo_updates(pet, data)
 
         await db.commit()
         await db.refresh(pet)
         return self.to_response(pet, user_id)
+
+    async def _validate_breed_update(
+        self,
+        db: AsyncSession,
+        pet: PetInfo,
+        data: dict[str, object],
+    ) -> None:
+        if "animal_type_id" not in data and "animal_breed_id" not in data:
+            return
+
+        next_animal_type_id = int(data.get("animal_type_id", pet.animal_type_id))
+        next_animal_breed_id = data.get("animal_breed_id", pet.animal_breed_id)
+
+        if next_animal_breed_id is None:
+            raise AppError("Animal breed is required.", status_code=400)
+
+        await self._ensure_breed_exists_for_type(
+            db,
+            animal_type_id=next_animal_type_id,
+            animal_breed_id=int(next_animal_breed_id),
+        )
 
     def _apply_simple_updates(self, pet: PetInfo, data: dict[str, object]) -> None:
         for payload_field, model_field in self.SIMPLE_UPDATE_FIELDS.items():

@@ -11,7 +11,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project --no-dev
 
 # Stage 2: Runtime
-FROM python:3.12-slim-bookworm
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 WORKDIR /app
 
@@ -24,10 +24,11 @@ COPY --from=builder /app/.venv /app/.venv
 # Set environment variables
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_PROJECT_ENVIRONMENT="/app/.venv"
 
 # Copy application code
-COPY alembic.ini package.json ./
+COPY alembic.ini package.json pyproject.toml uv.lock ./
 COPY alembic ./alembic
 COPY src ./src
 

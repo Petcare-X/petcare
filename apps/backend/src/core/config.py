@@ -6,6 +6,8 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
     INVITE_BASE_URL: str | None = None
+    BACKEND_CORS_ORIGINS: str | None = None
+    ENABLE_ADMIN_IMPORTS: bool = False
     JWT_SECRET_KEY: str = Field(min_length=32)
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
