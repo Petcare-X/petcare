@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.db import Base
@@ -9,8 +9,16 @@ int_primary_key = Annotated[int, mapped_column(primary_key=True)]
 
 class AnimalBreed(Base):
     __tablename__ = "animals_breeds"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "animal_breed",
+            "animal_type_id",
+            name="unique_animal_breeds"),
+            )
     
     id: Mapped[int_primary_key]
-    animal_breed: Mapped[str] = mapped_column(String(100), unique=True)
+    animal_breed: Mapped[str] = mapped_column(String(100))
     animal_type_id: Mapped[int] = mapped_column(Integer, ForeignKey("animals_types.id", ondelete="CASCADE"))
+
     animal_type = relationship("AnimalType", back_populates="breeds")

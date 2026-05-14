@@ -61,24 +61,8 @@ def normalize_pet_type_fk_name() -> None:
     )
 
 
-def ensure_dog_animal_type() -> None:
-    op.execute(
-        """
-        INSERT INTO animals_types (animal_name)
-        SELECT 'Dog'
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM animals_types
-            WHERE lower(animal_name) LIKE 'dog%'
-               OR lower(animal_name) LIKE 'собак%'
-        );
-        """
-    )
-
-
 def upgrade() -> None:
     normalize_pet_type_fk_name()
-    ensure_dog_animal_type()
     op.execute(
         """
         ALTER TABLE pets_info
@@ -105,7 +89,7 @@ def upgrade() -> None:
                OR lower(animal_name) LIKE 'собак%';
 
             IF dog_id IS NULL THEN
-                RAISE EXCEPTION 'Dog animal type was not found';
+                RETURN;
             END IF;
 
             IF dog_id = 1 THEN
