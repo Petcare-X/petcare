@@ -24,37 +24,6 @@ class LLMChatService:
         self.message_repo = LlmMessageRepository()
         self.pet_repo = PetsRepository()
         self.session_factory = AsyncSessionLocal
-
-    def build_openrouter_messages(
-        self,
-        chat: LlmChat,
-        history: list[LlmMessage],
-        current_content: str,
-    ) -> list[dict[str, str]]:
-        messages: list[dict[str, str]] = []
-        if chat.chat_custom_instructions:
-            messages.append(
-                {
-                    "role": MessageRole.SYSTEM.value,
-                    "content": chat.chat_custom_instructions,
-                }
-            )
-
-        for message in history:
-            messages.append(
-                {
-                    "role": str(message.role),
-                    "content": message.content,
-                }
-            )
-
-        messages.append(
-            {
-                "role": MessageRole.USER.value,
-                "content": current_content,
-            }
-        )
-        return messages
     
     async def failed_message(self, db: AsyncSession, message_id: int, error_message: str) -> LlmMessage:
         assistant_message = await self.message_repo.get_by_id(db, message_id)
@@ -190,10 +159,10 @@ class LLMChatService:
             raise UserMessageError("User message is not valid")
         
         chat_history = await self.message_repo.get_by_chat_id(db, chat.id)
-        if not chat_history:
-            assistant_message = await self.failed_message(db, assistant_message.id, "Chat history not found")
-            raise ChatHistoryNotFound("Chat history not found")
-        if chat_history[-1].role == MessageRole.ASSISTANT:
+        # if not chat_history:
+        #     assistant_message = await self.failed_message(db, assistant_message.id, "Chat history not found")
+        #     raise ChatHistoryNotFound("Chat history not found")
+        if chat_history and chat_history[-1].role == MessageRole.ASSISTANT:
             chat_history = chat_history[:-1]
 
         return (chat,
@@ -206,7 +175,7 @@ class LLMChatService:
             context = await self.build_generation_context(db, assistant_message_id)
             try:
                 assistant_text = await self.openrouter_service.generate_answer(
-                    self.build_openrouter_messages(*context))
+                    self.openrouter_service.build_openrouter_messages(*context))
                 if assistant_text:
                     assistant_message.content = assistant_text
                     assistant_message.status = MessageStatus.COMPLETED
@@ -225,10 +194,8 @@ class LLMChatService:
     async def send_message(self, db: AsyncSession, user_id: int, payload: MessageCreate) -> tuple[LlmMessage, LlmMessage]:
         chat = await self.get_user_chat(db, user_id, payload.chat_id)
         if not chat:
-            raise ChatNotFound("Chat not found")
+            raise ChatNotFound()
         chat_history = await self.message_repo.get_by_chat_id(db, payload.chat_id)
-        if not chat_history:
-            raise ChatHistoryNotFound("Chat history not found")
         user_message = LlmMessage(
             chat_id=chat.id,
             user_id=chat.user_id,
@@ -240,7 +207,7 @@ class LLMChatService:
         await db.flush()
 
         assistant_text = await self.openrouter_service.generate_answer(
-            self.build_openrouter_messages(chat, chat_history, payload.content)
+            self.openrouter_service.build_openrouter_messages(chat, chat_history, payload.content)
         )
 
         assistant_message = LlmMessage(
@@ -259,8 +226,10 @@ class LLMChatService:
 
         return user_message, assistant_message
     
-    async def delete_chat(self, db: AsyncSession, user_id: int, pet_id: int, chat_id: int) -> None:
-        chat = await self.get_user_chat(db, user_id, chat_id)
-        if chat.pet_id != pet_id:
-            raise UserPermissionError("User does not have permission to access this chat")
-        await self.chat_repo.delete(db, chat)
+    async def delete_chat(self, db: AsyncSession, chat_id: int) -> bool:
+        chat = await self.chat_repo.get_by_id(db, chat_id)
+        if chat:
+            result = await self.chat_repo.delete_by_id(db, chat.id)
+            return result
+        else:
+            raise ChatNotFound()
