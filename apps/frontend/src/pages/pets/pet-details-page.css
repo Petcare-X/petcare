@@ -544,6 +544,79 @@
   box-shadow: 0 12px 24px rgba(249, 115, 22, 0.22);
 }
 
+.pet-delete-document-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: rgba(18, 16, 15, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.pet-delete-document-modal {
+  width: min(100%, 360px);
+  padding: 22px 18px 18px;
+  border-radius: 26px;
+  background-color: #fafafa;
+  box-shadow:
+    0 18px 48px rgba(30, 16, 10, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.pet-delete-document-title {
+  margin: 0;
+  color: #4d372d;
+  font-size: 1.28rem;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+.pet-delete-document-text {
+  margin: 10px 0 0;
+  color: rgba(77, 55, 45, 0.74);
+  font-size: 0.96rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.pet-delete-document-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.pet-delete-document-button {
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: 16px;
+  font-size: 0.95rem;
+  font-weight: 900;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.pet-delete-document-button:hover:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.pet-delete-document-button:disabled {
+  opacity: 0.65;
+}
+
+.pet-delete-document-button-secondary {
+  background: rgba(105, 92, 82, 0.12);
+  color: #4d372d;
+}
+
+.pet-delete-document-button-danger {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  color: #fafafa;
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.22);
+}
+
 .pet-sharing-overlay {
   position: fixed;
   inset: 0;

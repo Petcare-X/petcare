@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { PetDocument } from "@/entities/document/model/document.types"
 
 import "./documents-list-item.css";
@@ -7,9 +7,10 @@ import { getPetDocumentDownloadUrl } from "@/entities/document/api/document.api"
 type Props = {
     petId: number;
     document: PetDocument;
+    onRequestDelete: (documentId: number) => void;
 }
 
-export function DocumentsListItem({ petId, document }: Props) {
+export function DocumentsListItem({ petId, document, onRequestDelete }: Props) {
     const [isDownloading, setIsDownloading] = useState(false);
 
     const uploadedAtLabel = document.uploaded_at
@@ -49,6 +50,21 @@ export function DocumentsListItem({ petId, document }: Props) {
         }
     }
 
+    const longPressTimeoutRef = useRef<number | null>(null);
+
+    const startLongPress = () => {
+        longPressTimeoutRef.current = window.setTimeout(() => {
+            onRequestDelete(document.id);
+        }, 500);
+    }
+
+    const clearLongPress = () => {
+        if (longPressTimeoutRef.current !== null) {
+            window.clearTimeout(longPressTimeoutRef.current);
+            longPressTimeoutRef.current = null;
+        }
+    }
+
     return (
         <li className="documents-list-item">
             <div className="documents-list-item-icon-conteiner">
@@ -57,7 +73,13 @@ export function DocumentsListItem({ petId, document }: Props) {
                 </svg>
             </div>
 
-            <div className="documents-list-item-content">
+            <div 
+                className="documents-list-item-content"
+                onPointerDown={startLongPress}
+                onPointerUp={clearLongPress}
+                onPointerLeave={clearLongPress}
+                onPointerCancel={clearLongPress}
+            >
                 <p className="documents-list-item-title">{document.custom_name}</p>
                 <p className="documents-list-item-subtitle">
                     {document.document_type_name ?? "Документ"}

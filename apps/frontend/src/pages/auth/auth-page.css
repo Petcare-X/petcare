@@ -42,6 +42,7 @@
 .auth-inputs-conteiner {
     display: flex;
     flex-direction: column;
+    margin-bottom: 70px;
 }
 
 .auth-inputs-conteiner label {
@@ -84,7 +85,6 @@
     border-radius: 50px;
     padding: 20px;
     font-size: 1.1rem;
-    margin-top: 70px;
     box-shadow: 0 16px 22px rgba(249, 115, 22, 0.25);
 }
 
@@ -98,4 +98,11 @@
     font-size: 0.9rem;
     margin-top: 0.2rem;
     padding-left: 20px;
+}
+
+.signup-error {
+    color: red;
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 1rem;
 }

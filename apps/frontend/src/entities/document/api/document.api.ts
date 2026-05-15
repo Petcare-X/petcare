@@ -51,3 +51,7 @@ export async function getPetDocumentDownloadUrl(petId: number, documentRowid: nu
 
     return response.data;
 }
+
+export async function deletePetDocument(petId: number, documentRowId: number): Promise<void> {
+    await apiClient.delete(`/pets/${petId}/documents/${documentRowId}`)
+}

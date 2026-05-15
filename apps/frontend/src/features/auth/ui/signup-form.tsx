@@ -96,6 +96,7 @@ export function SignupForm() {
             </div>
 
             <div>
+                {errors.root && <p className="signup-error">{errors.root.message}</p>}
                 <button className="auth-button" type="submit" disabled={isSubmitting || signupMutation.isPending}>
                     {isSubmitting || signupMutation.isPending ? "Регистрируем..." : "Зарегистрироваться"}
                 </button>

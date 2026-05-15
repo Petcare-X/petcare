@@ -6,9 +6,10 @@ import "./documents-list.css";
 type Props = {
     petId: number;
     documents: PetDocument[];
+    onRequestDelete: (documentId: number) => void;
 }
 
-export function DocumentsList({ petId, documents }: Props) {
+export function DocumentsList({ petId, documents, onRequestDelete }: Props) {
     if (documents.length === 0) {
         return (
             <div className="documents-list-placeholder">
@@ -36,6 +37,7 @@ export function DocumentsList({ petId, documents }: Props) {
                     key={document.id} 
                     petId={petId}
                     document={document}
+                    onRequestDelete={onRequestDelete}
                 />
             ))}
         </ul>
