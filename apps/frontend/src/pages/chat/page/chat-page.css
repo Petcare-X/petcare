@@ -49,6 +49,16 @@
     outline: 2px solid #F97316;
 }
 
+.chat-image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffe6d6;
+    color: #ea580c;
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
 .chat-pet-name {
     font-size: 1.2rem;
     font-weight: 700;

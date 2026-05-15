@@ -17,9 +17,9 @@ import { MapPage } from "@/pages/map/map-page";
 import { CalendarPage } from "@/pages/calendar/calendar-page";
 import { PetDetailsPage } from "@/pages/pets/pet-details-page";
 
-import { ChatPetSelectPage } from "@/pages/chat/chat-pet-select-page";
-import { ChatHistoryPage } from "@/pages/chat/chat-history-page";
-import { ChatPage } from "@/pages/chat/chat-page";
+import { ChatPetSelectPage } from "@/pages/chat/select-pet/chat-pet-select-page";
+import { ChatHistoryPage } from "@/pages/chat/history/chat-history-page";
+import { ChatPage } from "@/pages/chat/page/chat-page";
 
 import { ensureAuth, redirectIfAuthenticated } from "./guards";
 

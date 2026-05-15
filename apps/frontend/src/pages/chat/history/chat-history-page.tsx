@@ -67,11 +67,18 @@ export function ChatHistoryPage() {
             </header>
 
             <div className="chat-history-pet-conteiner">
-                <img 
-                    src={photoQuery.data}
-                    alt={pet?.pet_name}
-                    className="chat-history-pet-image"
-                />
+                {photoQuery.data ?
+                    (<img
+                        src={photoQuery.data}
+                        alt={pet?.pet_name}
+                        className="chat-pet-option-image"
+                    />
+                ) : 
+                    (<div className="chat-pet-option-image image-placeholder">
+                        {pet?.pet_name.slice(0, 2).toUpperCase()}
+                    </div>)
+                }
+
                 <div className="chat-history-pet-text">
                     <h1 className="chat-history-pet-name">{pet?.pet_name}</h1>
                     <p className="chat-history-pet-subtitle">История чатов</p>

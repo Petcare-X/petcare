@@ -27,14 +27,14 @@ def set_refresh_cookie(response: Response, refresh_token: str) -> None:
         secure=settings.ENV != "dev",
         samesite="lax",
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        path="/auth",
+        path="/",
     )
 
 
 def delete_refresh_cookie(response: Response) -> None:
     response.delete_cookie(
         key="refresh_token",
-        path="/auth",
+        path="/",
         httponly=True,
         secure=settings.ENV != "dev",
         samesite="lax",
