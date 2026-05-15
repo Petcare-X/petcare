@@ -34,7 +34,7 @@ export function MapPage() {
     } = useSheetDrag();
 
     return (
-        <div className="map-page">
+        <main className="map-page">
             <button
                 type="button"
                 className="map-back-button"
@@ -63,6 +63,6 @@ export function MapPage() {
                 onPointerUp={handleSheetPointerEnd}
                 onPointerCancel={handleSheetPointerEnd}
             />
-        </div>
+        </main>
     );
 }

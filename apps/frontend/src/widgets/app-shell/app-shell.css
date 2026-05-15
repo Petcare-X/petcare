@@ -59,10 +59,6 @@
   align-items: center;
 }
 
-.main-content-without-shell {
-  width: 100%;
-}
-
 .navbar {
   display: flex;
   align-items: center;
