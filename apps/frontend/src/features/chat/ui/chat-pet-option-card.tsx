@@ -11,7 +11,7 @@ type ChatPetOptionCardProps = {
 }
 
 export function ChatPetOptionCard({ pet }: ChatPetOptionCardProps) {
-    const photoQuery = usePetPhotoQuery(pet.id, Boolean(pet.photoObjectKey));
+    const photoQuery = usePetPhotoQuery(pet.id, pet.photoObjectKey);
 
     return (
         <Link

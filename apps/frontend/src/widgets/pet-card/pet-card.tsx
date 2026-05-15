@@ -11,7 +11,7 @@ type PetCardProps = {
 };
 
 export function PetCard({ pet }: PetCardProps) {
-    const photoQuery = usePetPhotoQuery(pet.id, Boolean(pet.photoObjectKey));
+    const photoQuery = usePetPhotoQuery(pet.id, pet.photoObjectKey);
 
     return (
         <Link

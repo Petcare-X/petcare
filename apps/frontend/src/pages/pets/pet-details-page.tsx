@@ -72,7 +72,7 @@ export function PetDetailsPage() {
         return mapPetToCardView(foundPet, breedsQuery.data ?? []);
     }, [breedsQuery.data, petsQuery.data, petId]);
 
-    const photoQuery = usePetPhotoQuery(pet?.id ?? 0, Boolean(pet?.photoObjectKey));
+    const photoQuery = usePetPhotoQuery(pet?.id ?? 0, pet?.photoObjectKey);
 
     const sheetMetrics = useMemo(() => {
         const topInset = 96;

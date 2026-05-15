@@ -22,7 +22,7 @@ export function ChatHistoryPage() {
         [petQuery.data, petId],
     )
 
-    const photoQuery = usePetPhotoQuery(pet?.id ?? 0,  Boolean(pet?.pet_photo_object_key));
+    const photoQuery = usePetPhotoQuery(pet?.id ?? 0, pet?.pet_photo_object_key);
 
     const chatsQuery = usePetChatsQuery(petIdNumber, hasValidPetId)
     

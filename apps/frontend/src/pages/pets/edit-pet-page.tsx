@@ -18,7 +18,7 @@ export function EditPetPage() {
         [petsQuery.data, petId],
     );
 
-    const photoQuery = usePetPhotoQuery(pet?.id ?? 0, Boolean(pet?.pet_photo_object_key));
+    const photoQuery = usePetPhotoQuery(pet?.id ?? 0, pet?.pet_photo_object_key);
     const backParams = { petId: petId ?? "" };
 
     function goBack() {
@@ -37,14 +37,6 @@ export function EditPetPage() {
                     </svg>
                 </Link>
 
-                <button
-                    className="edit-pet-save"
-                    type="submit"
-                    form="edit-pet-form"
-                    disabled={!pet}
-                >
-                    Сохранить
-                </button>
             </header>
 
             {petsQuery.isLoading || breedsQuery.isLoading ? (
