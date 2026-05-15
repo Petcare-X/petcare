@@ -24,6 +24,20 @@ class StoredObjectMeta:
 
 class StorageService:
     @staticmethod
+    def _build_endpoint_url(endpoint: str, secure: bool) -> str:
+        return f"http{'s' if secure else ''}://{endpoint}"
+
+    @staticmethod
+    def _public_endpoint() -> str | None:
+        return settings.MINIO_PUBLIC_ENDPOINT or settings.MINIO_ENDPOINT
+
+    @staticmethod
+    def _public_secure() -> bool:
+        if settings.MINIO_PUBLIC_SECURE is None:
+            return settings.MINIO_SECURE
+        return settings.MINIO_PUBLIC_SECURE
+
+    @staticmethod
     def sanitize_document_name(value: str) -> str:
         safe_name = re.sub(r"\s+", "_", value.strip().lower())
         safe_name = re.sub(r"[^0-9A-Za-zА-Яа-яЁё_-]", "", safe_name).strip("_")
@@ -51,19 +65,29 @@ class StorageService:
                 status_code=500,
             )
 
-    def _client(self) -> Any:
+    def _client(self, *, endpoint: str | None = None, secure: bool | None = None) -> Any:
         self._ensure_configured()
         session = aioboto3.Session()
+        resolved_endpoint = endpoint or settings.MINIO_ENDPOINT
+        resolved_secure = settings.MINIO_SECURE if secure is None else secure
         return session.client(
             "s3",
-            endpoint_url=f"http{'s' if settings.MINIO_SECURE else ''}://{settings.MINIO_ENDPOINT}",
+            endpoint_url=self._build_endpoint_url(resolved_endpoint, resolved_secure),
             aws_access_key_id=settings.MINIO_ACCESS_KEY,
             aws_secret_access_key=settings.MINIO_SECRET_KEY,
             region_name=settings.MINIO_REGION or "us-east-1",
         )
 
-    async def _call_client(self, method_name: str, /, *args: Any, **kwargs: Any) -> Any:
-        async with self._client() as client:
+    async def _call_client(
+        self,
+        method_name: str,
+        /,
+        *args: Any,
+        endpoint: str | None = None,
+        secure: bool | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        async with self._client(endpoint=endpoint, secure=secure) as client:
             method = getattr(client, method_name)
             result = method(*args, **kwargs)
             if asyncio.iscoroutine(result):
@@ -134,6 +158,8 @@ class StorageService:
         return await self._call_client(
             "generate_presigned_url",
             "put_object",
+            endpoint=self._public_endpoint(),
+            secure=self._public_secure(),
             Params={
                 "Bucket": settings.MINIO_BUCKET_PRIVATE,
                 "Key": object_key,
@@ -147,6 +173,8 @@ class StorageService:
         return await self._call_client(
             "generate_presigned_url",
             "get_object",
+            endpoint=self._public_endpoint(),
+            secure=self._public_secure(),
             Params={
                 "Bucket": settings.MINIO_BUCKET_PRIVATE,
                 "Key": object_key,

@@ -18,13 +18,15 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str | None = None
     TELEGRAM_BOT_INTERNAL_TOKEN: str | None = None
     MINIO_ENDPOINT: str | None = None
+    MINIO_PUBLIC_ENDPOINT: str | None = None
     MINIO_ACCESS_KEY: str | None = None
     MINIO_SECRET_KEY: str | None = None
     MINIO_BUCKET_PRIVATE: str | None = None
     MINIO_SECURE: bool = False
+    MINIO_PUBLIC_SECURE: bool | None = None
     MINIO_REGION: str | None = None
     MINIO_PRESIGNED_UPLOAD_TTL_SEC: int = 900
-    MINIO_PRESIGNED_DOWNLOAD_TTL_SEC: int = 300
+    MINIO_PRESIGNED_DOWNLOAD_TTL_SEC: int = 3600
     YANDEX_GEOCODER_API_KEY: str | None = None
     OPENROUTER_API_KEY: str | None = None
     OPENROUTER_MODEL: str | None = None
