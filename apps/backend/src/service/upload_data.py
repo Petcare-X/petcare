@@ -143,7 +143,6 @@ class ImportService:
                 vet_street=validated.vet_street,
                 vet_building_number=validated.vet_building_number,
                 vet_phone=validated.vet_phone,
-                vet_website=str(validated.vet_website) if validated.vet_website else None,
                 vet_working_hours=validated.vet_working_hours,
                 vet_is_24_7=validated.vet_is_24_7,
                 vet_status=validated.vet_status,

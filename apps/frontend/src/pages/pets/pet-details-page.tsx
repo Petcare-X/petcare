@@ -220,7 +220,10 @@ export function PetDetailsPage() {
                 ["--pet-sheet-top-inset" as string]: `${sheetMetrics.topInset}px`,
             }}
         >
-            <div className="pet-details-backdrop" />
+            { photoQuery.data ?
+                null :
+                (<div className="pet-details-backdrop" />)
+            }
 
             <section className="pet-profile-header">
                 <Link className="back-home" to={appRoutes.home}>
