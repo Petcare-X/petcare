@@ -118,6 +118,10 @@
   margin-top: 16px;
 }
 
+.edit-pet-grid .edit-pet-field + .edit-pet-field {
+  margin-top: 0;
+}
+
 .edit-pet-error {
   margin-top: 12px;
   color: #b42318;
