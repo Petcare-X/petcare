@@ -8,7 +8,12 @@ import { useUserGeolocation } from "@/features/map/model/use-user-geolocation";
 import { MapCanvas } from "@/features/map/ui/map-canvas";
 import { PlacesSheet } from "@/features/map/ui/places-sheet";
 
+import { mapRoute } from "@/app/router/routes";
+
 export function MapPage() {
+    const search = mapRoute.useSearch() as { filter?: "clinic" | "place" | "salon"};
+    const initialFilter = search.filter ?? "";
+    
     const navigate = useNavigate();
     const {
         activeFilter,
@@ -18,7 +23,7 @@ export function MapPage() {
         isLoading,
         isError,
         handleFilterChange,
-    } = useMapPageData();
+    } = useMapPageData(initialFilter);
     const { mapLocation, userCoordinates } = useUserGeolocation();
     const {
         sheetHeight,

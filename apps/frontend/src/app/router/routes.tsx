@@ -119,10 +119,17 @@ const calendarRoute = createRoute ({
     component: CalendarPage,
 });
 
-const mapRoute = createRoute ({
+export const mapRoute = createRoute ({
     getParentRoute: () => mainOnlyLayoutRoute,
     path: appRoutes.map,
     component: MapPage,
+    validateSearch: (search: Record<string, unknown>) => ({
+        filter:
+            search.filter === "clinic"  ||
+            search.filter === "place" ||
+            search.filter === "salon"
+                ? search.filter : undefined
+    }),
 });
 
 const chatPetSelectRoute = createRoute ({
