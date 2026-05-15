@@ -142,6 +142,7 @@ services:
         condition: service_started
     environment:
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
+      VITE_DEV_PROXY_TARGET: ${VITE_DEV_PROXY_TARGET}
     ports:
       - "5173:5173"
     volumes:
