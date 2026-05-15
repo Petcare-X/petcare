@@ -1,0 +1,173 @@
+.chats-history-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 28px;
+    width: 100%;
+}
+
+.chat-history-back-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 48px;
+    height: 48px;
+    background-color: #fafafa;
+    border-radius: 999px;
+    color: #313131;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+    transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.chat-history-back-button:hover {
+    background-color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+}
+
+.chat-history-back-icon {
+    width: 17px;
+    height: 17px;
+    color: currentColor;
+}
+
+.chat-history-pet-conteiner {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.chat-history-pet-image {
+    width: 84px;
+    height: 84px;
+    border-radius: 24px;
+    object-fit: cover;
+    background-color: #fed7aa;
+    outline: 3px solid rgba(249, 115, 22, 0.18);
+    flex-shrink: 0;
+}
+
+.chat-history-pet-text {
+    min-width: 0;
+}
+
+.chat-history-pet-name {
+    margin: 0;
+    color: #292524;
+    font-size: clamp(1.5rem, 2vw, 1.9rem);
+    font-weight: 800;
+    line-height: 1.05;
+}
+
+.chat-history-pet-subtitle {
+    margin: 8px 0 0;
+    color: #78716c;
+    font-size: 0.98rem;
+}
+
+.chat-history-content {
+    margin-top: 24px;
+    width: 100%;
+}
+
+.new-chat-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    width: 100%;
+    padding: 0 18px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    box-shadow: 0 14px 28px rgba(249, 115, 22, 0.28);
+    transition: transform 180ms ease;
+}
+
+.new-chat-button:hover {
+    transform: scale(0.94);
+}
+
+.chat-history-list {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.chat-history-item {
+    margin: 0;
+}
+
+.previous-chat-option {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 18px 18px 16px;
+    border-radius: 22px;
+    text-decoration: none;
+    background: #fff;
+    color: inherit;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(251, 146, 60, 0.12);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.previous-chat-option:hover {
+    transform: scale(0.94);
+    box-shadow:
+        0 0 0 4px rgba(249, 115, 22, 0.23),
+        0 14px 34px rgba(249, 115, 22, 0.12);
+}
+
+.previous-chat-title {
+    margin: 0;
+    color: #292524;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.previous-chat-date {
+    margin: 0;
+    color: #78716c;
+    font-size: 0.92rem;
+}
+
+@media (max-width: 640px) {
+    .chat-history-page {
+        padding: 18px 16px 28px;
+    }
+
+    .chat-history-pet-conteiner {
+        align-items: flex-start;
+        padding: 18px;
+        border-radius: 24px;
+    }
+
+    .chat-history-pet-image {
+        width: 72px;
+        height: 72px;
+        border-radius: 20px;
+    }
+
+    .chat-history-pet-name {
+        font-size: 1.3rem;
+    }
+
+    .previous-chat-option {
+        padding: 16px;
+        border-radius: 18px;
+    }
+}
