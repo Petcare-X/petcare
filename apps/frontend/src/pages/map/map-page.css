@@ -436,8 +436,65 @@
   background: #f7f7ff;
 }
 
+.custom-marker {
+  position: relative;
+  transform: translate(-50%, -100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  pointer-events: auto;
+}
+
+.custom-marker::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+  z-index: -1;
+}
+
+.custom-marker-clinic {
+  color: #c2410c;
+}
+
+.custom-marker-place {
+  color: #49aa35;
+}
+
+.custom-marker-salon {
+  color: #818cf8;
+}
+
+.custom-marker-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  line-height: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .places-sheet {
     transition: none;
   }
+}
+
+
+.user-location-marker {
+  transform: translate(-50%, -100%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(249, 115, 22, 0.18);
+  backdrop-filter: blur(6px);
 }

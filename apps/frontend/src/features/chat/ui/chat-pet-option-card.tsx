@@ -20,11 +20,17 @@ export function ChatPetOptionCard({ pet }: ChatPetOptionCardProps) {
             className="chat-pet-option-card"
         >
             <div className="chat-pet-option-card-main">
-                <img
-                    src={photoQuery.data}
-                    alt={pet.name}
-                    className="chat-pet-option-image"
-                />
+                {photoQuery.data ?
+                    (<img
+                        src={photoQuery.data}
+                        alt={pet.name}
+                        className="chat-pet-option-image"
+                    />
+                ) : 
+                    (<div className="chat-pet-option-image image-placeholder">
+                        {pet.name.slice(0, 2).toUpperCase()}
+                    </div>)
+                }
 
                 <div>
                     <p className="chat-pet-option-name">{pet.name}</p>
