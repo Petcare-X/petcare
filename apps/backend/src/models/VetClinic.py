@@ -33,5 +33,5 @@ class VetClinic(Base):
     vet_is_24_7: Mapped[bool] = mapped_column(Boolean)
     vet_status: Mapped[str] = mapped_column(String(20))
     vet_phone: Mapped[str] = mapped_column(String(16), nullable=True)
-    vet_website: Mapped[str | None] = mapped_column(Text)
+    vet_website: Mapped[str | None] = mapped_column(Text, nullable=True)
     vet_last_verified: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

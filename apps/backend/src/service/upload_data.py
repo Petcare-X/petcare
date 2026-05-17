@@ -1,5 +1,4 @@
 import csv
-import os
 from io import StringIO
 
 from dotenv import load_dotenv
@@ -7,6 +6,7 @@ from fastapi import UploadFile, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import settings
 from src.models import VetClinic, DogFriendlyPlace, GroomingSalon
 from src.schemas import (
     DogPlaceCreate,
@@ -18,7 +18,11 @@ from src.schemas import (
     SalonCreate,
     SalonImportRow,
 )
-from src.third_party.geocoder.geocoder import geocode_address
+from src.third_party.geocoder.geocoder import (
+    AddressNotFoundError,
+    GeocodingError,
+    geocode_address,
+)
 
 load_dotenv()
 
@@ -39,6 +43,9 @@ class ImportService:
         street: str,
         building_number: str,
     ) -> tuple[float | None, float | None, str | None]:
+        if not api_key:
+            raise ValueError("YANDEX_GEOCODER_API_KEY is not configured")
+
         try:
             coordinates = await geocode_address(
                 api_key=api_key,
@@ -47,8 +54,12 @@ class ImportService:
                 street=street,
                 house=building_number,
             )
-        except Exception:
-            return None, None, None
+        except AddressNotFoundError as exc:
+            raise ValueError(
+                f"Address was not found by geocoder: {city}, {street}, {building_number}"
+            ) from exc
+        except GeocodingError as exc:
+            raise ValueError(f"Geocoder request failed: {exc}") from exc
 
         return coordinates["lat"], coordinates["lon"], coordinates["precision"]
 
@@ -77,7 +88,7 @@ class ImportService:
     ) -> ImportCsvResponse:
         text = await self._decode_csv_text(file)
         reader = csv.DictReader(StringIO(text))
-        api_key = os.getenv("YANDEX_GEOCODER_API_KEY")
+        api_key = settings.YANDEX_GEOCODER_API_KEY
 
         errors: list[ImportRowError] = []
         imported_count = 0
@@ -132,7 +143,6 @@ class ImportService:
                 vet_street=validated.vet_street,
                 vet_building_number=validated.vet_building_number,
                 vet_phone=validated.vet_phone,
-                vet_website=str(validated.vet_website) if validated.vet_website else None,
                 vet_working_hours=validated.vet_working_hours,
                 vet_is_24_7=validated.vet_is_24_7,
                 vet_status=validated.vet_status,

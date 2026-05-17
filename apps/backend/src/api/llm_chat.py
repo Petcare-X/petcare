@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.db import get_db
@@ -50,6 +50,7 @@ async def accept_message(
     pet_id: int,
     chat_id: int,
     payload: SendMessageRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: UserInfo = Depends(get_current_user),
     service: LLMChatService = Depends(),
@@ -63,7 +64,8 @@ async def accept_message(
     )
     generating_message = await service.start_generation(db, assistant_message.id, current_user.id)
     if generating_message:
-        await service.generate_answer(generating_message.id)
+        background_tasks.add_task(service.generate_answer, generating_message.id)
+        assistant_message = generating_message
     return SendMessageResponse(user_message=user_message, assistant_message=assistant_message)
 
 @chat_router.get("/{pet_id}/{chat_id}/messages", response_model=list[MessageResponse])
@@ -83,10 +85,10 @@ async def get_chat_messages(
 
 @chat_router.delete("/{pet_id}/{chat_id}", status_code=204)
 async def delete_chat(
-    pet_id: int,
     chat_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: UserInfo = Depends(get_current_user),
     service: LLMChatService = Depends(),
 ):
-    await service.delete_chat(db=db, user_id=current_user.id, pet_id=pet_id, chat_id=chat_id)
+    await service.delete_chat(db=db, chat_id=chat_id)
+    return {"deleted": True}

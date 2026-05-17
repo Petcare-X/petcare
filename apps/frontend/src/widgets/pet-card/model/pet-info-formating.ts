@@ -2,11 +2,12 @@ import type { Pet, AnimalBreed, PetCardView } from "@/entities/pet/model/pet.typ
 
 export function mapPetToCardView(pet: Pet, breeds: AnimalBreed[]): PetCardView {
     const breed = breeds.find((item) => item.id === pet.animal_breed_id);
+    const breedName = pet.animal_breed_name?.trim();
 
     return {
         id: pet.id,
         name: pet.pet_name,
-        breed: breed?.animal_breed ?? "Порода не указана",
+        breed: breed?.animal_breed ?? breedName ?? "Порода не указана",
         age: formatPetAge(pet.pet_date_of_birth),
         weight: `${pet.pet_weight} кг`,
         photoObjectKey: pet.pet_photo_object_key,

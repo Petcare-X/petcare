@@ -71,9 +71,9 @@ class AssistantService:
 
     def _build_prompt(self, question: str, context: Dict[str, Any]) -> str:
         return (
-            "You are a pet-care assistant. "
-            "Answer only using pet-care context provided by the MCP backend. "
-            "If context is incomplete, say what data is missing.\n\n"
-            f"User question: {question}\n"
-            f"Structured context: {context}"
+            "Отвечай только на основе данных, переданных в структурированном контексте ниже. "
+            "Если данных недостаточно, прямо скажи, чего не хватает. "
+            "Не придумывай факты, которых нет в серверном контексте.\n\n"
+            f"Вопрос пользователя: {question}\n"
+            f"Структурированный контекст: {context}"
         )

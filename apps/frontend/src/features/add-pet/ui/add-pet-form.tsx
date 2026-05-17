@@ -1,6 +1,8 @@
 import { FormEvent, useMemo, useState } from "react";
 
 import { useDogBreedsQuery } from "@/entities/pet/model/pet.queries";
+import type { AnimalBreed } from "@/entities/pet/model/pet.types";
+import { BreedAutocomplete } from "@/entities/pet/ui/breed-autocomplete";
 import { useCreatePet } from "@/features/add-pet/model/use-add-pet";
 
 type CreatePetFormProps = {
@@ -11,13 +13,15 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
     const breedsQuery = useDogBreedsQuery();
     const createPet = useCreatePet();
     const [name, setName] = useState("");
-    const [breed, setBreed] = useState("");
+    const [breedQuery, setBreedQuery] = useState("");
+    const [breedId, setBreedId] = useState("");
     const [age, setAge] = useState("");
     const [weight, setWeight] = useState("");
     const [sex, setSex] = useState<"male" | "female">("male");
     const [isSterylized, setIsSterylized] = useState(false);
     const [healthNotes, setHealthNotes] = useState("");
     const [photo, setPhoto] = useState<File | null>(null);
+    const [breedError, setBreedError] = useState(false);
 
     const photoPreviewUrl = useMemo(() => {
         if (!photo) {
@@ -30,10 +34,15 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
+        if (!breedId) {
+            setBreedError(true);
+            return;
+        }
+
         createPet.mutate(
             {
                 name: name.trim(),
-                breed: breed.trim(),
+                breedId: Number(breedId),
                 age: Number(age),
                 weight: Number(weight),
                 sex,
@@ -44,13 +53,15 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
             {
                 onSuccess: () => {
                     setName("");
-                    setBreed("");
+                    setBreedQuery("");
+                    setBreedId("");
                     setAge("");
                     setWeight("");
                     setSex("male");
                     setIsSterylized(false);
                     setHealthNotes("");
                     setPhoto(null);
+                    setBreedError(false);
                     onCreated();
                 },
             },
@@ -72,19 +83,31 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
 
             <label className="create-pet-field">
                 <span>Порода</span>
-                <input
-                    value={breed}
-                    onChange={(event) => setBreed(event.target.value)}
-                    list="dog-breeds"
-                    maxLength={50}
+                <BreedAutocomplete
+                    value={breedQuery}
+                    onChange={(value) => {
+                        setBreedQuery(value);
+                        setBreedError(false);
+                        setBreedId(findMatchingBreedId(value, breedsQuery.data ?? []));
+                    }}
+                    onSelect={(breed) => {
+                        setBreedQuery(breed.animal_breed);
+                        setBreedId(String(breed.id));
+                        setBreedError(false);
+                    }}
+                    breeds={breedsQuery.data ?? []}
+                    invalid={breedError}
+                    disabled={breedsQuery.isLoading || breedsQuery.isError}
+                    placeholder={breedsQuery.isLoading ? "Загружаем породы..." : "Начните вводить породу"}
                     required
                 />
-                <datalist id="dog-breeds">
-                    {breedsQuery.data?.map((item) => (
-                        <option key={item.id} value={item.animal_breed} />
-                    ))}
-                </datalist>
             </label>
+
+            {breedError ? (
+                <p className="create-pet-error">
+                    Выберите породу из предложенного списка.
+                </p>
+            ) : null}
 
             <div className="create-pet-grid">
                 <label className="create-pet-field">
@@ -197,4 +220,11 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
             </div>
         </form>
     );
+}
+
+function findMatchingBreedId(value: string, breeds: AnimalBreed[]): string {
+    const normalizedValue = value.trim().toLowerCase();
+    const breed = breeds.find((item) => item.animal_breed.trim().toLowerCase() === normalizedValue);
+
+    return breed ? String(breed.id) : "";
 }

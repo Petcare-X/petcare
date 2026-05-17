@@ -11,6 +11,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  background: linear-gradient(180deg, #eeeeee 0%, #d4d4d4 100%);
 }
 
 .pet-profile-header {
@@ -29,6 +30,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 40;
   transition: 0.2s ease;
 }
 
@@ -56,6 +58,7 @@
   font-weight: 700;
   letter-spacing: 2px;
   text-decoration: none;
+  z-index: 40;
   transition: 0.2s ease;
 }
 
@@ -81,26 +84,22 @@
   transform: translateY(var(--pet-sheet-offset));
   transition: transform 0.28s ease;
   will-change: transform;
-}
-
-.pet-profile-info--dragging {
-  transition: none;
-}
-
-.pet-sheet-drag-zone {
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   cursor: grab;
   touch-action: none;
 }
 
-.pet-sheet-drag-zone:active {
+.pet-profile-info--dragging {
+  transition: none;
   cursor: grabbing;
+}
+
+.pet-sheet-drag-zone {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .pet-sheet-handle {
@@ -126,6 +125,8 @@
   flex-direction: column;
   gap: 20px;
   overflow-y: auto;
+  cursor: auto;
+  touch-action: pan-y;
   -ms-overflow-style: none;
   scrollbar-width: none;
   overscroll-behavior: contain;

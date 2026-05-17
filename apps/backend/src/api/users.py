@@ -17,7 +17,7 @@ users_service = UsersService()
 def delete_refresh_cookie(response: Response) -> None:
     response.delete_cookie(
         key="refresh_token",
-        path="/auth",
+        path="/",
         httponly=True,
         secure=settings.ENV != "dev",
         samesite="lax",

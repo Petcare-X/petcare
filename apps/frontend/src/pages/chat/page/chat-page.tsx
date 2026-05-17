@@ -150,11 +150,18 @@ export function ChatPage() {
                     </svg>
                 </Link>
                 <div className="chat-pet-element">
-                    <img 
+                    {photoQuery.data ?
+                    (<img
                         src={photoQuery.data}
                         alt={pet?.pet_name}
                         className="chat-pet-avatar"
-                    />
+                        />
+                    ) : 
+                        (<div className="chat-pet-avatar chat-image-placeholder">
+                            {pet?.pet_name.slice(0, 2).toUpperCase()}
+                        </div>)
+                    }
+
                     <div className="chat-pet-info">
                         <h1 className="chat-pet-name">{pet?.pet_name}</h1>
                     </div>

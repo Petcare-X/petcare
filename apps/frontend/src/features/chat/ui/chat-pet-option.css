@@ -45,6 +45,16 @@
     object-fit: cover;
 }
 
+.image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffe6d6;
+    color: #ff7a1a;
+    font-size: 1.45rem;
+    font-weight: 800;
+}
+
 .chat-pet-option-name {
     color: black;
     font-size: 1.35rem;

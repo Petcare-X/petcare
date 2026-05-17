@@ -1,0 +1,11 @@
+from functools import lru_cache
+from src.core.config import settings, BASE_DIR
+
+# @lru_cache(maxsize=1)
+def load_system_prompt() -> str | None:
+    path = settings.OPENROUTER_SYSTEM_PROMPT_PATH
+    if not path.is_absolute():
+        path = BASE_DIR / path
+
+    content = path.read_text(encoding="utf-8").strip()
+    return content or None

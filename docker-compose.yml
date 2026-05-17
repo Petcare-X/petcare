@@ -24,8 +24,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9010:9000"
+      - "9011:9001"
     volumes:
       - minio_data:/data
 
@@ -54,7 +54,7 @@ services:
     command:
       - sh
       - -c
-      - uv run alembic upgrade head && uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir src
+      - uv sync --frozen --no-install-project --no-dev && uv run alembic upgrade head && uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir src
     environment:
       DATABASE_URL: ${DATABASE_URL}
       INVITE_BASE_URL: ${INVITE_BASE_URL}
@@ -65,17 +65,24 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_INTERNAL_TOKEN: ${TELEGRAM_BOT_INTERNAL_TOKEN:-}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE}
       MINIO_SECURE: ${MINIO_SECURE}
+      MINIO_PUBLIC_SECURE: ${MINIO_PUBLIC_SECURE:-}
       MINIO_REGION: ${MINIO_REGION}
       MINIO_PRESIGNED_UPLOAD_TTL_SEC: ${MINIO_PRESIGNED_UPLOAD_TTL_SEC:-900}
-      MINIO_PRESIGNED_DOWNLOAD_TTL_SEC: ${MINIO_PRESIGNED_DOWNLOAD_TTL_SEC:-300}
+      MINIO_PRESIGNED_DOWNLOAD_TTL_SEC: ${MINIO_PRESIGNED_DOWNLOAD_TTL_SEC:-3600}
       YANDEX_GEOCODER_API_KEY: ${YANDEX_GEOCODER_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1/chat/completions}
+      MCP_SERVICE_URL: ${MCP_SERVICE_URL:-http://mcp:8001}
+      MCP_ENABLED: ${MCP_ENABLED:-false}
+      MCP_CLIENT_TIMEOUT_SECONDS: ${MCP_CLIENT_TIMEOUT_SECONDS:-75}
+      MCP_MAX_REQUEST_ATTEMPTS: ${MCP_MAX_REQUEST_ATTEMPTS:-2}
+      MCP_RETRY_DELAY_SECONDS: ${MCP_RETRY_DELAY_SECONDS:-1}
       ENV: ${ENV}
       WATCHFILES_FORCE_POLLING: ${WATCHFILES_FORCE_POLLING:-true}
     depends_on:
@@ -83,20 +90,28 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs')\" >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
     ports:
       - "8000:8000"
     volumes:
       - ./apps/backend:/app
+      - backend_venv:/app/.venv
 
-    mcp:
+  mcp:
     build:
-      context: ./apps/mcp
+      context: ./apps/backend/src/mcp-server
+      dockerfile: docker/Dockerfile
     restart: unless-stopped
     working_dir: /app
     command:
       - sh
       - -c
-      - uv run uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload --reload-dir app
+      - uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload --reload-dir app
     environment:
       POSTGRES_URL: ${DATABASE_URL}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
@@ -105,6 +120,11 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1/chat/completions}
+      DEFAULT_LLM: ${MCP_DEFAULT_LLM:-openrouter}
+      REQUEST_TIMEOUT_SECONDS: ${MCP_REQUEST_TIMEOUT_SECONDS:-60}
       GEMMA_API_KEY: ${GEMMA_API_KEY:-}
       GEMMA_ENDPOINT: ${GEMMA_ENDPOINT:-}
       ENV: ${ENV}
@@ -117,7 +137,7 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      - ./apps/mcp:/app
+      - ./apps/backend/src/mcp-server:/app
 
 
   bot:
@@ -137,17 +157,21 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_INTERNAL_TOKEN: ${TELEGRAM_BOT_INTERNAL_TOKEN:-}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE}
       MINIO_SECURE: ${MINIO_SECURE}
+      MINIO_PUBLIC_SECURE: ${MINIO_PUBLIC_SECURE:-}
       MINIO_REGION: ${MINIO_REGION}
       MINIO_PRESIGNED_UPLOAD_TTL_SEC: ${MINIO_PRESIGNED_UPLOAD_TTL_SEC:-900}
-      MINIO_PRESIGNED_DOWNLOAD_TTL_SEC: ${MINIO_PRESIGNED_DOWNLOAD_TTL_SEC:-300}
+      MINIO_PRESIGNED_DOWNLOAD_TTL_SEC: ${MINIO_PRESIGNED_DOWNLOAD_TTL_SEC:-3600}
       YANDEX_GEOCODER_API_KEY: ${YANDEX_GEOCODER_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1/chat/completions}
+      MCP_SERVICE_URL: ${MCP_SERVICE_URL:-http://mcp:8001}
+      MCP_ENABLED: ${MCP_ENABLED:-false}
       ENV: ${ENV}
     depends_on:
       postgres:
@@ -156,6 +180,7 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./apps/backend:/app
+      - backend_venv:/app/.venv
 
   frontend:
     build:
@@ -165,9 +190,10 @@ services:
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
     environment:
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
+      VITE_DEV_PROXY_TARGET: ${VITE_DEV_PROXY_TARGET:-http://backend:8000}
     ports:
       - "5173:5173"
     volumes:
@@ -175,6 +201,7 @@ services:
       - frontend_node_modules:/app/node_modules
 
 volumes:
+  backend_venv:
   postgres_data:
   minio_data:
   frontend_node_modules:

@@ -30,6 +30,19 @@ class Settings:
     GEMMA_ENDPOINT: str | None = os.getenv("GEMMA_ENDPOINT")
     GEMMA_API_KEY: str | None = os.getenv("GEMMA_API_KEY")
     GEMMA_TIMEOUT_SECONDS: int = int(os.getenv("GEMMA_TIMEOUT_SECONDS", "5"))
+    OPENROUTER_API_KEY: str | None = os.getenv("OPENROUTER_API_KEY")
+    OPENROUTER_MODEL: str | None = os.getenv("OPENROUTER_MODEL")
+    OPENROUTER_BASE_URL: str = os.getenv(
+        "OPENROUTER_BASE_URL",
+        "https://openrouter.ai/api/v1/chat/completions",
+    )
+    SYSTEM_PROMPT_PATH: str = os.getenv(
+        "SYSTEM_PROMPT_PATH",
+        "app/prompts/emergency_assistant.md",
+    )
+    OPENROUTER_TIMEOUT_SECONDS: int = int(os.getenv("OPENROUTER_TIMEOUT_SECONDS", "60"))
+    OPENROUTER_MAX_REQUEST_ATTEMPTS: int = int(os.getenv("OPENROUTER_MAX_REQUEST_ATTEMPTS", "3"))
+    OPENROUTER_RETRY_DELAY_SECONDS: float = float(os.getenv("OPENROUTER_RETRY_DELAY_SECONDS", "1"))
 
 
 settings = Settings()

@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { DEFAULT_ANIMAL_TYPE_ID, getDogBreeds } from "@/entities/pet/api/animal-reference.api";
+import { DEFAULT_ANIMAL_TYPE_ID } from "@/entities/pet/api/animal-reference.api";
 import { createPet } from "@/entities/pet/api/pet.api";
 import { uploadPetPhoto } from "@/entities/pet/api/pet-photo.api";
 import { petQueryKeys } from "@/entities/pet/model/pet.queries";
 
 export type CreatePetFormValues = {
     name: string;
-    breed: string;
+    breedId: number;
     age: number;
     weight: number;
     sex: "male" | "female";
@@ -21,19 +21,12 @@ export function useCreatePet() {
 
     return useMutation({
         mutationFn: async (values: CreatePetFormValues) => {
-            const breeds = await getDogBreeds();
-            const normalizedBreed = values.breed.trim().toLowerCase();
-            const selectedBreed = breeds.find(
-                (breed) => breed.animal_breed.trim().toLowerCase() === normalizedBreed,
-            );
-
             const pet = await createPet({
                 pet_name: values.name,
                 pet_date_of_birth: buildDateOfBirth(values.age),
                 pet_sex: values.sex,
                 animal_type_id: DEFAULT_ANIMAL_TYPE_ID,
-                animal_breed_id: selectedBreed?.id,
-                animal_breed_name: values.breed.trim(),
+                animal_breed_id: values.breedId,
                 pedigree: false,
                 pet_neck_girth: 20,
                 pet_breast_girth: 30,

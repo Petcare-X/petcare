@@ -2,12 +2,14 @@ from app.core.config import settings
 from app.core.exceptions import ValidationAppError
 from app.llm.base import LLMAdapter
 from app.llm.gemma_adapter import GemmaAdapter
+from app.llm.openrouter_adapter import OpenRouterAdapter
 
 
 class LLMSelector:
     def __init__(self) -> None:
         self._adapters: dict[str, LLMAdapter] = {}
         self.register(GemmaAdapter())
+        self.register(OpenRouterAdapter())
 
     def register(self, adapter: LLMAdapter) -> None:
         self._adapters[adapter.name] = adapter
@@ -21,4 +23,3 @@ class LLMSelector:
 
 
 llm_selector = LLMSelector()
-
