@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { useDogBreedsQuery } from "@/entities/pet/model/pet.queries";
 import type { AnimalBreed } from "@/entities/pet/model/pet.types";
@@ -30,6 +30,14 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
 
         return URL.createObjectURL(photo);
     }, [photo]);
+
+    useEffect(() => {
+        return () => {
+            if (photoPreviewUrl) {
+                URL.revokeObjectURL(photoPreviewUrl);
+            }
+        };
+    }, [photoPreviewUrl]);
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -200,6 +208,9 @@ export function CreatePetForm({ onCreated }: CreatePetFormProps) {
                 <input
                     type="file"
                     accept="image/*"
+                    onClick={(event) => {
+                        event.currentTarget.value = "";
+                    }}
                     onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
                 />
             </label>

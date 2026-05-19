@@ -78,6 +78,32 @@
         0 14px 34px rgba(249, 115, 22, 0.12);
 }
 
+.auth-password-field {
+    position: relative;
+}
+
+.auth-password-input {
+    padding-right: 58px;
+}
+
+.auth-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(49, 49, 49, 0.55);
+    transform: translateY(-50%);
+}
+
+.auth-password-toggle svg {
+    display: block;
+    flex: 0 0 auto;
+}
+
 .auth-button {
     width: 100%;
     background-color: #F97316;
@@ -100,9 +126,27 @@
     padding-left: 20px;
 }
 
-.signup-error {
-    color: red;
-    font-size: 1.2rem;
-    text-align: center;
-    margin-bottom: 1rem;
+.signup-password-hint {
+    max-height: 0;
+    margin-top: 0;
+    padding: 0 20px;
+    color: rgba(49, 49, 49, 0.55);
+    font-size: 0.78rem;
+    line-height: 1.25;
+    font-weight: 700;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-6px);
+    transition:
+        max-height 0.24s ease,
+        margin-top 0.24s ease,
+        opacity 0.2s ease,
+        transform 0.24s ease;
+}
+
+.signup-password-hint.is-visible {
+    max-height: 48px;
+    margin-top: 8px;
+    opacity: 1;
+    transform: translateY(0);
 }

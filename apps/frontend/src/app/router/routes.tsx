@@ -30,6 +30,7 @@ import { NavbarOnlyShell } from "@/widgets/app-shell/navbar-only-shell";
 import { NotFoundPage } from "@/pages/not-found/not-found-page";
 
 import { EditPetPage } from "@/pages/pets/edit-pet-page";
+import { PetDocumentsPage } from "@/pages/documents/pet-documents-page";
 
 
 const rootRoute = createRootRoute ({
@@ -42,24 +43,28 @@ const protectedRoute = createRoute ({
     id: "protected",
     beforeLoad: ensureAuth,
     component: () => <Outlet />,
+    notFoundComponent: NotFoundPage,
 });
 
 const fullAppLayoutRoute = createRoute({
     getParentRoute: () => protectedRoute,
     id: "app-layout",
     component: FullAppShell,
+    notFoundComponent: NotFoundPage,
 });
 
 const mainOnlyLayoutRoute = createRoute({
     getParentRoute: () => protectedRoute,
     id: "main-only-layout",
     component: MainOnlyShell,
+    notFoundComponent: NotFoundPage,
 });
 
 const navbarOnlyLayoutRoute = createRoute({
     getParentRoute: () => protectedRoute,
     id: "navbar-only-layout",
     component: NavbarOnlyShell,
+    notFoundComponent: NotFoundPage,
 });
 
 const signUpRoute = createRoute ({
@@ -114,7 +119,7 @@ const editProfileRoute = createRoute({
 })
 
 const calendarRoute = createRoute ({
-    getParentRoute: () => fullAppLayoutRoute,
+    getParentRoute: () => mainOnlyLayoutRoute,
     path: appRoutes.calendar,
     component: CalendarPage,
 });
@@ -150,6 +155,12 @@ const chatRoute = createRoute ({
     component: ChatPage,
 });
 
+const documentsRoute = createRoute({
+    getParentRoute: () => mainOnlyLayoutRoute,
+    path: appRoutes.documents,
+    component: PetDocumentsPage,
+})
+
 const routeTree = rootRoute.addChildren([
     authRoute,
     loginRoute,
@@ -159,7 +170,6 @@ const routeTree = rootRoute.addChildren([
         fullAppLayoutRoute.addChildren([
             homeRoute,
             profileRoute,
-            calendarRoute,
             editProfileRoute,
         ]),
 
@@ -168,6 +178,8 @@ const routeTree = rootRoute.addChildren([
             mapRoute,
             chatRoute,
             editPetRoute,
+            calendarRoute,
+            documentsRoute,
         ]),
 
         navbarOnlyLayoutRoute.addChildren([

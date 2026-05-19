@@ -8,7 +8,8 @@ export const petQueryKeys = {
     all: ["pets"] as const,
     list: () => [...petQueryKeys.all, "list"] as const,
     breeds: () => [...petQueryKeys.all, "breeds"] as const,
-    photo: (petId: number) => [...petQueryKeys.all, "photo", petId] as const,
+    photo: (petId: number, objectKey?: string | null) =>
+        [...petQueryKeys.all, "photo", petId, objectKey ?? "none"] as const,
 };
 
 export function usePetsQuery() {
@@ -27,11 +28,11 @@ export function useDogBreedsQuery() {
     });
 }
 
-export function usePetPhotoQuery(petId: number, enabled: boolean) {
+export function usePetPhotoQuery(petId: number, objectKey?: string | null) {
     return useQuery({
-        queryKey: petQueryKeys.photo(petId),
+        queryKey: petQueryKeys.photo(petId, objectKey),
         queryFn: () => getPetPhotoDownloadUrl(petId),
-        enabled,
+        enabled: petId > 0 && Boolean(objectKey),
         staleTime: 10 * 60_000,
     });
 }
