@@ -78,6 +78,11 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1/chat/completions}
+      MCP_SERVICE_URL: ${MCP_SERVICE_URL:-http://mcp:8001}
+      MCP_ENABLED: ${MCP_ENABLED:-false}
+      MCP_CLIENT_TIMEOUT_SECONDS: ${MCP_CLIENT_TIMEOUT_SECONDS:-75}
+      MCP_MAX_REQUEST_ATTEMPTS: ${MCP_MAX_REQUEST_ATTEMPTS:-2}
+      MCP_RETRY_DELAY_SECONDS: ${MCP_RETRY_DELAY_SECONDS:-1}
       ENV: ${ENV}
       WATCHFILES_FORCE_POLLING: ${WATCHFILES_FORCE_POLLING:-true}
     depends_on:
@@ -96,6 +101,44 @@ services:
     volumes:
       - ./apps/backend:/app
       - backend_venv:/app/.venv
+
+  mcp:
+    build:
+      context: ./apps/backend/src/mcp-server
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload --reload-dir app
+    environment:
+      POSTGRES_URL: ${DATABASE_URL}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET_PRIVATE: ${MINIO_BUCKET_PRIVATE}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1/chat/completions}
+      DEFAULT_LLM: ${MCP_DEFAULT_LLM:-openrouter}
+      REQUEST_TIMEOUT_SECONDS: ${MCP_REQUEST_TIMEOUT_SECONDS:-60}
+      GEMMA_API_KEY: ${GEMMA_API_KEY:-}
+      GEMMA_ENDPOINT: ${GEMMA_ENDPOINT:-}
+      ENV: ${ENV}
+      WATCHFILES_FORCE_POLLING: ${WATCHFILES_FORCE_POLLING:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./apps/backend/src/mcp-server:/app
+
 
   bot:
     profiles: ["bot"]
@@ -127,6 +170,8 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
       OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1/chat/completions}
+      MCP_SERVICE_URL: ${MCP_SERVICE_URL:-http://mcp:8001}
+      MCP_ENABLED: ${MCP_ENABLED:-false}
       ENV: ${ENV}
     depends_on:
       postgres:

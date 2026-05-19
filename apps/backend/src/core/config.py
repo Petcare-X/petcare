@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     OPENROUTER_MODEL: str | None = None
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1/chat/completions"
     OPENROUTER_SYSTEM_PROMPT_PATH: Path = "src/third_party/llm_chat/prompts/emergency_assistant.md"
+    MCP_SERVICE_URL: str | None = None
+    MCP_ENABLED: bool = False
+    MCP_CLIENT_TIMEOUT_SECONDS: int = 75
+    MCP_MAX_REQUEST_ATTEMPTS: int = 2
+    MCP_RETRY_DELAY_SECONDS: float = 1.0
     ENV: str
 
 settings = Settings()
