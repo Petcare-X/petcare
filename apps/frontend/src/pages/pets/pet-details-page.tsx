@@ -6,6 +6,7 @@ import { appRoutes } from "@/shared/constants/routes";
 import { DocumentsList } from "@/widgets/document-list/documents-list";
 import { mapPetToCardView } from "@/widgets/pet-card/model/pet-info-formating";
 import { useCreateInvite } from "@/features/manage-share/model/use-create-invite";
+import { useSharedUsersQuery } from "@/entities/invite/model/shared-users.queries";
 import {
     useDogBreedsQuery,
     usePetsQuery,
@@ -16,6 +17,7 @@ import './pet-details-page.css';
 import { usePetDocumentsQuery } from "@/entities/document/model/document.queries";
 import { UploadDocumentForm } from "@/features/upload-document/ui/upload-document-form";
 import { createPortal } from "react-dom";
+import { useDeleteDocument } from "@/features/delete-document/model/use-delete-document";
 
 type SheetMode = "collapsed" | "mid" | "expanded";
 
@@ -50,6 +52,13 @@ export function PetDetailsPage() {
     const [sheetOffset, setSheetOffset] = useState(0);
     const [isDraggingSheet, setIsDraggingSheet] = useState(false);
 
+    const sharedUsersQuery = useSharedUsersQuery(
+        petIdNumber, 
+        Number.isFinite(petIdNumber) && petIdNumber > 0
+    );
+
+    const sharedUsersCount = sharedUsersQuery.data?.length ?? 0;
+
     const contentRef = useRef<HTMLDivElement | null>(null);
     const dragStateRef = useRef<{
         pointerId: number | null;
@@ -72,7 +81,7 @@ export function PetDetailsPage() {
         return mapPetToCardView(foundPet, breedsQuery.data ?? []);
     }, [breedsQuery.data, petsQuery.data, petId]);
 
-    const photoQuery = usePetPhotoQuery(pet?.id ?? 0, Boolean(pet?.pet_photo_object_key));
+    const photoQuery = usePetPhotoQuery(pet?.id ?? 0, pet?.photoObjectKey);
 
     const sheetMetrics = useMemo(() => {
         const topInset = 96;
@@ -207,6 +216,36 @@ export function PetDetailsPage() {
     };
 
 
+    const deleteDocumentMutation = useDeleteDocument();
+
+    const [documentToDeleteId, setDocumentToDeleteId] = useState<number | null>(null);
+
+    const handleRequestDeleteDocument = (documentId: number) => {
+        setDocumentToDeleteId(documentId);
+    }
+
+    const handleConfirmDocumentDelete = () => {
+        if (!petIdNumber || documentToDeleteId === null) {
+            return;
+        }
+
+        deleteDocumentMutation.mutate(
+            {
+                petId: petIdNumber,
+                documentId: documentToDeleteId,
+            },
+            {
+                onSuccess: () => {
+                    setDocumentToDeleteId(null);
+                },
+            },
+        );
+    }
+
+    const handleCancelDocumentDelete = () => {
+        setDocumentToDeleteId(null);
+    }
+
     return (
         <main
             className="pet-details-page"
@@ -267,7 +306,7 @@ export function PetDetailsPage() {
                             <svg width="20" height="27" viewBox="0 0 20 27" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M0 26.25C0 20.7271 4.47715 16.25 10 16.25C15.5229 16.25 20 20.7271 20 26.25H0ZM10 15C5.85625 15 2.5 11.6438 2.5 7.5C2.5 3.35625 5.85625 0 10 0C14.1437 0 17.5 3.35625 17.5 7.5C17.5 11.6438 14.1437 15 10 15Z" fill="white"/>
                             </svg>
-                            <span className="shared-quantity-value">2</span>
+                            <span className="shared-quantity-value">{sharedUsersCount}</span>
                         </div>
 
                         <button type="button" className="share-pet-button" onClick={() => setSharingIsOpen(true)}>
@@ -360,9 +399,49 @@ export function PetDetailsPage() {
                                 <DocumentsList
                                     petId={petIdNumber}
                                     documents={documentsQuery.data ?? []}
+                                    onRequestDelete={handleRequestDeleteDocument}
                                 />
                             )}
                         </div>
+
+                        {documentToDeleteId !== null ? createPortal(
+                            <div
+                                className="pet-delete-document-overlay"
+                                onClick={handleCancelDocumentDelete}
+                            >
+                                <div
+                                    className="pet-delete-document-modal"
+                                    onClick={(event) => event.stopPropagation()}
+                                >
+                                    <p className="pet-delete-document-title">
+                                        Удалить документ?
+                                    </p>
+                                    <p className="pet-delete-document-text">
+                                        Документ будет удален из профиля питомца и из хранилища.
+                                    </p>
+
+                                    <div className="pet-delete-document-actions">
+                                        <button
+                                            type="button"
+                                            className="pet-delete-document-button pet-delete-document-button-secondary"
+                                            onClick={handleCancelDocumentDelete}
+                                            disabled={deleteDocumentMutation.isPending}
+                                        >
+                                            Отмена
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="pet-delete-document-button pet-delete-document-button-danger"
+                                            onClick={handleConfirmDocumentDelete}
+                                            disabled={deleteDocumentMutation.isPending}
+                                        >
+                                            {deleteDocumentMutation.isPending ? "Удаляем..." : "Удалить"}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>,
+                            document.body,
+                        ) : null}
                     </section>
                 </div>
             </section>

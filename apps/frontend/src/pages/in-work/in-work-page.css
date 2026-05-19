@@ -1,35 +1,34 @@
-.not-found-page {
+.in-work-page {
     height: 100dvh;
-    background-color: #F97316;
-    padding: 0 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 14px;
+    gap: 24px;
+    background-color: #F97316;
 }
 
-.not-found-code {
-    font-size: clamp(3rem, 40vw, 10rem);
-    color: #fafafa;
-    line-height: 0.82;
+.in-work-text-conteiner {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.not-found-title {
+.in-work-title {
     font-size: 1.75rem;
     color: #fafafa;
     font-weight: 900;
     text-align: center;
 }
 
-.not-found-subtitle {
+.in-work-subtitle {
     color: #fafafa;
     text-align: center;
     font-size: 1.2rem;
     font-weight: 700;
 }
 
-.not-found-back-btn {
+.in-work-back-btn {
     max-width: min(430px, 100%);
     background-color: #fafafa;
     color: #F97316;
@@ -42,7 +41,7 @@
     padding: 20px 40px;
 }
 
-.not-found-back-btn:hover {
+.in-work-back-btn:hover {
     background-color: #F97316;
     color: #fafafa;
 }

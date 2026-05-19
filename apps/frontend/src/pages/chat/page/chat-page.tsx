@@ -64,7 +64,7 @@ export function ChatPage() {
         [petsQuery.data, petId],
     );
 
-    const photoQuery = usePetPhotoQuery(pet?.id ?? 0, Boolean(pet?.pet_photo_object_key));
+    const photoQuery = usePetPhotoQuery(pet?.id ?? 0, pet?.pet_photo_object_key);
     const sendMessageMutation = useSendMessageMutation();
 
     useEffect(() => {
@@ -138,7 +138,7 @@ export function ChatPage() {
     }
 
     return (
-        <div className="chat-page">
+        <main className="chat-page page-transition">
             <header className="chat-header">
                 <Link 
                     to={appRoutes.chatHistory} 
@@ -280,7 +280,7 @@ export function ChatPage() {
                     Не удалось отправить сообщение. Попробуйте ещё раз.
                 </p>
             ) : null}
-        </div>
+        </main>
     );
 }
 

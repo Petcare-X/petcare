@@ -50,17 +50,12 @@
 }
 
 .main-content-with-shell {
-  min-height: 100dvh;
   max-width: 430px;
   margin: auto;
   padding: 45px 24px 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.main-content-without-shell {
-  width: 100%;
 }
 
 .navbar {

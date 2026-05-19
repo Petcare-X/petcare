@@ -134,6 +134,9 @@ export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPe
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
+                    onClick={(event) => {
+                        event.currentTarget.value = "";
+                    }}
                     onChange={(event) => setPhoto(event.target.files?.[0] ?? null)}
                 />
             </label>
@@ -272,7 +275,7 @@ export function EditPetForm({ pet, breeds, photoUrl, onCancel, onSaved }: EditPe
                     Отмена
                 </button>
                 <button type="submit" className="edit-pet-submit" disabled={isSubmitting}>
-                    Добавить
+                    Сохранить
                 </button>
             </div>
         </form>
