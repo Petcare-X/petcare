@@ -5,6 +5,7 @@ from typing import AsyncIterator
 from fastmcp import FastMCP
 
 from app.core.config import settings
+from app.core.exceptions import ValidationAppError
 from app.infrastructure.db.session import AsyncSessionLocal
 from app.infrastructure.storage.s3_client import S3StorageClient
 from app.repository.clinics_repo import ClinicsRepository
@@ -35,6 +36,20 @@ async def _service_scope() -> AsyncIterator[dict[str, object]]:
         }
 
 
+def _parse_iso_date(value: str) -> date:
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValidationAppError("uploaded_at must be an ISO date") from exc
+
+
+def _parse_iso_datetime(value: str) -> datetime:
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise ValidationAppError("current_datetime must be an ISO datetime") from exc
+
+
 def create_fastmcp_server() -> FastMCP:
     mcp = FastMCP(
         name=f"{settings.APP_NAME} MCP",
@@ -47,19 +62,16 @@ def create_fastmcp_server() -> FastMCP:
 
     @mcp.tool(name="pets_get_pet_details")
     async def pets_get_pet_details(pet_id: int, user_id: str) -> dict:
-        """Get detailed pet information for a specific owner."""
         async with _service_scope() as services:
             return await services["pets"].get_pet_details(pet_id, user_id)  # type: ignore[union-attr]
 
     @mcp.tool(name="pets_get_pet_short_info")
     async def pets_get_pet_short_info(pet_id: int, user_id: str) -> dict:
-        """Get short pet information for a specific owner."""
         async with _service_scope() as services:
             return await services["pets"].get_pet_short_info(pet_id, user_id)  # type: ignore[union-attr]
 
     @mcp.tool(name="documents_get_pet_documents")
     async def documents_get_pet_documents(pet_id: int, user_id: str) -> list[dict]:
-        """List documents for a pet owned by the specified user."""
         async with _service_scope() as services:
             return await services["documents"].get_pet_documents(pet_id, user_id)  # type: ignore[union-attr]
 
@@ -69,12 +81,11 @@ def create_fastmcp_server() -> FastMCP:
         user_id: str,
         uploaded_at: str,
     ) -> list[dict]:
-        """List pet documents filtered by upload date."""
         async with _service_scope() as services:
             return await services["documents"].get_pet_documents_by_upload_date(  # type: ignore[union-attr]
                 pet_id,
                 user_id,
-                date.fromisoformat(uploaded_at),
+                _parse_iso_date(uploaded_at),
             )
 
     @mcp.tool(name="documents_extract_pet_document_text_by_custom_name")
@@ -83,7 +94,6 @@ def create_fastmcp_server() -> FastMCP:
         user_id: str,
         custom_name: str,
     ) -> dict:
-        """Download a pet document from storage and return decoded text."""
         async with _service_scope() as services:
             return await services["documents"].extract_pet_document_text_by_custom_name(  # type: ignore[union-attr]
                 pet_id,
@@ -93,8 +103,66 @@ def create_fastmcp_server() -> FastMCP:
 
     @mcp.tool(name="clinics_search_vet_clinics_by_city")
     async def clinics_search_vet_clinics_by_city(vet_city: str) -> list[dict]:
-        """Search active veterinary clinics by city."""
         async with _service_scope() as services:
             return await services["clinics"].search_vet_clinics_by_city(vet_city)  # type: ignore[union-attr]
 
     @mcp.tool(name="clinics_search_vet_clinics_by_location")
+    async def clinics_search_vet_clinics_by_location(
+        user_lat: float,
+        user_lon: float,
+        radius_km: float,
+    ) -> list[dict]:
+        async with _service_scope() as services:
+            return await services["clinics"].search_vet_clinics_by_location(  # type: ignore[union-attr]
+                user_lat,
+                user_lon,
+                radius_km,
+            )
+
+    @mcp.tool(name="clinics_filter_available_vet_clinics")
+    async def clinics_filter_available_vet_clinics(
+        current_datetime: str,
+        vet_city: str | None = None,
+        user_lat: float | None = None,
+        user_lon: float | None = None,
+        radius_km: float | None = None,
+    ) -> list[dict]:
+        async with _service_scope() as services:
+            return await services["clinics"].filter_available_vet_clinics(  # type: ignore[union-attr]
+                _parse_iso_datetime(current_datetime),
+                vet_city=vet_city,
+                user_lat=user_lat,
+                user_lon=user_lon,
+                radius_km=radius_km,
+            )
+
+    @mcp.tool(name="clinics_get_vet_contacts_by_address")
+    async def clinics_get_vet_contacts_by_address(vet_id: int) -> dict:
+        async with _service_scope() as services:
+            return await services["clinics"].get_vet_contacts_by_address(vet_id)  # type: ignore[union-attr]
+
+    @mcp.tool(name="clinics_get_vet_location_by_name")
+    async def clinics_get_vet_location_by_name(vet_name: str, vet_city: str) -> dict:
+        async with _service_scope() as services:
+            return await services["clinics"].get_vet_location_by_name(vet_name, vet_city)  # type: ignore[union-attr]
+
+    @mcp.tool(name="assistant_ask_petcare_assistant")
+    async def assistant_ask_petcare_assistant(
+        question: str,
+        user_id: str | None = None,
+        pet_id: int | None = None,
+        vet_city: str | None = None,
+        include_documents: bool = True,
+        llm_name: str | None = None,
+    ) -> dict:
+        async with _service_scope() as services:
+            return await services["assistant"].ask_petcare_assistant(  # type: ignore[union-attr]
+                question=question,
+                user_id=user_id,
+                pet_id=pet_id,
+                vet_city=vet_city,
+                include_documents=include_documents,
+                llm_name=llm_name,
+            )
+
+    return mcp

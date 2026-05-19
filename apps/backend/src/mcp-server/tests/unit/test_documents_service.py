@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 from datetime import date
-from unittest.mock import AsyncMock
 
 import pytest
 
 from app.core.exceptions import ForbiddenError, NotFoundError
-from app.infrastructure.storage.s3_client import S3Object
 from app.services.documents_service import DocumentsService
-from tests.unit.conftest import (
+from tests.unit.helpers import (
     make_document_row,
     make_s3_object,
     mock_documents_repo,

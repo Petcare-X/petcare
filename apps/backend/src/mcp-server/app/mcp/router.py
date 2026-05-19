@@ -1,8 +1,11 @@
+import logging
 import inspect
 from typing import Any, Dict
 
 from app.core.exceptions import ValidationAppError
 from app.mcp.registry import ToolRegistry
+
+logger = logging.getLogger(__name__)
 
 
 class MCPRouter:
@@ -19,7 +22,14 @@ class MCPRouter:
         except TypeError as exc:
             raise ValidationAppError(f"Invalid payload for '{tool}.{method}': {exc}") from exc
 
-        result = handler(**payload)
-        if inspect.isawaitable(result):
-            return await result
+        logger.info("Executing MCP tool call %s.%s", tool, method)
+        try:
+            result = handler(**payload)
+            if inspect.isawaitable(result):
+                result = await result
+        except Exception:
+            logger.exception("MCP tool call failed: %s.%s", tool, method)
+            raise
+
+        logger.info("MCP tool call completed: %s.%s", tool, method)
         return result

@@ -33,7 +33,10 @@ class SmokeTests(unittest.TestCase):
 
     def test_dynamic_tool_registry_discovers_required_tools(self) -> None:
         registry = build_tool_registry(object())
-        self.assertEqual(registry.list_tools(), ["clinics", "documents", "pets"])
+        self.assertEqual(
+            registry.list_tools(),
+            ["assistant", "clinics", "documents", "pets"],
+        )
 
     def test_mcp_router_executes_registered_tool(self) -> None:
         router = MCPRouter(DummyRegistry())

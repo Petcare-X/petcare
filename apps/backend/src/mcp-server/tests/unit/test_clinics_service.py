@@ -8,7 +8,7 @@ import pytest
 
 from app.core.exceptions import NotFoundError
 from app.services.clinics_service import ClinicsService, haversine_km, is_open_at
-from tests.unit.conftest import make_clinic_row, mock_clinics_repo
+from tests.unit.helpers import make_clinic_row, mock_clinics_repo
 
 
 # ── haversine_km ──────────────────────────────────────────────────────────────

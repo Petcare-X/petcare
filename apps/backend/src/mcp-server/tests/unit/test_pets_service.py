@@ -8,7 +8,7 @@ import pytest
 
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.services.pets_service import PetsService, calculate_age
-from tests.unit.conftest import (
+from tests.unit.helpers import (
     make_pet_details_row,
     make_pet_short_row,
     mock_pets_repo,

@@ -1,4 +1,4 @@
-.PHONY: help install up down test test-int test-all lint format clean logs
+.PHONY: help install up down test test-int test-all lint format clean logs run run-prod
 
 #Справка
 help:
@@ -38,7 +38,8 @@ test:
 	pytest tests/unit/ -v --tb=short
 
 test-int:
-	@docker compose -f docker/docker-compose.yml ps postgres | grep -q Up || \
+	@docker compose -f docker/docker-compose.yml ps api | grep -q Up || \
+		(echo "MCP integration stack is not running. Start it with 'make up'." && exit 1)
 	pytest tests/integration/ -v --tb=short
 
 test-all:
@@ -47,3 +48,12 @@ test-all:
 		--json-report --json-report-file=report.json
 
 #Качество кода
+lint:
+	ruff check app tests
+
+format:
+	ruff check --fix app tests
+	ruff format app tests
+
+clean:
+	rm -rf .pytest_cache .ruff_cache report.json
