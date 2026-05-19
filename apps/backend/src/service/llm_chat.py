@@ -1,10 +1,14 @@
+import logging
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.db import AsyncSessionLocal
+from src.core.config import settings
 from src.models import LlmChat, LlmMessage
 from src.schemas import MessageRole, ChatCreate, MessageCreate, MessageStatus, SendMessageRequest, SendMessageResponse
 from src.service.openrouter import OpenRouterService
+from src.service.mcp_chat import MCPChatService
 from src.repositories import LlmChatRepository, LlmMessageRepository, PetsRepository
 from src.exceptions import (ChatNotFound, 
                             UserMessageError, 
@@ -17,10 +21,14 @@ from src.exceptions import (ChatNotFound,
                             MessageGenerationError,
                             PetNotFoundError)
 
+logger = logging.getLogger(__name__)
+
+
 class LLMChatService:
     def __init__(self):
         self.openrouter_service = OpenRouterService()
         self.chat_repo = LlmChatRepository()
+        self.mcp_chat_service = MCPChatService()
         self.message_repo = LlmMessageRepository()
         self.pet_repo = PetsRepository()
         self.session_factory = AsyncSessionLocal
@@ -168,27 +176,66 @@ class LLMChatService:
         return (chat,
                 chat_history,
                 user_message.content)
-    
+
+    async def _generate_text(
+        self,
+        chat: LlmChat,
+        chat_history: list[LlmMessage],
+        current_content: str,
+        user_id: int,
+        pet_id: int,
+    ) -> str:
+        if settings.MCP_ENABLED:
+            return await self.mcp_chat_service.generate_petcare_answer(
+                message=current_content,
+                user_id=user_id,
+                pet_id=pet_id,
+            )
+
+        return await self.openrouter_service.generate_answer(
+            self.openrouter_service.build_openrouter_messages(
+                chat,
+                chat_history,
+                current_content,
+            )
+        )
+
+
     async def generate_answer(self, assistant_message_id: int) -> LlmMessage:
         async with self.session_factory() as db:
             assistant_message = await self.message_repo.get_by_id(db, assistant_message_id)
-            context = await self.build_generation_context(db, assistant_message_id)
+            if not assistant_message:
+                raise AssistantMessageNotFound("Assistant message not found")
+
+            chat, chat_history, current_content = await self.build_generation_context(db, assistant_message_id)
+
             try:
-                assistant_text = await self.openrouter_service.generate_answer(
-                    self.openrouter_service.build_openrouter_messages(*context))
+                assistant_text = await self._generate_text(
+                    chat=chat,
+                    chat_history=chat_history,
+                    current_content=current_content,
+                    user_id=assistant_message.user_id,
+                    pet_id=chat.pet_id,
+                )
                 if assistant_text:
                     assistant_message.content = assistant_text
                     assistant_message.status = MessageStatus.COMPLETED
                     assistant_message.error_message = None
 
-                    await db.commit()
-                    await db.refresh(assistant_message)
-                    return assistant_message
+                await db.commit()
+                await db.refresh(assistant_message)
+                return assistant_message
 
             except Exception as e:
                 error_message = f"Error generating answer: {str(e)}"
-                assistant_message = await self.failed_message(db, assistant_message_id, error_message)
-                raise MessageGenerationError(error_message)
+                logger.exception("Failed to generate assistant message %s", assistant_message_id)
+                return await self.failed_message(db, assistant_message_id, error_message)
+
+    async def delete_chat(self, db: AsyncSession, user_id: int, pet_id: int, chat_id: int) -> None:
+            chat = await self.get_user_chat(db, user_id, chat_id)
+            if chat.pet_id != pet_id:
+                raise UserPermissionError("User does not have permission to access this chat")
+            await self.chat_repo.delete(db, chat)
 
 # для бота
     async def send_message(self, db: AsyncSession, user_id: int, payload: MessageCreate) -> tuple[LlmMessage, LlmMessage]:

@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 from dataclasses import dataclass
 from asyncio import Semaphore
@@ -17,6 +18,8 @@ class GenerationSettings:
     top_p: float = 0.8
     timeout_seconds: float = 60.0
     max_history_length: int = 12
+    max_request_attempts: int = 3
+    retry_delay_seconds: float = 1.0
 
 class OpenRouterService:
     def __init__(self):
@@ -43,8 +46,19 @@ class OpenRouterService:
         timeout = httpx.Timeout(self.generation_settings.timeout_seconds)
 
         async with self._semaphore:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                response = await client.post(self.base_url, headers=headers, json=payload)
+            last_error: httpx.RequestError | None = None
+            for attempt in range(1, self.generation_settings.max_request_attempts + 1):
+                try:
+                    async with httpx.AsyncClient(timeout=timeout) as client:
+                        response = await client.post(self.base_url, headers=headers, json=payload)
+                    break
+                except httpx.RequestError as exc:
+                    last_error = exc
+                    if attempt == self.generation_settings.max_request_attempts:
+                        raise OpenRouterApiError(
+                            f"OpenRouter network error: {exc}"
+                        ) from exc
+                    await asyncio.sleep(self.generation_settings.retry_delay_seconds)
 
         if response.status_code >= 400:
             raise OpenRouterApiError(f"OpenRouter API error: {response.text}")
