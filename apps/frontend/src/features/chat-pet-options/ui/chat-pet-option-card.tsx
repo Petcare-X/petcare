@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { usePetPhotoQuery } from "@/entities/pet/model/pet.queries";
-import type { ChatPetOption } from "@/features/chat/model/chat-pet-options";
+import type { ChatPetOption } from "@/features/chat-pet-options/model/chat-pet-options";
 import { appRoutes } from "@/shared/constants/routes";
 
 import "./chat-pet-option.css";

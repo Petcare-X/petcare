@@ -28,7 +28,7 @@ export function HomePage() {
     return (
         <>
             <section className="pets-section">
-                <div className="section-row">
+                <div className="section-header">
                     <h2 className="section-title">Мои питомцы</h2>
                     {pets.length > 0 ? (
                         <button
