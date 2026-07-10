@@ -26,6 +26,7 @@
   content: "";
   position: absolute;
   inset: -40px -64px;
+  pointer-events: none;
   background-image:
     linear-gradient(90deg, transparent 0 45%, rgba(220, 220, 220, 0.86) 45% 46.5%, transparent 46.5%),
     linear-gradient(0deg, transparent 0 44%, rgba(226, 226, 226, 0.9) 44% 46%, transparent 46%),
