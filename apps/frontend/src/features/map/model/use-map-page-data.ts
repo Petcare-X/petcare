@@ -1,16 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import { useClinicsQuery, useFriendlyQuery, useGroomingsQuery } from "@/entities/map-point/model/map.queries";
 import { mapClinicToPlace, mapDogPlaceToPlace, mapGroomingToPlace, type PlaceType } from "@/entities/map-point/model/map.types";
 
 import { useMapSearch } from "./use-map-search";
 
-export function useMapPageData() {
+export function useMapPageData(initialFilter: PlaceType | "" = "") {
     const clinicsQuery = useClinicsQuery();
     const friendlyQuery = useFriendlyQuery();
     const groomingsQuery = useGroomingsQuery();
 
-    const [activeFilter, setActiveFilter] = useState<PlaceType | "">("");
+    const [activeFilter, setActiveFilter] = useState<PlaceType | "">(initialFilter);
     const [searchTerm, setSearchTerm] = useState("");
 
     const allPlaces = useMemo(
@@ -32,6 +32,10 @@ export function useMapPageData() {
     const handleFilterChange = (filter: PlaceType) => {
         setActiveFilter((current) => (current === filter ? "" : filter));
     };
+
+    useEffect(() => {
+        setActiveFilter(initialFilter);
+    }, [initialFilter]);
 
     return {
         activeFilter,

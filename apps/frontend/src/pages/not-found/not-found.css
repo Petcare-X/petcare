@@ -1,39 +1,48 @@
 .not-found-page {
-    min-height: 100vh;
-    background: linear-gradient(180deg, #fff7ed 0%, #f8fafc 100%);
-    padding: 50px 0;
-}
-
-.not-found-page-content {
+    height: 100dvh;
+    background-color: #F97316;
+    padding: 0 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0 auto;
-    width: clamp(300px, 50vw, 400px);
+    justify-content: center;
+    gap: 14px;
 }
 
 .not-found-code {
-    font-size: 10rem;
-    color: #ff7a1a;
+    font-size: clamp(3rem, 40vw, 10rem);
+    color: #fafafa;
+    line-height: 0.82;
 }
 
-.not-found-message {
-    font-size: 1.5rem;
-    color: #8f8f8f;
-    font-weight: 700;
+.not-found-title {
+    font-size: 1.75rem;
+    color: #fafafa;
+    font-weight: 900;
     text-align: center;
 }
 
-.to-main-button {
-    width: 100%;
-    background-color: #F97316;
-    color: #f8fafc;
+.not-found-subtitle {
+    color: #fafafa;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.not-found-back-btn {
+    max-width: min(430px, 100%);
+    background-color: #fafafa;
+    color: #F97316;
+    border: 2px solid #fafafa;
     font-size: 1.1rem;
     text-align: center;
     text-decoration: none;
     font-weight: 700;
     border-radius: 50px;
-    padding: 20px;
-    margin-top: 70px;
-    box-shadow: 0 16px 22px rgba(249, 115, 22, 0.25);
+    padding: 20px 40px;
+}
+
+.not-found-back-btn:hover {
+    background-color: #F97316;
+    color: #fafafa;
 }

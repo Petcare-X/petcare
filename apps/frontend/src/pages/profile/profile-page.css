@@ -39,12 +39,25 @@
 
 .profile-link-item {
     display: flex;
+    align-items: center;
     gap: 20px;
     padding: 15px 20px;
     text-decoration: none;
     color: #000000;
     font-size: 1.1rem;
     font-weight: 700;
+}
+
+.profile-link-icon {
+    width: 24px;
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-link-icon svg {
+    display: block;
 }
 
 .profile-link-item + .profile-link-item {

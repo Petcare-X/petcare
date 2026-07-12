@@ -1,6 +1,6 @@
 import { Outlet } from "@tanstack/react-router";
-import { Header } from "@/widgets/app-shell/page-header";
-import { Navbar } from "@/widgets/app-shell/page-navbar";
+import { Header } from "@/widgets/header/page-header";
+import { Navbar } from "@/widgets/navbar/page-navbar";
 
 import "./app-shell.css";
 

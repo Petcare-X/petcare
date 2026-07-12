@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { uploadPetPhoto } from "@/entities/pet/api/pet-photo.api";
 import { petQueryKeys } from "@/entities/pet/model/pet.queries";
+import type { Pet } from "@/entities/pet/model/pet.types";
 
 export type UploadPetPhotoVariables = {
     petId: number;
@@ -15,13 +16,21 @@ export function useUploadPetPhoto() {
         mutationFn: ({ petId, file }: UploadPetPhotoVariables) =>
             uploadPetPhoto(petId, file),
 
-        onSuccess: (_pet, variables) => {
+        onSuccess: (pet, variables) => {
+            queryClient.setQueryData<Pet[]>(petQueryKeys.list(), (pets) => {
+                if (!pets) {
+                    return pets;
+                }
+
+                return pets.map((item) => item.id === pet.id ? pet : item);
+            });
+
             void queryClient.invalidateQueries({
                 queryKey: petQueryKeys.list(),
             });
 
-            void queryClient.invalidateQueries({
-                queryKey: petQueryKeys.photo(variables.petId),
+            void queryClient.removeQueries({
+                queryKey: [...petQueryKeys.all, "photo", variables.petId],
             });
         },
     });

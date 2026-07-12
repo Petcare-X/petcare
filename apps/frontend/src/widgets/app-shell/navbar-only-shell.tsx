@@ -1,6 +1,6 @@
 import { Outlet } from "@tanstack/react-router"
 
-import { Navbar } from "./page-navbar"
+import { Navbar } from "../navbar/page-navbar"
 
 export function NavbarOnlyShell() {
     return (

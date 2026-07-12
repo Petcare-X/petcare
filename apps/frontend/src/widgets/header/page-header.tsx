@@ -1,6 +1,8 @@
 import { appRoutes } from "@/shared/constants/routes"
 import { Link } from "@tanstack/react-router"
 
+import './header.css'
+
 export function Header() {
     return (
         <header className="header">

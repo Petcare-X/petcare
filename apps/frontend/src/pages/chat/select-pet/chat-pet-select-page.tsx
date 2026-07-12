@@ -1,5 +1,5 @@
-import { useChatPetOptions } from "@/features/chat/model/chat-pet-options"
-import { ChatPetOptionCard } from "@/features/chat/ui/chat-pet-option-card"
+import { useChatPetOptions } from "@/features/chat-pet-options/model/chat-pet-options"
+import { ChatPetOptionCard } from "@/features/chat-pet-options/ui/chat-pet-option-card"
 
 import "./chat-pet-selection-page.css"
 
