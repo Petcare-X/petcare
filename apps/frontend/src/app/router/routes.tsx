@@ -11,8 +11,12 @@ import { LoginPage } from "@/pages/auth/login-page";
 import { SignupPage } from "@/pages/auth/signup-page";
 
 import { HomePage } from "@/pages/home/home-page";
+
 import { UserProfilePage } from "@/pages/user/profile/profile-page";
 import { EditProfilePage } from "@/pages/user/edit/edit-profile-page";
+import { SettingsPage } from "@/pages/user/settings/settings-page";
+import { HelpPage } from "@/pages/user/help/help-page";
+
 import { MapPage } from "@/pages/map/map-page";
 import { CalendarPage } from "@/pages/calendar/calendar-page";
 import { PetProfilePage } from "@/pages/pets/profile/pet-profile-page";
@@ -118,6 +122,18 @@ const editProfileRoute = createRoute({
     component: EditProfilePage,
 })
 
+const settingsRoute = createRoute({
+    getParentRoute: () => mainOnlyLayoutRoute,
+    path: appRoutes.settings,
+    component: SettingsPage,
+});
+
+const helpRoute = createRoute({
+    getParentRoute: () => mainOnlyLayoutRoute,
+    path: appRoutes.help,
+    component: HelpPage,
+});
+
 const calendarRoute = createRoute ({
     getParentRoute: () => mainOnlyLayoutRoute,
     path: appRoutes.calendar,
@@ -180,6 +196,8 @@ const routeTree = rootRoute.addChildren([
             editPetRoute,
             calendarRoute,
             documentsRoute,
+            settingsRoute,
+            helpRoute,
         ]),
 
         navbarOnlyLayoutRoute.addChildren([

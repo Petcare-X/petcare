@@ -8,6 +8,8 @@ export const appRoutes = {
     documents: "/pets/$petId/documents/",
     userProfile: "/user",
     editProfile: "/user/edit",
+    settings: "/user/settings",
+    help: "/user/help",
     chatSelectPet: "/chat",
     chatHistory: "/chat/$petId",
     chat: "/chat/$petId/$chatId",
