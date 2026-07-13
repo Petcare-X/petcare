@@ -1,0 +1,125 @@
+.edit-profile-form {
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-photo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.edit-user-avatar-image {
+    display: block;
+    width: 85px;
+    height: 88px;
+    border-radius: 25px;
+    object-fit: cover;
+}
+
+.change-avatar-button {
+    color: #f97316;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.change-avatar-button:hover {
+    color: #d95f0b;
+}
+
+.change-avatar-button:focus-within {
+    border-radius: 6px;
+    outline: 2px solid rgba(249, 115, 22, 0.35);
+    outline-offset: 3px;
+}
+
+.edit-user-avatar-error {
+    max-width: 240px;
+    margin: 0;
+    color: #d93737;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.edit-user-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.edit-user-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #111111;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.edit-user-field input {
+    width: 100%;
+    height: 45px;
+    border: 1px solid #e2e2e2;
+    border-radius: 23px;
+    background: #efefef;
+    padding: 0 19px;
+    color: #1f1f1f;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    outline: none;
+}
+
+.edit-user-field input:focus {
+    border-color: #f97316;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.12);
+}
+
+.save-button {
+    width: 100%;
+    background-color: #ff7a1a;
+    color: white;
+    cursor: pointer;
+    margin-top: 40px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 50px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.12);
+    transition: all 0.2s ease;
+}
+
+.save-button:hover {
+    box-shadow: 0 5px 20px rgba(253, 105, 6, 0.55);
+}
+
+.delete-user-button {
+    margin-top: 30px;
+    width: 80%;
+    background-color: #fafafa;
+    color: #FF4D4D;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 10px;
+    border: 2px solid #FF4D4D;
+    border-radius: 50px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.12);
+    transition: all 0.2s ease;
+}
+
+.delete-user-button:hover {
+    background-color: #FF4D4D;
+    color: #fafafa;
+}
+
+.delete-user-button:focus {
+    transform: scale(0.98);
+}

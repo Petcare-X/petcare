@@ -11,11 +11,11 @@ import { LoginPage } from "@/pages/auth/login-page";
 import { SignupPage } from "@/pages/auth/signup-page";
 
 import { HomePage } from "@/pages/home/home-page";
-import { UserProfile } from "@/pages/profile/profile-page";
-import { EditProfilePage } from "@/pages/profile/edit-profile";
+import { UserProfilePage } from "@/pages/user/profile/profile-page";
+import { EditProfilePage } from "@/pages/user/edit/edit-profile-page";
 import { MapPage } from "@/pages/map/map-page";
 import { CalendarPage } from "@/pages/calendar/calendar-page";
-import { PetDetailsPage } from "@/pages/pets/pet-details-page";
+import { PetProfilePage } from "@/pages/pets/profile/pet-profile-page";
 
 import { ChatPetSelectPage } from "@/pages/chat/select-pet/chat-pet-select-page";
 import { ChatHistoryPage } from "@/pages/chat/history/chat-history-page";
@@ -29,7 +29,7 @@ import { NavbarOnlyShell } from "@/widgets/app-shell/navbar-only-shell";
 
 import { NotFoundPage } from "@/pages/not-found/not-found-page";
 
-import { EditPetPage } from "@/pages/pets/edit-pet-page";
+import { EditPetPage } from "@/pages/pets/edit/edit-pet-page";
 import { PetDocumentsPage } from "@/pages/documents/pet-documents-page";
 
 
@@ -94,10 +94,10 @@ const homeRoute = createRoute ({
     component: HomePage,
 });
 
-const petDetailsRoute = createRoute ({
+const petProfileRoute = createRoute ({
     getParentRoute: () => mainOnlyLayoutRoute,
     path: appRoutes.petProfile,
-    component: PetDetailsPage,
+    component: PetProfilePage,
 });
 
 const editPetRoute = createRoute ({
@@ -109,7 +109,7 @@ const editPetRoute = createRoute ({
 const profileRoute = createRoute ({
     getParentRoute: () => fullAppLayoutRoute,
     path: appRoutes.userProfile,
-    component: UserProfile,
+    component: UserProfilePage,
 });
 
 const editProfileRoute = createRoute({
@@ -174,7 +174,7 @@ const routeTree = rootRoute.addChildren([
         ]),
 
         mainOnlyLayoutRoute.addChildren([
-            petDetailsRoute,
+            petProfileRoute,
             mapRoute,
             chatRoute,
             editPetRoute,

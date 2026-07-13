@@ -13,7 +13,7 @@ import {
     usePetPhotoQuery
 } from "@/entities/pet/model/pet.queries";
 
-import './pet-details-page.css';
+import './pet-profile-page.css';
 import { usePetDocumentsQuery } from "@/entities/document/model/document.queries";
 import { UploadDocumentForm } from "@/features/upload-document/ui/upload-document-form";
 import { createPortal } from "react-dom";
@@ -33,7 +33,7 @@ function shouldIgnoreSheetDrag(target: EventTarget | null) {
     );
 }
 
-export function PetDetailsPage() {
+export function PetProfilePage() {
     const { petId } = useParams({ strict: false }) as { petId?: string };
     const petIdNumber = Number(petId);
 

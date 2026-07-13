@@ -5,7 +5,7 @@ import "./profile-page.css"
 import { Link } from "@tanstack/react-router";
 import { appRoutes } from "@/shared/constants/routes";
 
-export function UserProfile () {
+export function UserProfilePage () {
     const logout = useLogout();
 
     const user = useUserQueries().data;
