@@ -113,7 +113,7 @@
     cursor: not-allowed;
 }
 
-.chat-composer {
+.chat-input-container {
     width: 100%;
     display: flex;
     justify-content: center;
@@ -122,7 +122,7 @@
     position: sticky;
     bottom: 0;
     z-index: 20;
-    padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
     margin-top: auto;
 }
 
@@ -161,7 +161,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    right: 5px;
+    right: 19px;
     width: 50px;
     height: 50px;
     display: flex;

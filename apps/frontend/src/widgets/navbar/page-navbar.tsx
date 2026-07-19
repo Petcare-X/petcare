@@ -28,7 +28,7 @@ export function Navbar() {
             {pets.pets.length === 1 ?
                 <Link
                     to={appRoutes.chatHistory}
-                    params={String(pets.pets[0].id)}
+                    params={{ petId: String(pets.pets[0].id) }}
                     className="navbar-chat-button"
                 >
                     <svg className="chat-button-icon" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">

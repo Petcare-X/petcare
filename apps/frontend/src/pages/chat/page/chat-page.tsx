@@ -252,7 +252,7 @@ export function ChatPage() {
                 )}
             </section>
 
-            <form className="chat-composer" onSubmit={handleSubmit}>
+            <form className="chat-input-container" onSubmit={handleSubmit}>
                 <input 
                     type="text" 
                     className="chat-input" 
