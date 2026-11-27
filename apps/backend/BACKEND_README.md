@@ -237,22 +237,25 @@ uv run python src/import/scripts/import_document_types.py src/import/csv_files/d
 ### Запуск скриптов внутри контейнера backend
 
 Если backend уже поднят через compose:
+```bash
+cd apps/backend
+```
 
 для типов животных:
 ```bash
-docker compose --env-file .env.docker exec backend \
+docker compose --env-file .env exec backend \
   uv run python src/import/scripts/import_animals_types.py src/import/csv_files/animal_types.csv
 ```
 
 для пород животных:
 ```bash
-docker compose --env-file .env.docker exec backend \
+docker compose --env-file .env exec backend \
   uv run python src/import/scripts/import_animals_breeds.py src/import/csv_files/animal_breeds.csv
 ```
 
 для типов документов:
 ```bash
-docker compose --env-file .env.docker exec backend \
+docker compose --env-file .env exec backend \
   uv run python src/import/scripts/import_document_types.py src/import/csv_files/document_types.csv
 ```
 
