@@ -53,6 +53,11 @@ export function ChatHistoryPage() {
         }
     }
 
+    const sortedChats = [...(chatsQuery.data ?? [])].sort(
+        (a, b) => new Date(b.created_at).getTime() - 
+        new Date(a.created_at).getTime()
+    )
+
     return (
         <>
             <header className="chats-history-header">
@@ -94,9 +99,9 @@ export function ChatHistoryPage() {
                     + новый чат
                 </button>
 
-                {chatsQuery.data?.length ? (
+                {sortedChats.length > 0 ? (
                     <ul className="chat-history-list">
-                        {chatsQuery.data.map((chat) => (
+                        {sortedChats.map((chat) => (
                             <li key={chat.id} className="chat-history-item">
                                 <Link
                                     to={appRoutes.chat}
